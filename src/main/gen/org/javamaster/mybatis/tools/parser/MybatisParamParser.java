@@ -3,8 +3,8 @@ package org.javamaster.mybatis.tools.parser;
 
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiBuilder.Marker;
-import static org.javamaster.mybatis.tools.psi.MybatisTypes.*;
-import static org.javamaster.mybatis.tools.parser.MybatisParserUtil.*;
+import static org.javamaster.mybatis.tools.psi.MybatisParamTypes.*;
+import static org.javamaster.mybatis.tools.parser.MybatisParamParserUtil.*;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.lang.ASTNode;
 import com.intellij.psi.tree.TokenSet;
@@ -12,7 +12,7 @@ import com.intellij.lang.PsiParser;
 import com.intellij.lang.LightPsiParser;
 
 @SuppressWarnings({"SimplifiableIfStatement", "UnusedAssignment"})
-public class MybatisParser implements PsiParser, LightPsiParser {
+public class MybatisParamParser implements PsiParser, LightPsiParser {
 
   public ASTNode parse(IElementType t, PsiBuilder b) {
     parseLight(t, b);
@@ -32,7 +32,7 @@ public class MybatisParser implements PsiParser, LightPsiParser {
   }
 
   static boolean parse_root_(IElementType t, PsiBuilder b, int l) {
-    return mybatisFile(b, l + 1);
+    return mybatisParamFile(b, l + 1);
   }
 
   /* ********************************************************** */
@@ -120,27 +120,27 @@ public class MybatisParser implements PsiParser, LightPsiParser {
 
   /* ********************************************************** */
   // fieldName (SEPARATOR attrs)?
-  static boolean mybatisFile(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "mybatisFile")) return false;
+  static boolean mybatisParamFile(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "mybatisParamFile")) return false;
     if (!nextTokenIs(b, FIELD_NAME_LABEL)) return false;
     boolean r;
     Marker m = enter_section_(b);
     r = fieldName(b, l + 1);
-    r = r && mybatisFile_1(b, l + 1);
+    r = r && mybatisParamFile_1(b, l + 1);
     exit_section_(b, m, null, r);
     return r;
   }
 
   // (SEPARATOR attrs)?
-  private static boolean mybatisFile_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "mybatisFile_1")) return false;
-    mybatisFile_1_0(b, l + 1);
+  private static boolean mybatisParamFile_1(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "mybatisParamFile_1")) return false;
+    mybatisParamFile_1_0(b, l + 1);
     return true;
   }
 
   // SEPARATOR attrs
-  private static boolean mybatisFile_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "mybatisFile_1_0")) return false;
+  private static boolean mybatisParamFile_1_0(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "mybatisParamFile_1_0")) return false;
     boolean r;
     Marker m = enter_section_(b);
     r = consumeToken(b, SEPARATOR);

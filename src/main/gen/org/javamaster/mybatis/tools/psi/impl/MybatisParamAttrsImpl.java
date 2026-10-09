@@ -7,30 +7,30 @@ import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
-import static org.javamaster.mybatis.tools.psi.MybatisTypes.*;
+import static org.javamaster.mybatis.tools.psi.MybatisParamTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import org.javamaster.mybatis.tools.psi.*;
 
-public class MybatisAttrsImpl extends ASTWrapperPsiElement implements MybatisAttrs {
+public class MybatisParamAttrsImpl extends ASTWrapperPsiElement implements MybatisParamAttrs {
 
-  public MybatisAttrsImpl(@NotNull ASTNode node) {
+  public MybatisParamAttrsImpl(@NotNull ASTNode node) {
     super(node);
   }
 
-  public void accept(@NotNull MybatisVisitor visitor) {
+  public void accept(@NotNull MybatisParamVisitor visitor) {
     visitor.visitAttrs(this);
   }
 
   @Override
   public void accept(@NotNull PsiElementVisitor visitor) {
-    if (visitor instanceof MybatisVisitor) accept((MybatisVisitor)visitor);
+    if (visitor instanceof MybatisParamVisitor) accept((MybatisParamVisitor)visitor);
     else super.accept(visitor);
   }
 
   @Override
   @NotNull
-  public List<MybatisAttr> getAttrList() {
-    return PsiTreeUtil.getChildrenOfTypeAsList(this, MybatisAttr.class);
+  public List<MybatisParamAttr> getAttrList() {
+    return PsiTreeUtil.getChildrenOfTypeAsList(this, MybatisParamAttr.class);
   }
 
 }

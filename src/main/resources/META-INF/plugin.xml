@@ -5,10 +5,24 @@
 
     <description><![CDATA[
        <ul>
-          <li>mapper and xml can jump back and forth</li>
-          <li>mybatis.xml, mapper.xml prompt</li>
-          <li>mapper and xml support auto prompt like jpa (reference  MybatisCodeHelperPro)</li>
-          <li>integrate mybatis generator Gui (copy from free mybatis plugin)</li>
+          <li>Mapper and xml can jump back and forth</li>
+          <li>Mybatis.xml prompt</li>
+          <li>Prompt and reference jumps for if test, when test, and other areas in the mapper.xml file</li>
+          <li>Prompt and reference jumps for #{} / ${} areas in the mapper.xml file</li>
+          <li>Extract console mybatis SQL logs as complete executable SQL</li>
+          <li>Integrate all functions of the MybatisX plugin(copy from MybatisX)</li>
+          <li>Integrate mybatis generator Gui (copy from free mybatis plugin)</li>
+          <li>Integrate OGNL language support(copy from intellij)</li>
+       </ul>
+       <ul>
+          <li>在 Mapper 接口类和 xml 文件之间跳转</li>
+          <li>mybatis.xml 智能提示</li>
+          <li>mapper.xml 文件的 if test、when test 等区域的智能输入提示及引用跳转</li>
+          <li>mapper.xml 文件的 #{} / ${} 区域的智能输入提示及引用跳转</li>
+          <li>提取控制台 mybatis SQL 日志为完整的可执行 SQL</li>
+          <li>集成 MybatisX 插件所有功能(源码来自 MybatisX)</li>
+          <li>集成 mybatis generator Gui (源码来自 free mybatis plugin)</li>
+          <li>集成 OGNL 语言支持(源码来自 intellij)</li>
        </ul>
   ]]></description>
 
@@ -31,29 +45,28 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <fileType
-                name="MYBATIS_TOOLS"
-                implementationClass="org.javamaster.mybatis.tools.MybatisFileType"
+                name="MYBATIS_PARAM"
+                implementationClass="org.javamaster.mybatis.tools.MybatisParamFileType"
                 fieldName="INSTANCE"
-                language="mybatisTools"
-                extensions="mybatisTools"/>
+                language="mybatisParam"
+                extensions="mybatisParam"/>
         <lang.parserDefinition
-                language="mybatisTools"
+                language="mybatisParam"
                 implementationClass="org.javamaster.mybatis.tools.parser.MybatisParserDefinition"/>
         <lang.syntaxHighlighterFactory
-                language="mybatisTools"
-                implementationClass="org.javamaster.mybatis.tools.highlighting.MybatisSyntaxHighlighterFactory"/>
+                language="mybatisParam"
+                implementationClass="org.javamaster.mybatis.tools.highlighting.MybatisParamSyntaxHighlighterFactory"/>
         <multiHostInjector
                 implementation="org.javamaster.mybatis.tools.inject.MybatisInjectionContributor"/>
         <psi.referenceContributor id="MybatisReferenceContributor"
                                   implementation="org.javamaster.mybatis.tools.contributor.MybatisReferenceContributor"
-                                  language="mybatisTools"/>
-        <completion.contributor language="mybatisTools"
+                                  language="mybatisParam"/>
+        <completion.contributor language="mybatisParam"
                                 implementationClass="org.javamaster.mybatis.tools.completion.MybatisCompletionContributor"/>
+
         <completion.contributor language="OGNL"
                                 implementationClass="org.javamaster.mybatis.tools.completion.OgnlCompletionContributor"/>
 
-        <projectService id="javamaster.TemplatesSettings"
-                        serviceImplementation="com.baomidou.plugin.idea.mybatisx.generate.setting.TemplatesSettings"/>
         <!-- mapper.xml文件属性提示 -->
         <dom.fileMetaData id="javamaster.MapperDescription"
                           rootTagName="mapper"
@@ -62,7 +75,6 @@
         <dom.fileMetaData id="javamaster.ConfigurationDescription"
                           rootTagName="configuration"
                           implementation="com.baomidou.plugin.idea.mybatisx.dom.description.ConfigurationDescription"/>
-
         <!-- 定位类的跳转, 定位方法的跳转 -->
         <definitionsScopedSearch id="javamaster.MapperClassSearch"
                                  implementation="com.baomidou.plugin.idea.mybatisx.system.definitionsearch.MapperClassSearch"/>
@@ -72,6 +84,8 @@
                 implementation="com.baomidou.plugin.idea.mybatisx.provider.GotoMapperXmlSchemaTypePresentationProvider"/>
 
         <!--项目服务-->
+        <projectService id="javamaster.TemplatesSettings"
+                        serviceImplementation="com.baomidou.plugin.idea.mybatisx.generate.setting.TemplatesSettings"/>
         <projectService id="javamaster.JavaService"
                         serviceImplementation="com.baomidou.plugin.idea.mybatisx.service.JavaService"/>
         <projectService id="javamaster.AnnotationService"
@@ -80,11 +94,8 @@
                         serviceImplementation="com.baomidou.plugin.idea.mybatisx.service.EditorService"/>
         <projectService id="javamaster.AliasFacade"
                         serviceImplementation="com.baomidou.plugin.idea.mybatisx.alias.AliasFacade"/>
-
-
         <projectService id="javamaster.MapperLocator"
                         serviceImplementation="com.baomidou.plugin.idea.mybatisx.locator.MapperLocator"/>
-
 
         <!--代码行插件，实现代码导航功能-->
         <!-- java 跳转到 xml  -->
@@ -100,10 +111,9 @@
         <consoleFilterProvider
                 implementation="org.javamaster.mybatis.tools.console.MyBatisSqlConsoleActionsPostProcessor"/>
 
-        <!--         设置中的配置 -->
+        <!-- 设置中的配置 -->
         <applicationConfigurable id="mybatisx.settings" displayName="MybatisX"
                                  instance="com.baomidou.plugin.idea.mybatisx.setting.MybatisConfigurable"/>
-
 
         <!-- jpa规范提示, 在mapper类声明方法提示, 提示字符串完成后, 后续可以根据字符串生成方法参数和XML内容 -->
         <completion.contributor id="javamaster.MapperMethodCompletionContributor" language="JAVA"

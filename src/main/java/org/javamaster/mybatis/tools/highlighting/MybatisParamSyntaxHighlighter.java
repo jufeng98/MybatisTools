@@ -7,7 +7,7 @@ import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
 import com.intellij.psi.tree.IElementType;
 import org.javamaster.mybatis.tools.parser.MybatisAdapter;
-import org.javamaster.mybatis.tools.psi.MybatisTypes;
+import org.javamaster.mybatis.tools.psi.MybatisParamTypes;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * @author yudong
  */
-public class MybatisSyntaxHighlighter extends SyntaxHighlighterBase {
+public class MybatisParamSyntaxHighlighter extends SyntaxHighlighterBase {
     private static final Map<IElementType, TextAttributesKey> ATTRIBUTE_MAP = Maps.newHashMap();
 
     private static final TextAttributesKey FIELD_NAME;
@@ -27,9 +27,9 @@ public class MybatisSyntaxHighlighter extends SyntaxHighlighterBase {
         ATTR_NAME = TextAttributesKey.createTextAttributesKey("MYBATIS_TOOLS_ATTR_NAME", DefaultLanguageHighlighterColors.PARAMETER);
         ATTR_VALUE = TextAttributesKey.createTextAttributesKey("MYBATIS_TOOLS_ATTR_VALUE", DefaultLanguageHighlighterColors.STRING);
 
-        fillMap(ATTRIBUTE_MAP, FIELD_NAME, MybatisTypes.FIELD_NAME_LABEL);
-        fillMap(ATTRIBUTE_MAP, ATTR_NAME, MybatisTypes.ATTR_NAME_LABEL);
-        fillMap(ATTRIBUTE_MAP, ATTR_VALUE, MybatisTypes.ATTR_VALUE_LABEL);
+        fillMap(ATTRIBUTE_MAP, FIELD_NAME, MybatisParamTypes.FIELD_NAME_LABEL);
+        fillMap(ATTRIBUTE_MAP, ATTR_NAME, MybatisParamTypes.ATTR_NAME_LABEL);
+        fillMap(ATTRIBUTE_MAP, ATTR_VALUE, MybatisParamTypes.ATTR_VALUE_LABEL);
     }
 
     public @NotNull Lexer getHighlightingLexer() {

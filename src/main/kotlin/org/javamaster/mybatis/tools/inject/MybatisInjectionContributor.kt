@@ -9,7 +9,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.xml.XmlText
 import com.intellij.util.SmartList
-import org.javamaster.mybatis.tools.MybatisLanguage
+import org.javamaster.mybatis.tools.MybatisParamLanguage
 
 /**
  * 对 mybatis mapper xml 文件里的 #{} / ${} 注入语言
@@ -29,7 +29,7 @@ class MybatisInjectionContributor : MultiHostInjector {
 
         val value = literalExpression.text
 
-        registrar.startInjecting(MybatisLanguage.INSTANCE)
+        registrar.startInjecting(MybatisParamLanguage.INSTANCE)
 
         injectXmlText(registrar, context as PsiLanguageInjectionHost, value)
     }
@@ -45,7 +45,7 @@ class MybatisInjectionContributor : MultiHostInjector {
         }
 
         for (variableRange in variablesRanges) {
-            registrar.startInjecting(MybatisLanguage.INSTANCE)
+            registrar.startInjecting(MybatisParamLanguage.INSTANCE)
 
             registrar.addPlace(null, null, host, variableRange)
             

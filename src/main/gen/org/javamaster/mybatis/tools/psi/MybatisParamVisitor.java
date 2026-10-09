@@ -5,25 +5,25 @@ import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiElement;
 
-public class MybatisVisitor extends PsiElementVisitor {
+public class MybatisParamVisitor extends PsiElementVisitor {
 
-  public void visitAttr(@NotNull MybatisAttr o) {
+  public void visitAttr(@NotNull MybatisParamAttr o) {
     visitPsiElement(o);
   }
 
-  public void visitAttrName(@NotNull MybatisAttrName o) {
+  public void visitAttrName(@NotNull MybatisParamAttrName o) {
     visitPsiElement(o);
   }
 
-  public void visitAttrValue(@NotNull MybatisAttrValue o) {
+  public void visitAttrValue(@NotNull MybatisParamAttrValue o) {
     visitPsiElement(o);
   }
 
-  public void visitAttrs(@NotNull MybatisAttrs o) {
+  public void visitAttrs(@NotNull MybatisParamAttrs o) {
     visitPsiElement(o);
   }
 
-  public void visitFieldName(@NotNull MybatisFieldName o) {
+  public void visitFieldName(@NotNull MybatisParamFieldName o) {
     visitPsiElement(o);
   }
 

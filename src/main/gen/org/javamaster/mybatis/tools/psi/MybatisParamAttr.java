@@ -4,12 +4,13 @@ package org.javamaster.mybatis.tools.psi;
 import java.util.List;
 import org.jetbrains.annotations.*;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiReference;
 
-public interface MybatisAttrValue extends PsiElement {
+public interface MybatisParamAttr extends PsiElement {
 
-  @NotNull String getName();
+  @NotNull
+  MybatisParamAttrName getAttrName();
 
-  @NotNull PsiReference @NotNull [] getReferences();
+  @Nullable
+  MybatisParamAttrValue getAttrValue();
 
 }

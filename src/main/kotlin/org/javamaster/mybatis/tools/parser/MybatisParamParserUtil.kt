@@ -2,4 +2,4 @@ package org.javamaster.mybatis.tools.parser
 
 import com.intellij.lang.parser.GeneratedParserUtilBase
 
-object MybatisParserUtil : GeneratedParserUtilBase()
+object MybatisParamParserUtil : GeneratedParserUtilBase()

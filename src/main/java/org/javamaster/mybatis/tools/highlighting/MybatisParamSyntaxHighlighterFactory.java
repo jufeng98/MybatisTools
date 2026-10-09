@@ -10,11 +10,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @author yudong
  */
-public class MybatisSyntaxHighlighterFactory extends SyntaxHighlighterFactory {
+public class MybatisParamSyntaxHighlighterFactory extends SyntaxHighlighterFactory {
 
     @Override
     public @NotNull SyntaxHighlighter getSyntaxHighlighter(@Nullable Project project, @Nullable VirtualFile virtualFile) {
-        return new MybatisSyntaxHighlighter();
+        return new MybatisParamSyntaxHighlighter();
     }
 
 }

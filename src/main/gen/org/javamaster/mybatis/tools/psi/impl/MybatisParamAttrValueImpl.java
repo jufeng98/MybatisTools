@@ -7,35 +7,35 @@ import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
-import static org.javamaster.mybatis.tools.psi.MybatisTypes.*;
+import static org.javamaster.mybatis.tools.psi.MybatisParamTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import org.javamaster.mybatis.tools.psi.*;
 import com.intellij.psi.PsiReference;
 
-public class MybatisAttrNameImpl extends ASTWrapperPsiElement implements MybatisAttrName {
+public class MybatisParamAttrValueImpl extends ASTWrapperPsiElement implements MybatisParamAttrValue {
 
-  public MybatisAttrNameImpl(@NotNull ASTNode node) {
+  public MybatisParamAttrValueImpl(@NotNull ASTNode node) {
     super(node);
   }
 
-  public void accept(@NotNull MybatisVisitor visitor) {
-    visitor.visitAttrName(this);
+  public void accept(@NotNull MybatisParamVisitor visitor) {
+    visitor.visitAttrValue(this);
   }
 
   @Override
   public void accept(@NotNull PsiElementVisitor visitor) {
-    if (visitor instanceof MybatisVisitor) accept((MybatisVisitor)visitor);
+    if (visitor instanceof MybatisParamVisitor) accept((MybatisParamVisitor)visitor);
     else super.accept(visitor);
   }
 
   @Override
   public @NotNull String getName() {
-    return MybatisPsiImplUtil.getName(this);
+    return MybatisParamPsiImplUtil.getName(this);
   }
 
   @Override
   public @NotNull PsiReference @NotNull [] getReferences() {
-    return MybatisPsiImplUtil.getReferences(this);
+    return MybatisParamPsiImplUtil.getReferences(this);
   }
 
 }

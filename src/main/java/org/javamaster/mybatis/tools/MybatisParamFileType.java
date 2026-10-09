@@ -11,25 +11,25 @@ import static com.baomidou.plugin.idea.mybatisx.util.Icons.IMAGES_STATEMENT_SVG;
 /**
  * @author yudong
  */
-public class MybatisFileType extends LanguageFileType {
+public class MybatisParamFileType extends LanguageFileType {
 
-    public static final MybatisFileType INSTANCE = new MybatisFileType();
-    public static final String DEFAULT_EXTENSION = "mybatisTools";
+    public static final MybatisParamFileType INSTANCE = new MybatisParamFileType();
+    public static final String DEFAULT_EXTENSION = "mybatisParam";
 
-    private MybatisFileType() {
-        super(MybatisLanguage.INSTANCE);
+    private MybatisParamFileType() {
+        super(MybatisParamLanguage.INSTANCE);
     }
 
     @NotNull
     @Override
     public String getName() {
-        return "MYBATIS_TOOLS";
+        return "MYBATIS_PARAM";
     }
 
     @NotNull
     @Override
     public String getDescription() {
-        return "Mybatis file";
+        return "Mybatis xml file param";
     }
 
     @NotNull

@@ -7,36 +7,36 @@ import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.util.PsiTreeUtil;
-import static org.javamaster.mybatis.tools.psi.MybatisTypes.*;
+import static org.javamaster.mybatis.tools.psi.MybatisParamTypes.*;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import org.javamaster.mybatis.tools.psi.*;
 
-public class MybatisAttrImpl extends ASTWrapperPsiElement implements MybatisAttr {
+public class MybatisParamAttrImpl extends ASTWrapperPsiElement implements MybatisParamAttr {
 
-  public MybatisAttrImpl(@NotNull ASTNode node) {
+  public MybatisParamAttrImpl(@NotNull ASTNode node) {
     super(node);
   }
 
-  public void accept(@NotNull MybatisVisitor visitor) {
+  public void accept(@NotNull MybatisParamVisitor visitor) {
     visitor.visitAttr(this);
   }
 
   @Override
   public void accept(@NotNull PsiElementVisitor visitor) {
-    if (visitor instanceof MybatisVisitor) accept((MybatisVisitor)visitor);
+    if (visitor instanceof MybatisParamVisitor) accept((MybatisParamVisitor)visitor);
     else super.accept(visitor);
   }
 
   @Override
   @NotNull
-  public MybatisAttrName getAttrName() {
-    return findNotNullChildByClass(MybatisAttrName.class);
+  public MybatisParamAttrName getAttrName() {
+    return findNotNullChildByClass(MybatisParamAttrName.class);
   }
 
   @Override
   @Nullable
-  public MybatisAttrValue getAttrValue() {
-    return findChildByClass(MybatisAttrValue.class);
+  public MybatisParamAttrValue getAttrValue() {
+    return findChildByClass(MybatisParamAttrValue.class);
   }
 
 }

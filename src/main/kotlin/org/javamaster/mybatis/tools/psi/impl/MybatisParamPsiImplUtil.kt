@@ -2,42 +2,42 @@ package org.javamaster.mybatis.tools.psi.impl
 
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry
-import org.javamaster.mybatis.tools.psi.MybatisAttrName
-import org.javamaster.mybatis.tools.psi.MybatisAttrValue
-import org.javamaster.mybatis.tools.psi.MybatisFieldName
+import org.javamaster.mybatis.tools.psi.MybatisParamAttrName
+import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue
+import org.javamaster.mybatis.tools.psi.MybatisParamFieldName
 
 /**
  * @author yudong
  */
-object MybatisPsiImplUtil {
+object MybatisParamPsiImplUtil {
 
     @JvmStatic
-    fun getName(mybatisFieldName: MybatisFieldName): String {
+    fun getName(mybatisFieldName: MybatisParamFieldName): String {
         return mybatisFieldName.text
     }
 
     @JvmStatic
-    fun getReferences(mybatisFieldName: MybatisFieldName): Array<PsiReference> {
+    fun getReferences(mybatisFieldName: MybatisParamFieldName): Array<PsiReference> {
         return ReferenceProvidersRegistry.getReferencesFromProviders(mybatisFieldName)
     }
 
     @JvmStatic
-    fun getName(mybatisAttrName: MybatisAttrName): String {
+    fun getName(mybatisAttrName: MybatisParamAttrName): String {
         return mybatisAttrName.text
     }
 
     @JvmStatic
-    fun getReferences(mybatisAttrName: MybatisAttrName): Array<PsiReference> {
+    fun getReferences(mybatisAttrName: MybatisParamAttrName): Array<PsiReference> {
         return ReferenceProvidersRegistry.getReferencesFromProviders(mybatisAttrName)
     }
 
     @JvmStatic
-    fun getName(mybatisAttrValue: MybatisAttrValue): String {
+    fun getName(mybatisAttrValue: MybatisParamAttrValue): String {
         return mybatisAttrValue.text
     }
 
     @JvmStatic
-    fun getReferences(mybatisAttrValue: MybatisAttrValue): Array<PsiReference> {
+    fun getReferences(mybatisAttrValue: MybatisParamAttrValue): Array<PsiReference> {
         return ReferenceProvidersRegistry.getReferencesFromProviders(mybatisAttrValue)
     }
 

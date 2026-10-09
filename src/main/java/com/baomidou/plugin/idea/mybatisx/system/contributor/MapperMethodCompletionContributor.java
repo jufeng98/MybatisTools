@@ -56,9 +56,6 @@ public class MapperMethodCompletionContributor extends CompletionContributor {
      * 填充变量
      * <p>
      * 这一层做验证
-     *
-     * @param parameters
-     * @param result
      */
     @Override
     public void fillCompletionVariants(@NotNull CompletionParameters parameters, @NotNull CompletionResultSet result) {

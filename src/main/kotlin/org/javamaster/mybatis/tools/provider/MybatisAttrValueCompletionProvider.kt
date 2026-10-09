@@ -9,8 +9,8 @@ import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.util.ProcessingContext
 import com.intellij.util.xml.DomUtil
-import org.javamaster.mybatis.tools.psi.MybatisAttr
-import org.javamaster.mybatis.tools.psi.MybatisAttrValue
+import org.javamaster.mybatis.tools.psi.MybatisParamAttr
+import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue
 
 class MybatisAttrValueCompletionProvider : CompletionProvider<CompletionParameters>() {
 
@@ -22,8 +22,8 @@ class MybatisAttrValueCompletionProvider : CompletionProvider<CompletionParamete
         val position = completionParameters.position
         val psiElement = position.parent ?: return
 
-        val mybatisAttrValue = psiElement as MybatisAttrValue
-        val mybatisAttr = mybatisAttrValue.parent as MybatisAttr
+        val mybatisAttrValue = psiElement as MybatisParamAttrValue
+        val mybatisAttr = mybatisAttrValue.parent as MybatisParamAttr
 
         val injectionHost = InjectedLanguageManager.getInstance(mybatisAttr.project).getInjectionHost(mybatisAttrValue)
         val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return

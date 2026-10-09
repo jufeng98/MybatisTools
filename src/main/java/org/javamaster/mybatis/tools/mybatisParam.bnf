@@ -1,18 +1,18 @@
 {
-  parserClass="org.javamaster.mybatis.tools.parser.MybatisParser"
-  parserUtilClass="org.javamaster.mybatis.tools.parser.MybatisParserUtil"
+  parserClass="org.javamaster.mybatis.tools.parser.MybatisParamParser"
+  parserUtilClass="org.javamaster.mybatis.tools.parser.MybatisParamParserUtil"
 
   extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
 
-  psiClassPrefix="Mybatis"
+  psiClassPrefix="MybatisParam"
   psiImplClassSuffix="Impl"
   psiPackage="org.javamaster.mybatis.tools.psi"
   psiImplPackage="org.javamaster.mybatis.tools.psi.impl"
 
-  elementTypeHolderClass="org.javamaster.mybatis.tools.psi.MybatisTypes"
-  elementTypeClass="org.javamaster.mybatis.tools.psi.MybatisElementType"
-  tokenTypeClass="org.javamaster.mybatis.tools.psi.MybatisTokenType"
-  psiImplUtilClass="org.javamaster.mybatis.tools.psi.impl.MybatisPsiImplUtil"
+  elementTypeHolderClass="org.javamaster.mybatis.tools.psi.MybatisParamTypes"
+  elementTypeClass="org.javamaster.mybatis.tools.psi.MybatisParamElementType"
+  tokenTypeClass="org.javamaster.mybatis.tools.psi.MybatisParamTokenType"
+  psiImplUtilClass="org.javamaster.mybatis.tools.psi.impl.MybatisParamPsiImplUtil"
 
   tokens=[
     FIELD_NAME_LABEL='FIELD_NAME_LABEL'
@@ -23,7 +23,7 @@
   ]
 }
 
-mybatisFile ::= fieldName (SEPARATOR attrs)?
+mybatisParamFile ::= fieldName (SEPARATOR attrs)?
 
 fieldName ::= FIELD_NAME_LABEL {
       methods = [

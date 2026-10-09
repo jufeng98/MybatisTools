@@ -23,7 +23,7 @@ public class OgnlMultiHostInjector implements MultiHostInjector {
 
     public static final PsiElementPattern.Capture<XmlAttributeValue> COLLECTION_ATTRIBUTE_VALUE = PlatformPatterns.psiElement(XmlAttributeValue.class)
             .withParent(PlatformPatterns.psiElement(XmlAttribute.class)
-                    .withName("collection")
+                    .withName("collection", "item")
                     .withParent(PlatformPatterns.psiElement(XmlTag.class)
                             .withName("foreach")));
 
