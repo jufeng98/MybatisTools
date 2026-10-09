@@ -1,0 +1,70 @@
+package com.baomidou.plugin.idea.mybatisx.generate.util;
+
+import com.baomidou.plugin.idea.mybatisx.generate.dto.TemplateSettingDTO;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+
+/**
+ * 通过xml读取元数据配置
+ */
+public class XmlUtils {
+
+    public static Map<String, TemplateSettingDTO> loadTemplatesByFile(InputStream inputStream) throws IOException {
+        try {
+            //1.或去SAXParserFactory实例
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            //2.获取SAXParser实例
+            SAXParser saxParser = factory.newSAXParser();
+            //创建Handel对象
+            SAXDemoHandel dh = new SAXDemoHandel();
+            saxParser.parse(inputStream, dh);
+            return dh.map;
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new IOException("读取配置文件出错", e);
+        }
+    }
+
+
+    static class SAXDemoHandel extends DefaultHandler {
+        final Stack<Object> objects = new Stack<>();
+        final Map<String, TemplateSettingDTO> map = new HashMap<>();
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            super.startElement(uri, localName, qName, attributes);
+            if (qName.equals("template")) {
+                objects.push(new TemplateSettingDTO());
+            } else if (qName.equals("property")) {
+                TemplateSettingDTO peek = (TemplateSettingDTO) objects.peek();
+                String name = attributes.getValue("name");
+                String value = attributes.getValue("value");
+                switch (name) {
+                    case "configName" -> peek.setConfigName(value);
+                    case "configFile" -> peek.setConfigFile(value);
+                    case "fileName" -> peek.setFileName(value);
+                    case "suffix" -> peek.setSuffix(value);
+                    case "packageName" -> peek.setPackageName(value);
+                    case "encoding" -> peek.setEncoding(value);
+                    case "basePath" -> peek.setBasePath(value);
+                }
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            super.endElement(uri, localName, qName);
+            if (qName.equals("template")) {
+                TemplateSettingDTO templateSettingDTO = (TemplateSettingDTO) objects.pop();
+                map.put(templateSettingDTO.getConfigFile(), templateSettingDTO);
+            }
+
+        }
+
+    }
+}

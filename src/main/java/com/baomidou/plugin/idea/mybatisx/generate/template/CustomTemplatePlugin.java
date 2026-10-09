@@ -1,0 +1,71 @@
+package com.baomidou.plugin.idea.mybatisx.generate.template;
+
+import com.baomidou.plugin.idea.mybatisx.generate.dto.CustomTemplateRoot;
+import com.baomidou.plugin.idea.mybatisx.generate.dto.ModuleInfoGo;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
+import org.mybatis.generator.api.*;
+import org.mybatis.generator.api.dom.java.TopLevelClass;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+/**
+ * 自定义模板填充插件
+ */
+@Slf4j
+public class CustomTemplatePlugin extends PluginAdapter {
+
+    public static final String ROOT = "root";
+
+    @Override
+    public boolean validate(List<String> warnings) {
+        return true;
+    }
+
+    @Override
+    public List<GeneratedJavaFile> contextGenerateAdditionalJavaFiles(IntrospectedTable introspectedTable) {
+        String root = properties.getProperty(ROOT);
+        CustomTemplateRoot rootObject = readRootObject(root);
+
+        ModuleInfoGo moduleUIInfo = Objects.requireNonNull(rootObject).getModuleUIInfo();
+        if (moduleUIInfo.getEnable() == null || !moduleUIInfo.getEnable()) {
+            log.info("模板文件未启用, modulePath: {}", moduleUIInfo.getModulePath());
+            return Collections.emptyList();
+
+        }
+        String modulePath = rootObject.getModuleUIInfo().getModulePath() + "/" + moduleUIInfo.getBasePath();
+        final File file = new File(modulePath);
+        if (!file.exists()) {
+            final boolean created = file.mkdirs();
+            log.info("模块目录不存在,已创建目录. modulePath: {},created:{}", file.getAbsolutePath(), created);
+        }
+        TopLevelClass topLevelClass = new TopLevelClass(moduleUIInfo.getFileName());
+        FreeMakerFormatter javaFormatter = new FreeMakerFormatter(rootObject, ClassInfo.build(introspectedTable));
+        javaFormatter.setContext(context);
+
+        GeneratedJavaFile generatedJavaFile = new FreemarkerFile(topLevelClass,
+                javaFormatter,
+                modulePath,
+                moduleUIInfo.getEncoding(),
+                moduleUIInfo.getFileNameWithSuffix(),
+                moduleUIInfo.getPackageName());
+        log.info("模板文件构建完成, modulePath: {}", modulePath);
+        return Collections.singletonList(generatedJavaFile);
+    }
+
+    @Nullable
+    private CustomTemplateRoot readRootObject(String root) {
+        CustomTemplateRoot rootObject = null;
+        try {
+            byte[] decode = Base64.getDecoder().decode(root.getBytes(StandardCharsets.UTF_8));
+            try (ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(decode))) {
+                rootObject = (CustomTemplateRoot) objectInputStream.readObject();
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            log.error("Root Object Read Error", e);
+        }
+        return rootObject;
+    }
+}

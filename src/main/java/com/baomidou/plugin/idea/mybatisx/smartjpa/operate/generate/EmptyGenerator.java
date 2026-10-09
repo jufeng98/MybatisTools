@@ -1,0 +1,51 @@
+package com.baomidou.plugin.idea.mybatisx.smartjpa.operate.generate;
+
+import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.component.TxField;
+import com.baomidou.plugin.idea.mybatisx.util.MapperUtils;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.psi.PsiClass;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Collection;
+import java.util.List;
+
+@Slf4j
+public class EmptyGenerator implements Generator {
+
+    @Override
+    public void generateSelect(String id, String value, Boolean resultType, String resultMap, String resultSet, List<TxField> resultFields, PsiClass entityClass) {
+        log.warn("generateSelect fail");
+    }
+
+    @Override
+    public void generateDelete(String id, String value) {
+        log.warn("generateDelete fail");
+    }
+
+    @Override
+    public void generateInsert(String id, String value) {
+        log.warn("generateInsert fail");
+    }
+
+    @Override
+    public void generateUpdate(String id, String value) {
+        log.warn("generateUpdate fail");
+    }
+
+    @Override
+    public boolean checkCanGenerate(Project project, PsiClass mapperClass) {
+        final Collection<Mapper> mappers = MapperUtils.findMappers(mapperClass.getProject(), mapperClass);
+        if (!hasMapperXmlFiles(mappers)) {
+            final String message = "mapper :'" + mapperClass.getQualifiedName() + "'\n is not related mapper xml";
+            Messages.showWarningDialog(message, "generate failure");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasMapperXmlFiles(Collection<Mapper> mappers) {
+        return !mappers.isEmpty();
+    }
+}

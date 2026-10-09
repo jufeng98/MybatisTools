@@ -1,0 +1,69 @@
+package com.baomidou.plugin.idea.mybatisx.smartjpa.operate.manager;
+
+
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.SyntaxAppender;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+
+/**
+ * 分割符号帮助
+ */
+class SyntaxSplitHelper {
+
+    /**
+     * The String length comparator.
+     */
+// 文本长度优先排序, 其次按照区域顺序排序
+    final Comparator<SyntaxAppender> stringLengthComparator = (o1, o2) ->
+    {
+        // 长度相等, 按照区域顺序排序
+        int compare = o2.getText().length() - o1.getText().length();
+        if (compare == 0) {
+            return o1.getAreaSequence().getSequence() - o2.getAreaSequence().getSequence();
+        }
+        return compare;
+    };
+    /**
+     * The Syntax appender comparator.
+     */
+    final Comparator<LinkedList<SyntaxAppender>> syntaxAppenderComparator = (o1, o2) ->
+    {
+        // 长度相等, 按照区域顺序排序
+        int listComparor = o2.size() - o1.size();
+        if (listComparor == 0 && o2.size() == 1 && o1.size() == 1) {
+            return o2.getFirst().getText().length() - o1.getFirst().getText().length();
+        }
+        return listComparor;
+    };
+    private final List<StatementBlock> statementBlockList;
+
+    /**
+     * Instantiates a new Syntax split helper.
+     *
+     * @param statementBlockList the statement block list
+     */
+    public SyntaxSplitHelper(final List<StatementBlock> statementBlockList) {
+        this.statementBlockList = statementBlockList;
+    }
+
+    /**
+     * Split appender by text linked list.
+     *
+     * @param splitText the split text
+     * @return linked list
+     */
+    @NotNull
+    public LinkedList<SyntaxAppender> splitAppenderByText(final String splitText) {
+        PriorityQueue<LinkedList<SyntaxAppender>> collect = new PriorityQueue<>(syntaxAppenderComparator);
+        for (StatementBlock statementBlock : statementBlockList) {
+            LinkedList<SyntaxAppender> priority = statementBlock.findPriority(stringLengthComparator, splitText);
+            if (!priority.isEmpty()) {
+                collect.add(priority);
+            }
+        }
+        LinkedList<SyntaxAppender> peek = collect.peek();
+        return peek != null ? peek : new LinkedList<>();
+    }
+
+}

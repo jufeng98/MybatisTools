@@ -1,0 +1,98 @@
+package com.baomidou.plugin.idea.mybatisx.generate.action;
+
+
+import com.baomidou.plugin.idea.mybatisx.generate.dto.*;
+import com.baomidou.plugin.idea.mybatisx.generate.notify.Notifier;
+import com.baomidou.plugin.idea.mybatisx.generate.setting.TemplatesSettings;
+import com.baomidou.plugin.idea.mybatisx.generate.template.GenerateCode;
+import com.intellij.database.model.DasObject;
+import com.intellij.database.psi.DbTable;
+import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.psi.PsiElement;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ * The type Mybatis generator main action.
+ */
+@Slf4j
+public class MybatisGeneratorMainAction extends AnAction {
+
+    public static final String TITLE = "MybatisX Generate";
+
+    /**
+     * 点击后打开插件主页面
+     */
+    @Override
+    public void actionPerformed(@NotNull AnActionEvent e) {
+        /*
+          代码生成
+         */
+        Project project = e.getProject();
+        PsiElement[] tableElements = e.getData(LangDataKeys.PSI_ELEMENT_ARRAY);
+        if (tableElements == null) {
+            log.error("未选择表, 无法生成代码");
+            return;
+        }
+        ClassGenerateDialogWrapper classGenerateDialogWrapper = new ClassGenerateDialogWrapper(project);
+        List<DbTable> dbTables = Stream.of(tableElements).filter(t -> t instanceof DbTable).map(t -> (DbTable) t).collect(Collectors.toList());
+        // 填充默认的选项
+        classGenerateDialogWrapper.fillData(project, dbTables);
+        classGenerateDialogWrapper.show();
+        // 模态窗口选择 OK, 生成相关代码
+        if (classGenerateDialogWrapper.getExitCode() == Messages.YES) {
+            // 生成代码
+            GenerateConfig generateConfig = classGenerateDialogWrapper.determineGenerateConfig();
+            if (!generateConfig.checkGenerate()) {
+                return;
+            }
+            generateCode(project, dbTables, generateConfig);
+        }
+    }
+
+    public void generateCode(Project project, List<DbTable> psiElements, GenerateConfig generateConfig) {
+        try {
+            // 保存配置, 更新最后一次存储的配置
+            TemplatesSettings templatesSettings = TemplatesSettings.getInstance(project);
+            TemplateContext templateConfigs = templatesSettings.getTemplateConfigs();
+            templateConfigs.setGenerateConfig(generateConfig);
+            templateConfigs.setTemplateName(generateConfig.getTemplatesName());
+            templateConfigs.setModuleName(generateConfig.getModuleName());
+            templatesSettings.setTemplateConfigs(templateConfigs);
+
+            Map<String, DbTable> tableMapping = psiElements.stream().collect(Collectors.toMap(DasObject::getName, a -> a, (a, b) -> a));
+            for (TableUIInfo uiInfo : generateConfig.getTableUIInfoList()) {
+                String tableName = uiInfo.getTableName();
+                DbTable dbTable = tableMapping.get(tableName);
+                if (dbTable != null) {
+                    // 生成代码
+                    GenerateCode.generate(project,
+                            generateConfig,
+                            templatesSettings.getTemplateSettingMap(),
+                            dbTable,
+                            uiInfo.getClassName(),
+                            uiInfo.getTableName());
+                }
+            }
+            VirtualFileManager.getInstance().refreshWithoutFileWatcher(true);
+            log.info("全部代码生成成功, 文件内容已更新. config: {}", generateConfig);
+            notify(project, generateConfig);
+        } catch (Exception e) {
+            log.error("生成代码出错", e);
+        }
+    }
+
+    private void notify(Project project, GenerateConfig generateConfig) {
+        Notifier.notifyInformation(project,
+                TITLE,
+                generateConfig.getModuleName() + " generate finished");
+    }
+}

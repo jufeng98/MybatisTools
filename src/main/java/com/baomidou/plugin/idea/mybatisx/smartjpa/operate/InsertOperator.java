@@ -1,0 +1,323 @@
+package com.baomidou.plugin.idea.mybatisx.smartjpa.operate;
+
+
+import com.baomidou.plugin.idea.mybatisx.setting.config.StatementGenerators;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.SyntaxAppender;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.appender.*;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.appender.operator.suffix.SuffixOperator;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.factory.ResultAppenderFactory;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.iftest.ConditionFieldWrapper;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.component.*;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.operate.generate.Generator;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.operate.manager.StatementBlock;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.util.SyntaxAppenderWrapper;
+import com.baomidou.plugin.idea.mybatisx.util.MybatisXCollectors;
+import com.baomidou.plugin.idea.mybatisx.util.StringUtils;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiMethod;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * The type Insert operator.
+ */
+@Slf4j
+public class InsertOperator extends BaseOperatorManager {
+
+
+    /**
+     * Instantiates a new Insert operator.
+     *
+     * @param mappingField the mapping field
+     */
+    public InsertOperator(final List<TxField> mappingField) {
+        this(mappingField, false);
+    }
+
+    /**
+     * Instantiates a new Insert operator.
+     *
+     * @param mappingField     the mapping field
+     * @param supportDuplicate duplicate replace mode,exclude "insertAll","insertSelective"
+     */
+    public InsertOperator(final List<TxField> mappingField, boolean supportDuplicate) {
+        Set<String> patterns = StatementGenerators.INSERT_GENERATOR.getPatterns();
+        this.init(mappingField, patterns, supportDuplicate);
+    }
+
+    /**
+     * Init.
+     *
+     * @param mappingField     the mapping field
+     * @param patterns         the patterns
+     * @param supportDuplicate
+     */
+    public void init(final List<TxField> mappingField, Set<String> patterns, boolean supportDuplicate) {
+        for (final String areaName : patterns) {
+            if (!supportDuplicate) {
+                // insertSelective
+                this.initInsertSelectiveAppender(areaName, mappingField);
+                // insertOne
+                this.initInsertAllAppender(areaName, mappingField);
+                // insertBatch
+//            this.initInsertBatch(areaName, mappingField);
+            }
+
+            this.initCustomArea(areaName, mappingField);
+        }
+    }
+
+    private void initInsertSelectiveAppender(String areaName, List<TxField> mappingField) {
+        String newAreaName = areaName + "Selective";
+        final ResultAppenderFactory insertResultAppenderFactory = new InsertResultAppenderFactory(newAreaName) {
+            @Override
+            public String getTemplateText(String tableName,
+                                          PsiClass entityClass,
+                                          LinkedList<TxParameter> parameters,
+                                          LinkedList<SyntaxAppenderWrapper> collector,
+                                          ConditionFieldWrapper conditionFieldWrapper) {
+                // 定制参数
+                SyntaxAppender selective = InsertCustomSuffixAppender.createInsertBySuffixOperator("Selective",
+                        new InsertSelectiveSuffixOperator(mappingField),
+                        AreaSequence.RESULT);
+                LinkedList<SyntaxAppenderWrapper> syntaxAppenderWrappers = new LinkedList<>();
+                syntaxAppenderWrappers.add(new SyntaxAppenderWrapper(selective));
+                return super.getTemplateText(tableName, entityClass, parameters, syntaxAppenderWrappers, conditionFieldWrapper);
+            }
+        };
+
+        // insert + Selective
+        final SyntaxAppender selectiveAppender =
+                CustomAreaAppender.createCustomAreaAppender(newAreaName, ResultAppenderFactory.RESULT, AreaSequence.AREA, AreaSequence.RESULT, insertResultAppenderFactory);
+        insertResultAppenderFactory.registerAppender(selectiveAppender);
+
+        StatementBlock statementBlock = new StatementBlock();
+        statementBlock.setResultAppenderFactory(insertResultAppenderFactory);
+        statementBlock.setTagName(newAreaName);
+        statementBlock.setReturnWrapper(TxReturnDescriptor.createByOrigin(null, "int"));
+        this.registerStatementBlock(statementBlock);
+
+        this.addOperatorName(newAreaName);
+    }
+
+
+    private void initInsertAllAppender(final String areaName, List<TxField> mappingField) {
+        String newAreaName = areaName + "All";
+        final ResultAppenderFactory insertResultAppenderFactory = new InsertResultAppenderFactory(newAreaName) {
+            @Override
+            public String getTemplateText(String tableName,
+                                          PsiClass entityClass,
+                                          LinkedList<TxParameter> parameters,
+                                          LinkedList<SyntaxAppenderWrapper> collector, ConditionFieldWrapper conditionFieldWrapper) {
+                // 定制参数
+                SyntaxAppender insertAll = InsertCustomSuffixAppender.createInsertBySuffixOperator("All",
+                        new InsertAllSuffixOperator(mappingField),
+                        AreaSequence.RESULT);
+                LinkedList<SyntaxAppenderWrapper> syntaxAppenderWrappers = new LinkedList<>();
+                syntaxAppenderWrappers.add(new SyntaxAppenderWrapper(insertAll));
+                return super.getTemplateText(tableName, entityClass, parameters, syntaxAppenderWrappers, conditionFieldWrapper);
+            }
+
+
+        };
+        // insert + All
+        final SyntaxAppender allAppender =
+                CustomAreaAppender.createCustomAreaAppender(newAreaName,
+                        ResultAppenderFactory.RESULT,
+                        AreaSequence.AREA,
+                        AreaSequence.RESULT,
+                        insertResultAppenderFactory);
+        insertResultAppenderFactory.registerAppender(allAppender);
+
+        StatementBlock statementBlock = new StatementBlock();
+        statementBlock.setResultAppenderFactory(insertResultAppenderFactory);
+        statementBlock.setTagName(newAreaName);
+        statementBlock.setReturnWrapper(TxReturnDescriptor.createByOrigin(null, "int"));
+        this.registerStatementBlock(statementBlock);
+
+        this.addOperatorName(newAreaName);
+    }
+
+    @Override
+    public String getTagName() {
+        return "insert";
+    }
+
+    @Override
+    public void generateMapperXml(String id,
+                                  LinkedList<SyntaxAppender> jpaList,
+                                  PsiClass entityClass,
+                                  PsiMethod psiMethod,
+                                  String tableName,
+                                  Generator mybatisXmlGenerator,
+                                  ConditionFieldWrapper conditionFieldWrapper,
+                                  List<TxField> resultFields) {
+        String mapperXml = super.generateXml(jpaList, entityClass, psiMethod, tableName, conditionFieldWrapper);
+        mybatisXmlGenerator.generateInsert(id, mapperXml);
+    }
+
+    /**
+     * The type Insert custom suffix appender.
+     */
+    static class InsertCustomSuffixAppender extends CustomSuffixAppender {
+
+        /**
+         * Instantiates a new Insert custom suffix appender.
+         *
+         * @param tipName        the tip name
+         * @param suffixOperator the suffix operator
+         * @param areaSequence   the area sequence
+         */
+        public InsertCustomSuffixAppender(String tipName, SuffixOperator suffixOperator, AreaSequence areaSequence) {
+            super(tipName, suffixOperator, areaSequence);
+        }
+
+        /**
+         * Create insert by suffix operator syntax appender.
+         *
+         * @param all            the all
+         * @param suffixOperator the suffix operator
+         * @param areaSequence   the area sequence
+         * @return the syntax appender
+         */
+        public static SyntaxAppender createInsertBySuffixOperator(String all, SuffixOperator suffixOperator, AreaSequence areaSequence) {
+            return new InsertCustomSuffixAppender(all, suffixOperator, areaSequence);
+        }
+
+        @Override
+        public void toTree(LinkedList<SyntaxAppender> jpaStringList, SyntaxAppenderWrapper syntaxAppenderWrapper) {
+            syntaxAppenderWrapper.addWrapper(new SyntaxAppenderWrapper(this));
+        }
+
+    }
+
+    private static class InsertResultAppenderFactory extends ResultAppenderFactory {
+
+        /**
+         * Instantiates a new Insert result appender factory.
+         *
+         * @param areaPrefix the area prefix
+         */
+        public InsertResultAppenderFactory(String areaPrefix) {
+            super(areaPrefix);
+        }
+
+        @Override
+        public String getTemplateText(String tableName,
+                                      PsiClass entityClass,
+                                      LinkedList<TxParameter> parameters,
+                                      LinkedList<SyntaxAppenderWrapper> collector, ConditionFieldWrapper conditionFieldWrapper) {
+            StringBuilder mapperXml = new StringBuilder();
+            mapperXml.append("insert into ").append(tableName).append("\n");
+            for (SyntaxAppenderWrapper syntaxAppenderWrapper : collector) {
+                String templateText = syntaxAppenderWrapper.getAppender().getTemplateText(tableName, entityClass, parameters, collector, conditionFieldWrapper);
+                mapperXml.append(templateText);
+            }
+            return mapperXml.toString();
+        }
+
+        @Override
+        public List<TxParameter> getMxParameter(PsiClass entityClass, LinkedList<SyntaxAppenderWrapper> jpaStringList) {
+            String defineName = entityClass.getName();
+            String variableName = StringUtils.lowerCaseFirstChar(defineName);
+            List<String> importClass = Collections.singletonList(entityClass.getQualifiedName());
+            TxParameter parameter = TxParameter.createByOrigin(variableName,
+                    defineName,
+                    entityClass.getQualifiedName(),
+                    false,
+                    importClass);
+            return Collections.singletonList(parameter);
+        }
+
+    }
+
+    private record InsertAllSuffixOperator(List<TxField> mappingField) implements SuffixOperator {
+
+        /**
+         * Instantiates a new Insert all suffix operator.
+         *
+         * @param mappingField the mapping field
+         */
+        private InsertAllSuffixOperator {
+        }
+
+        @Override
+        public String getTemplateText(String fieldName, @NotNull LinkedList<TxParameter> parameters, ConditionFieldWrapper conditionFieldWrapper) {
+            TxParameter parameter = parameters.poll();
+            StringBuilder stringBuilder = new StringBuilder();
+            // 追加列名
+            final String columns = mappingField.stream()
+                    .map(TxField::getColumnName)
+                    .collect(MybatisXCollectors.joining(",", conditionFieldWrapper.getNewline()));
+            stringBuilder.append("(").append(columns).append(")").append("\n");
+            // values 连接符
+            stringBuilder.append("values").append("\n");
+            final String fields = mappingField.stream()
+                    .map(field -> {
+                        String fieldValue = JdbcTypeUtils.wrapperField(field.getFieldName(), field.getFieldType());
+                        return conditionFieldWrapper.wrapDefaultDateIfNecessary(field.getColumnName(), fieldValue);
+                    }).collect(MybatisXCollectors.joining(",", conditionFieldWrapper.getNewline()));
+            stringBuilder.append("(\n");
+            stringBuilder.append(fields).append("\n");
+            stringBuilder.append(")").append("\n");
+
+            return stringBuilder.toString();
+        }
+
+    }
+
+    private record InsertSelectiveSuffixOperator(List<TxField> mappingField) implements SuffixOperator {
+
+        /**
+         * Instantiates a new Insert selective suffix operator.
+         *
+         * @param mappingField the mapping field
+         */
+        private InsertSelectiveSuffixOperator {
+        }
+
+        @Override
+        public String getTemplateText(String fieldName, @NotNull LinkedList<TxParameter> parameters, ConditionFieldWrapper conditionFieldWrapper) {
+            StringBuilder stringBuilder = new StringBuilder();
+            // 追加列名
+            final String columns = mappingField.stream()
+                    .map(field -> selective(field.getFieldName(), field.getColumnName()))
+                    .collect(Collectors.joining("\n"));
+
+            stringBuilder.append(trimFieldStart()).append(columns).append(trimEnd()).append("\n");
+            // values 连接符
+            stringBuilder.append("values").append("\n");
+            final String fields = mappingField.stream()
+                    .map(field -> {
+                        String fieldValue = conditionFieldWrapper.wrapperField(field.getFieldName(), field.getFieldName(), field.getFieldType());
+                        fieldValue = conditionFieldWrapper.wrapDefaultDateIfNecessary(field.getColumnName(), fieldValue);
+                        return selective(field.getFieldName(), fieldValue);
+                    })
+                    .collect(Collectors.joining("\n"));
+
+            stringBuilder.append(trimFieldStart());
+            stringBuilder.append(fields).append("\n");
+            stringBuilder.append(trimEnd());
+
+            return stringBuilder.toString();
+        }
+
+        private String trimEnd() {
+            return "</trim>";
+        }
+
+        private String trimFieldStart() {
+            return "<trim prefix=\"(\" suffix=\")\" suffixOverrides=\",\">";
+        }
+
+        private String selective(String paramName, String origin) {
+            return "<if test=\"" + paramName + " != null" + "\">" +
+                    origin +
+                    "," +
+                    "</if>";
+        }
+    }
+}

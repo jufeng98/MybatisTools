@@ -1,0 +1,40 @@
+package com.baomidou.plugin.idea.mybatisx.smartjpa.common.appender.changer;
+
+
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.appender.MxParameterChanger;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.common.iftest.ConditionFieldWrapper;
+import com.baomidou.plugin.idea.mybatisx.smartjpa.component.TxParameter;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+
+/**
+ * The type Boolean parameter changer.
+ */
+public class BooleanParameterChanger implements MxParameterChanger {
+
+    private final Boolean booleanValue;
+
+    /**
+     * Instantiates a new Boolean parameter changer.
+     *
+     * @param booleanValue the boolean value
+     */
+    public BooleanParameterChanger(Boolean booleanValue) {
+        this.booleanValue = booleanValue;
+    }
+
+    @Override
+    public List<TxParameter> getParameter(TxParameter txParameter) {
+        return Collections.emptyList();
+    }
+
+
+    @Override
+    public String getTemplateText(String fieldName, @NotNull LinkedList<TxParameter> parameters, ConditionFieldWrapper conditionFieldWrapper) {
+        final String templateText = fieldName + " = " + booleanValue.toString();
+        return conditionFieldWrapper.wrapConditionText(fieldName, templateText);
+    }
+
+
+}

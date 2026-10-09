@@ -1,0 +1,52 @@
+{
+  parserClass="org.javamaster.mybatis.tools.parser.MybatisParser"
+  parserUtilClass="org.javamaster.mybatis.tools.parser.MybatisParserUtil"
+
+  extends="com.intellij.extapi.psi.ASTWrapperPsiElement"
+
+  psiClassPrefix="Mybatis"
+  psiImplClassSuffix="Impl"
+  psiPackage="org.javamaster.mybatis.tools.psi"
+  psiImplPackage="org.javamaster.mybatis.tools.psi.impl"
+
+  elementTypeHolderClass="org.javamaster.mybatis.tools.psi.MybatisTypes"
+  elementTypeClass="org.javamaster.mybatis.tools.psi.MybatisElementType"
+  tokenTypeClass="org.javamaster.mybatis.tools.psi.MybatisTokenType"
+  psiImplUtilClass="org.javamaster.mybatis.tools.psi.impl.MybatisPsiImplUtil"
+
+  tokens=[
+    FIELD_NAME_LABEL='FIELD_NAME_LABEL'
+    SEPARATOR='SEPARATOR'
+    ATTR_NAME_LABEL='ATTR_NAME_LABEL'
+    ATTR_SEPARATOR='ATTR_SEPARATOR'
+    ATTR_VALUE_LABEL='ATTR_VALUE_LABEL'
+  ]
+}
+
+mybatisFile ::= fieldName (SEPARATOR attrs)?
+
+fieldName ::= FIELD_NAME_LABEL {
+      methods = [
+          getName
+          getReferences
+      ]
+      name = "field name"
+}
+attrs ::= (attr SEPARATOR?)*
+attr ::= attrName ATTR_SEPARATOR attrValue {
+    pin = 1
+}
+attrName ::= ATTR_NAME_LABEL {
+      methods = [
+          getName
+          getReferences
+      ]
+      name = "attr name"
+}
+attrValue ::= ATTR_VALUE_LABEL {
+    methods = [
+        getName
+        getReferences
+    ]
+    name = "attr value"
+}

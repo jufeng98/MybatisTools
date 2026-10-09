@@ -1,0 +1,75 @@
+package com.baomidou.plugin.idea.mybatisx.generate.plugin;
+
+import org.mybatis.generator.api.IntrospectedColumn;
+import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
+import org.mybatis.generator.internal.types.JavaTypeResolverDefaultImpl;
+
+import java.time.*;
+import java.util.Properties;
+
+import static java.sql.Types.*;
+
+/**
+ * JSR 类型
+ */
+public class JavaTypeResolverJsr310Impl extends JavaTypeResolverDefaultImpl {
+
+    private boolean supportJsr;
+    private boolean supportAutoNumeric;
+
+    @Override
+    public void addConfigurationProperties(Properties properties) {
+        super.addConfigurationProperties(properties);
+        this.supportJsr = "true".equals(properties.getProperty("supportJsr"));
+        this.supportAutoNumeric = "true".equals(properties.getProperty("supportAutoNumeric"));
+    }
+
+    private FullyQualifiedJavaType calcNumeric(IntrospectedColumn column, FullyQualifiedJavaType defaultType) {
+        return switch (column.getJdbcType()) {
+            case TINYINT, SMALLINT -> new FullyQualifiedJavaType(Integer.class.getName());
+            case NUMERIC, DECIMAL -> this.calculateBigDecimalReplacement(column, defaultType);
+            case BIT -> this.calculateBitReplacement(column, defaultType);
+            case BOOLEAN -> new FullyQualifiedJavaType(Boolean.class.getName());
+            default -> defaultType;
+        };
+    }
+
+    @Override
+    protected FullyQualifiedJavaType overrideDefaultType(IntrospectedColumn column, FullyQualifiedJavaType defaultType) {
+        if (!supportJsr) {
+            final FullyQualifiedJavaType fullyQualifiedJavaType = super.overrideDefaultType(column, defaultType);
+            return calcNumeric(column, fullyQualifiedJavaType);
+        }
+        defaultType = calcNumeric(column, defaultType);
+        return calcDate(column, defaultType);
+    }
+
+    private FullyQualifiedJavaType calcDate(IntrospectedColumn column, FullyQualifiedJavaType defaultType) {
+        return switch (column.getJdbcType()) {
+            case DATE -> new FullyQualifiedJavaType(LocalDate.class.getName());
+            case TIME -> new FullyQualifiedJavaType(LocalTime.class.getName());
+            case TIMESTAMP -> new FullyQualifiedJavaType(LocalDateTime.class.getName());
+            default -> defaultType;
+        };
+    }
+
+
+    @Override
+    protected FullyQualifiedJavaType calculateBigDecimalReplacement(IntrospectedColumn column,
+                                                                    FullyQualifiedJavaType defaultType) {
+        if (!supportAutoNumeric) {
+            return super.calculateBigDecimalReplacement(column, defaultType);
+        }
+        FullyQualifiedJavaType answer;
+
+        if (column.getScale() > 0) {
+            answer = defaultType;
+        } else if (column.getLength() > 10) {
+            answer = new FullyQualifiedJavaType(Long.class.getName());
+        } else {
+            answer = new FullyQualifiedJavaType(Integer.class.getName());
+        }
+
+        return answer;
+    }
+}

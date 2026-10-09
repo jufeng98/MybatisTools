@@ -1,0 +1,84 @@
+package com.baomidou.plugin.idea.mybatisx.setting;
+
+import com.baomidou.plugin.idea.mybatisx.setting.config.StatementGenerators;
+import com.google.common.base.Joiner;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.*;
+import com.intellij.util.xmlb.XmlSerializerUtil;
+import lombok.Getter;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.Serializable;
+
+/**
+ * The type Mybatis setting.
+ * 这里是全局配置, 所以配置文件在目录($APP_CONFIG$)下
+ *
+ * @author yanglin
+ */
+@Setter
+@Getter
+@State(
+        name = "MybatisXSettings",
+        storages = @Storage(value = "mybatisx.xml", roamingType = RoamingType.DISABLED))
+public class MybatisXSettings implements PersistentStateComponent<MybatisXSettings>, Serializable {
+
+    private static final Joiner joiner = Joiner.on(";");
+    // 配置的默认值
+    private String mapperIcon;
+    private String insertGenerator;
+    private String updateGenerator;
+    private String deleteGenerator;
+    private String selectGenerator;
+    /**
+     * 强制找字段
+     */
+    private Boolean forceFindField;
+
+    /**
+     * Gets instance.
+     *
+     * @return the instance
+     */
+    public static MybatisXSettings getInstance() {
+        MybatisXSettings service = ApplicationManager.getApplication().getService(MybatisXSettings.class);
+        // 配置的默认值
+        if (service.insertGenerator == null) {
+            service.insertGenerator = joiner.join(StatementGenerators.INSERT_GENERATOR.getPatterns());
+        }
+        if (service.updateGenerator == null) {
+            service.updateGenerator = joiner.join(StatementGenerators.UPDATE_GENERATOR.getPatterns());
+        }
+        if (service.deleteGenerator == null) {
+            service.deleteGenerator = joiner.join(StatementGenerators.DELETE_GENERATOR.getPatterns());
+        }
+        if (service.selectGenerator == null) {
+            service.selectGenerator = joiner.join(StatementGenerators.SELECT_GENERATOR.getPatterns());
+        }
+        if (service.mapperIcon == null) {
+            service.mapperIcon = MapperIcon.BIRD.name();
+        }
+        if (service.forceFindField == null) {
+            service.forceFindField = Boolean.TRUE;
+        }
+        return service;
+    }
+
+    @Nullable
+    @Override
+    public MybatisXSettings getState() {
+        return this;
+    }
+
+    @Override
+    public void loadState(@NotNull MybatisXSettings state) {
+        XmlSerializerUtil.copyBean(state, this);
+    }
+
+    public enum MapperIcon {
+        DEFAULT,
+        BIRD
+    }
+}

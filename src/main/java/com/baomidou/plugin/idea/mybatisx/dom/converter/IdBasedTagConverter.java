@@ -1,0 +1,287 @@
+package com.baomidou.plugin.idea.mybatisx.dom.converter;
+
+import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement;
+import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper;
+import com.baomidou.plugin.idea.mybatisx.util.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.*;
+import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceProvider;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.xml.XmlAttributeValue;
+import com.intellij.psi.xml.XmlTag;
+import com.intellij.util.xml.*;
+import org.jetbrains.annotations.*;
+
+import java.util.*;
+
+/**
+ * The type Id based tag converter.
+ *
+ * @author yanglin
+ */
+public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeValue> implements CustomReferenceConverter<XmlAttributeValue> {
+
+    private final boolean crossMapperSupported;
+
+    /**
+     * Instantiates a new Id based tag converter.
+     */
+    public IdBasedTagConverter() {
+        this(true);
+    }
+
+    /**
+     * Instantiates a new Id based tag converter.
+     *
+     * @param crossMapperSupported the cross mapper supported
+     */
+    protected IdBasedTagConverter(boolean crossMapperSupported) {
+        this.crossMapperSupported = crossMapperSupported;
+    }
+
+    @Nullable
+    @Override
+    public XmlAttributeValue fromString(@Nullable @NonNls String value, @NotNull ConvertContext context) {
+        return matchIdDomElement(selectStrategy(context).getValue(), value, context).orElse(null);
+    }
+
+    private Optional<XmlAttributeValue> matchIdDomElement(Collection<? extends IdDomElement> idDomElements, String value, ConvertContext context) {
+        Mapper contextMapper = MapperUtils.getMapper(context.getInvocationElement());
+        for (IdDomElement idDomElement : idDomElements) {
+            if (MapperUtils.getIdSignature(idDomElement).equals(value) ||
+                    MapperUtils.getIdSignature(idDomElement, contextMapper).equals(value)) {
+                return Optional.ofNullable(idDomElement.getId().getXmlAttributeValue());
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Nullable
+    @Override
+    public String toString(@Nullable XmlAttributeValue xmlAttribute, @NotNull ConvertContext context) {
+        if (xmlAttribute == null) {
+            return null;
+        }
+
+        PsiElement fatherElement = xmlAttribute.getParent();
+        if (fatherElement == null) {
+            return null;
+        }
+
+        DomElement domElement = DomUtil.getDomElement(fatherElement.getParent());
+        if (domElement instanceof IdDomElement) {
+            Mapper contextMapper = MapperUtils.getMapper(context.getInvocationElement());
+            return MapperUtils.getIdSignature((IdDomElement) domElement, contextMapper);
+        }
+        return null;
+    }
+
+    private TraverseStrategy selectStrategy(ConvertContext context) {
+        return crossMapperSupported ? new CrossMapperStrategy(context) : new InsideMapperStrategy(context);
+    }
+
+    /**
+     * Gets comparisons.
+     *
+     * @param mapper  mapper in the project, null if {@link #crossMapperSupported} is false
+     * @param context the dom convert context
+     * @return the comparisons
+     */
+    @NotNull
+    public abstract Collection<? extends IdDomElement> getComparisons(@Nullable Mapper mapper, ConvertContext context);
+
+
+    @Override
+    public PsiReference @NotNull [] createReferences(GenericDomValue<XmlAttributeValue> value, PsiElement element, ConvertContext context) {
+        return PsiClassConverter.createJavaClassReferenceProvider(value, null, new ValueReferenceProvider(context)).getReferencesByElement(element);
+    }
+
+    private abstract static class TraverseStrategy {
+        /**
+         * The Context.
+         */
+        protected final ConvertContext context;
+
+        /**
+         * Instantiates a new Traverse strategy.
+         *
+         * @param context the context
+         */
+        public TraverseStrategy(@NotNull ConvertContext context) {
+            this.context = context;
+        }
+
+        /**
+         * Gets value.
+         *
+         * @return the value
+         */
+        public abstract Collection<? extends IdDomElement> getValue();
+    }
+
+    private class InsideMapperStrategy extends TraverseStrategy {
+
+        /**
+         * Instantiates a new Inside mapper strategy.
+         *
+         * @param context the context
+         */
+        public InsideMapperStrategy(@NotNull ConvertContext context) {
+            super(context);
+        }
+
+        @Override
+        public Collection<? extends IdDomElement> getValue() {
+            return getComparisons(null, context);
+        }
+
+    }
+
+    private class CrossMapperStrategy extends TraverseStrategy {
+
+        /**
+         * Instantiates a new Cross mapper strategy.
+         *
+         * @param context the context
+         */
+        public CrossMapperStrategy(@NotNull ConvertContext context) {
+            super(context);
+        }
+
+        @Override
+        public Collection<? extends IdDomElement> getValue() {
+            List<IdDomElement> result = Lists.newArrayList();
+            for (Mapper mapper : MapperUtils.findMappers(context.getProject())) {
+                result.addAll(getComparisons(mapper, context));
+            }
+            return result;
+        }
+
+    }
+
+    private class ValueReferenceProvider extends JavaClassReferenceProvider {
+
+        private final ConvertContext context;
+
+        private ValueReferenceProvider(ConvertContext context) {
+            this.context = context;
+        }
+
+        @Nullable
+        @Override
+        public GlobalSearchScope getScope(@NotNull Project project) {
+            return GlobalSearchScope.allScope(project);
+        }
+
+        /**
+         * It looks like hacking here, as it's a little hard to handle so many different cases as JetBrains does
+         */
+
+        @Override
+        public PsiReference @NotNull [] getReferencesByString(String text, @NotNull PsiElement position, int offsetInPosition) {
+            List<PsiReference> refs = Lists.newArrayList(super.getReferencesByString(text, position, offsetInPosition));
+            ValueReference vr = new ValueReference(position, getTextRange(position), context, text);
+            if (!refs.isEmpty() && 0 != vr.getVariants().length) {
+                refs.remove(refs.size() - 1);
+                refs.add(vr);
+            }
+            return refs.toArray(new PsiReference[0]);
+        }
+
+        private TextRange getTextRange(PsiElement element) {
+            String text = element.getText();
+            int index = text.lastIndexOf(MybatisConstants.DOT_SEPARATOR);
+            return -1 == index ? ElementManipulators.getValueTextRange(element) : TextRange.create(text.substring(0, index).length() + 1, text.length() - 1);
+        }
+    }
+
+    private class ValueReference extends PsiReferenceBase<PsiElement> {
+
+        private final ConvertContext context;
+        private final String text;
+
+        /**
+         * Instantiates a new Value reference.
+         *
+         * @param element the element
+         * @param rng     the rng
+         * @param context the context
+         * @param text    the text
+         */
+        public ValueReference(@NotNull PsiElement element, TextRange rng, ConvertContext context, String text) {
+            super(element, rng, false);
+            this.context = context;
+            this.text = text;
+        }
+
+        @Nullable
+        @Override
+        public PsiElement resolve() {
+            PsiElement ognlElement = OgnlUtils.resolveExpression(myElement, text);
+            if (ognlElement != null) {
+                return ognlElement;
+            }
+            return IdBasedTagConverter.this.fromString(text, context);
+        }
+
+
+        @Override
+        public Object @NotNull [] getVariants() {
+            Set<String> res = getElement().getText().contains(MybatisConstants.DOT_SEPARATOR) ? setupContextIdSignature() : setupGlobalIdSignature();
+            return res.toArray(new String[0]);
+        }
+
+        private Set<String> setupContextIdSignature() {
+            Set<String> res = Sets.newHashSet();
+            String ns = text.substring(0, text.lastIndexOf(MybatisConstants.DOT_SEPARATOR));
+            for (IdDomElement ele : selectStrategy(context).getValue()) {
+                if (MapperUtils.getNamespace(ele).equals(ns)) {
+                    res.add(MapperUtils.getId(ele));
+                }
+            }
+            return res;
+        }
+
+        private Set<String> setupGlobalIdSignature() {
+            Mapper contextMapper = MapperUtils.getMapper(context.getInvocationElement());
+            Collection<? extends IdDomElement> idDomElements = selectStrategy(context).getValue();
+            Set<String> res = new HashSet<>(idDomElements.size());
+            for (IdDomElement ele : idDomElements) {
+                res.add(MapperUtils.getIdSignature(ele, contextMapper));
+            }
+            // Add method parameters and foreach items
+            addOgnlVariants(res);
+            return res;
+        }
+
+        private void addOgnlVariants(Set<String> res) {
+            // This is a bit simplified, but we want to add top-level names
+            // similar to what TestParamReferenceContributor does.
+            // We can reuse some logic from OgnlUtils or just implement a quick search here.
+            PsiElement current = myElement;
+            while (current != null) {
+                if (current instanceof XmlTag tag) {
+                    if ("foreach".equals(tag.getName())) {
+                        String item = tag.getAttributeValue("item");
+                        if (item != null) res.add(item);
+                        String index = tag.getAttributeValue("index");
+                        if (index != null) res.add(index);
+                    }
+                }
+                current = current.getParent();
+            }
+            // Also add method parameters
+            assert myElement != null;
+            PsiMethod method = OgnlUtils.getPsiMethod(myElement);
+            if (method != null) {
+                for (PsiParameter parameter : method.getParameterList().getParameters()) {
+                    res.add(parameter.getName());
+                    // Also handle @Param annotation if needed, but for variants, name is usually enough or handled by MybatisX
+                }
+            }
+        }
+    }
+}
