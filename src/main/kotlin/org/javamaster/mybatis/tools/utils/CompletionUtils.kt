@@ -2,6 +2,7 @@ package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
+import com.baomidou.plugin.idea.mybatisx.tip.hashmark.CompositeHashMarkTip
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.util.MethodParenthesesHandler
 import com.intellij.codeInsight.lookup.LookupElementBuilder
@@ -9,8 +10,6 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.*
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.util.xml.DomUtil
-import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference
-import java.util.*
 
 /**
  * @author yudong
@@ -22,19 +21,21 @@ object CompletionUtils {
         completionResultSet: CompletionResultSet,
         fromOgnl: Boolean,
     ) {
-        val xmlElement = InjectedLanguageManager.getInstance(psiElement.project).getInjectionHost(psiElement)
+        val injectionHost =
+            InjectedLanguageManager.getInstance(psiElement.project).getInjectionHost(psiElement) ?: return
 
-        val domElement = DomUtil.findDomElement(xmlElement, IdDomElement::class.java) ?: return
+        val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return
 
         val psiMethod = domElement.id.value as? PsiMethod ?: return
 
-        fillVariants(psiMethod, psiElement, completionResultSet, fromOgnl)
+        fillVariants(psiMethod, psiElement, injectionHost, completionResultSet, fromOgnl)
     }
 
     private fun fillVariants(
         psiMethod: PsiMethod,
-        psiElement: PsiElement,
-        completionResultSet: CompletionResultSet,
+        currentPsiElement: PsiElement,
+        injectionHost: PsiLanguageInjectionHost,
+        resultSet: CompletionResultSet,
         fromOgnl: Boolean,
     ) {
         val parameterList = psiMethod.parameterList
@@ -42,10 +43,72 @@ object CompletionUtils {
             return
         }
 
-        val prefixMatcher = completionResultSet.prefixMatcher
-        val text = psiElement.text
+        val prefixMatcher = resultSet.prefixMatcher
+        val newPrefix = prefixMatcher.prefix
+        // 按照新的前缀进行匹配提示
+        val newCompletionResultSet = resultSet.withPrefixMatcher(newPrefix)
 
+        val collectionAttrValue = CompositeHashMarkTip.getCollectionAttrIfForeachTagItemAttrValue(injectionHost)
+        if (collectionAttrValue != null) {
+            // foreach 的 item 属性智能提示
+            val value = collectionAttrValue.value
+
+            val tip = if (value.endsWith("es")) {
+                value.substring(0, value.length - 2)
+            } else if (value.endsWith("List")) {
+                value.substring(0, value.length - 4)
+            } else {
+                val psiClass = CompositeHashMarkTip.resolveGenericIfForeachTagItemAttrValue(collectionAttrValue)
+                if (psiClass != null && psiClass.name != null) {
+                    StringUtil.toCamelCase(psiClass.name)
+                } else {
+                    value.substring(0, value.length - 1)
+                }
+            }
+
+            newCompletionResultSet.addElement(LookupElementBuilder.create(tip))
+
+            return
+        }
+
+        var text = currentPsiElement.text
         val idx = text.indexOf(".")
+
+        val itemAttrValue = CompositeHashMarkTip.getItemAttrValueIfParamInForeachTag(injectionHost)
+        if (itemAttrValue != null) {
+            // foreach 里面的 param 参数属性智能提示
+            if (idx == -1) {
+                text = itemAttrValue.value
+
+                val psiReferences = ReferenceUtils.convert(text, itemAttrValue)
+
+                val itemPsiElement = psiReferences[0].resolve()
+                if (itemPsiElement !is PsiClass) {
+                    return
+                }
+
+                @Suppress("USELESS_CAST")
+                val itemPsiClass = itemPsiElement as PsiClass
+
+                newCompletionResultSet.addElement(
+                    LookupElementBuilder.create(itemPsiClass, itemAttrValue.value).withTypeText(itemPsiClass.name)
+                )
+            } else {
+                val psiReferences = ReferenceUtils.convert(text, itemAttrValue)
+
+                val itemPsiElement = psiReferences[0].resolve()
+                if (itemPsiElement !is PsiClass) {
+                    return
+                }
+
+                @Suppress("USELESS_CAST")
+                val itemPsiClass = itemPsiElement as PsiClass
+
+                fillFieldAndMethodNames("", itemPsiClass, newCompletionResultSet, fromOgnl)
+            }
+            return
+        }
+
         if (idx == -1) {
             val helper = JavaPsiFacade.getInstance(psiMethod.project).constantEvaluationHelper
 
@@ -60,28 +123,15 @@ object CompletionUtils {
                         continue
                     }
 
-                    fillParamNames(paramValue, psiParameter, completionResultSet, fromOgnl)
+                    fillParamNames(paramValue, psiParameter, newCompletionResultSet, fromOgnl)
                 } else {
                     val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: return
 
-                    fillFieldAndMethodNames("", psiClass, completionResultSet, fromOgnl)
+                    fillFieldAndMethodNames("", psiClass, newCompletionResultSet, fromOgnl)
                 }
             }
         } else {
-            val textRangeList = ReferenceUtils.convert(text)
-
-            val psiReferences = mutableListOf<PsiReference>()
-
-            for (i in textRangeList.indices) {
-                val textRange = textRangeList[i]
-
-                val nameLevels = LinkedList<String>()
-                for (j in 0..<i + 1) {
-                    nameLevels.add(textRangeList[j].substring(text))
-                }
-
-                psiReferences.add(MybatisFieldNameReference(psiElement, textRange, nameLevels))
-            }
+            val psiReferences = ReferenceUtils.convert(text, currentPsiElement)
 
             val resolve = if (psiReferences.size == 1) {
                 psiReferences[0].resolve()
@@ -91,9 +141,6 @@ object CompletionUtils {
 
             val fieldPrefix = text.substring(0, idx + 1)
 
-            val newPrefix = prefixMatcher.prefix
-            // 按照新的前缀进行匹配提示
-            val newCompletionResultSet = completionResultSet.withPrefixMatcher(newPrefix)
             if (resolve is PsiParameter || resolve is PsiField) {
                 val psiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
 

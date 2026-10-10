@@ -7,6 +7,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.xml.XmlElement
 import com.intellij.util.xml.DomUtil
 import java.util.*
 
@@ -15,20 +16,26 @@ import java.util.*
  */
 class MybatisFieldNameReference(
     psiElement: PsiElement,
-    from: TextRange,
+    val from: TextRange,
     private val nameLevels: LinkedList<String>,
 ) : PsiReferenceBase<PsiElement>(psiElement, from) {
 
     override fun resolve(): PsiElement? {
         val project = myElement.project
 
-        val injectionHost = InjectedLanguageManager.getInstance(project).getInjectionHost(myElement) ?: return null
+        val injectionHost = if (myElement is XmlElement) {
+            myElement
+        } else {
+            InjectedLanguageManager.getInstance(project).getInjectionHost(myElement)
+        } ?: return null
 
         val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return null
 
         val psiMethod = domElement.id.value as? PsiMethod ?: return null
 
-        return CompositeHashMarkTip.findReference(psiMethod, LinkedList<String>(nameLevels), project)
+        return CompositeHashMarkTip.findReference(
+            this, psiMethod, injectionHost, myElement, LinkedList<String>(nameLevels), project
+        )
     }
 
 }

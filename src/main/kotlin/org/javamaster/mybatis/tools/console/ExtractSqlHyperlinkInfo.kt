@@ -66,7 +66,7 @@ class ExtractSqlHyperlinkInfo(private val line: String, private val sqlLine: Str
         }
 
         fun parseParams(line: String?): Queue<Map.Entry<String, String>> {
-            val lineStr = StringUtils.removeEnd(line, "\n")
+            val lineStr = line?.trimEnd('\n')
 
             val params = StringUtils.splitByWholeSeparator(lineStr, ", ")
             val queue: Queue<Map.Entry<String, String>> = ArrayDeque(params.size)

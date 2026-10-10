@@ -2,16 +2,15 @@ package org.javamaster.mybatis.tools.utils
 
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiReference
 import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference
-import java.util.LinkedList
+import java.util.*
 
 object ReferenceUtils {
 
-    fun convert(text: String, psiElement: PsiElement): Array<PsiReference> {
+    fun convert(text: String, psiElement: PsiElement): Array<MybatisFieldNameReference> {
         val textRangeList = convert(text)
 
-        val psiReferences = mutableListOf<PsiReference>()
+        val psiReferences = mutableListOf<MybatisFieldNameReference>()
 
         for (i in textRangeList.indices) {
             val textRange = textRangeList[i]
