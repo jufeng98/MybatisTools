@@ -6,10 +6,7 @@ import com.intellij.util.ProcessingContext
 import org.javamaster.mybatis.tools.psi.MybatisParamAttrName
 import org.javamaster.mybatis.tools.psi.MybatisParamFieldName
 import org.javamaster.mybatis.tools.reference.MybatisAttrNameReference
-import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference
 import org.javamaster.mybatis.tools.utils.ReferenceUtils
-import java.util.*
-import kotlin.jvm.java
 
 /***
  * mapper.xml文件 #{} / ${} 区域的引用跳转
@@ -29,22 +26,7 @@ class MybatisReferenceContributor : PsiReferenceContributor() {
                 ): Array<PsiReference> {
                     val text = psiElement.text
 
-                    val textRangeList = ReferenceUtils.convert(text)
-
-                    val psiReferences = mutableListOf<PsiReference>()
-
-                    for (i in textRangeList.indices) {
-                        val textRange = textRangeList[i]
-
-                        val nameLevels = LinkedList<String>()
-                        for (j in 0..<i + 1) {
-                            nameLevels.add(textRangeList[j].substring(text))
-                        }
-
-                        psiReferences.add(MybatisFieldNameReference(psiElement, textRange, nameLevels))
-                    }
-
-                    return psiReferences.toTypedArray()
+                    return ReferenceUtils.convert(text, psiElement)
                 }
 
             })

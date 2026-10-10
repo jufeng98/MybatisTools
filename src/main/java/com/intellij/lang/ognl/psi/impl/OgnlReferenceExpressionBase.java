@@ -20,15 +20,10 @@ import com.intellij.ide.projectView.PresentationData;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.ognl.OgnlTypes;
 import com.intellij.navigation.ItemPresentation;
-import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
-import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference;
 import org.javamaster.mybatis.tools.utils.ReferenceUtils;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author Yann C&eacute;bron
@@ -52,23 +47,7 @@ abstract class OgnlReferenceExpressionBase extends OgnlExpressionImpl {
     public PsiReference @NotNull [] getReferences() {
         String text = this.getText();
 
-        List<TextRange> textRangeList = ReferenceUtils.INSTANCE.convert(text);
-
-        PsiReference[] psiReferences = new PsiReference[textRangeList.size()];
-
-        for (int i = 0; i < textRangeList.size(); i++) {
-            TextRange textRange = textRangeList.get(i);
-
-            LinkedList<String> nameLevels = new LinkedList<>();
-            for (int j = 0; j < i + 1; j++) {
-                nameLevels.add(textRangeList.get(j).substring(text));
-            }
-
-            // mapper.xml文件 <if test> <when test> 等区域的引用跳转
-            psiReferences[i] = new MybatisFieldNameReference(this, textRange, nameLevels);
-        }
-
-        return psiReferences;
+        return ReferenceUtils.INSTANCE.convert(text, this);
     }
 
     @Override
