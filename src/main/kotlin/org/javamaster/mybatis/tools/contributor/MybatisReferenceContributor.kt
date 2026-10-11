@@ -6,7 +6,6 @@ import com.intellij.util.ProcessingContext
 import org.javamaster.mybatis.tools.psi.MybatisParamAttrName
 import org.javamaster.mybatis.tools.psi.MybatisParamFieldName
 import org.javamaster.mybatis.tools.reference.MybatisAttrNameReference
-import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference
 import org.javamaster.mybatis.tools.utils.ReferenceUtils
 
 /***
@@ -24,7 +23,7 @@ class MybatisReferenceContributor : PsiReferenceContributor() {
                 override fun getReferencesByElement(
                     psiElement: PsiElement,
                     processingContext: ProcessingContext,
-                ): Array<MybatisFieldNameReference> {
+                ): Array<PsiReference> {
                     val text = psiElement.text
 
                     return ReferenceUtils.convert(text, psiElement)
