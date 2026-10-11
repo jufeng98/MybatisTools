@@ -25,16 +25,16 @@ public class MapperClassSearch extends QueryExecutorBase<PsiElement, Definitions
     }
 
     @Override
-    public void processQuery(@NotNull DefinitionsScopedSearch.SearchParameters queryParameters, @NotNull Processor<? super PsiElement> consumer) {
+    public void processQuery(@NotNull DefinitionsScopedSearch.SearchParameters queryParameters,
+                             @NotNull Processor<? super PsiElement> consumer) {
         final PsiElement element = queryParameters.getElement();
         if (element instanceof PsiMethod psiMethod) {
             final Collection<XmlElement> tags = MapperUtils.findTags(psiMethod.getProject(), psiMethod);
             for (XmlElement idDomElement : tags) {
                 consumer.process(idDomElement);
             }
-        }
-        if (element instanceof PsiClass) {
-            Collection<Mapper> mappers = MapperUtils.findMappers(queryParameters.getProject(), (PsiClass) element);
+        } else if (element instanceof PsiClass psiClass) {
+            Collection<Mapper> mappers = MapperUtils.findMappers(queryParameters.getProject(), psiClass);
             for (Mapper mapper : mappers) {
                 consumer.process(mapper.getXmlElement());
             }

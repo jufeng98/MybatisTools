@@ -1,7 +1,6 @@
 <idea-plugin>
 
     <actions>
-
         <action id="bmd-mybatis-generate-action"
                 class="com.baomidou.plugin.idea.mybatisx.generate.action.MybatisGeneratorMainAction"
                 text="MybatisX-Generator"
@@ -9,4 +8,5 @@
             <add-to-group group-id="DatabaseViewPopupMenu" anchor="first"/>
         </action>
     </actions>
+
 </idea-plugin>
