@@ -18,7 +18,7 @@ class OgnlCompletionContributor : CompletionContributor() {
         if (psiElement is OgnlReferenceExpression) {
             val ognlReferenceExpression = psiElement
 
-            CompletionUtils.fillMybatisVariants(ognlReferenceExpression, result, true)
+            CompletionUtils.fillMybatisVariants(ognlReferenceExpression, parameters, result, true)
         }
     }
 

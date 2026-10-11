@@ -19,7 +19,7 @@ class MybatisFieldNameCompletionProvider : CompletionProvider<CompletionParamete
 
         val mybatisFieldName = psiElement as MybatisParamFieldName
 
-        CompletionUtils.fillMybatisVariants(mybatisFieldName, completionResultSet, false)
+        CompletionUtils.fillMybatisVariants(mybatisFieldName, completionParameters, completionResultSet, false)
     }
 
 }

@@ -22,6 +22,7 @@ public class JavaTypeHashMark implements HashMarkTip {
         newResult.addElement(LookupElementBuilder.create("long"));
         newResult.addElement(LookupElementBuilder.create("ResultSet"));
         newResult.addElement(LookupElementBuilder.create("ArrayList"));
+        newResult.addElement(LookupElementBuilder.create("hashmap"));
 
         JavaClassNameCompletionContributor.addAllClasses(
                 parameters,
