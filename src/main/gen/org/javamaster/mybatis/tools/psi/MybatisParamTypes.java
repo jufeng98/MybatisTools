@@ -12,12 +12,10 @@ public interface MybatisParamTypes {
   IElementType ATTRS = new MybatisParamElementType("ATTRS");
   IElementType ATTR_NAME = new MybatisParamElementType("ATTR_NAME");
   IElementType ATTR_VALUE = new MybatisParamElementType("ATTR_VALUE");
-  IElementType FIELD_NAME = new MybatisParamElementType("FIELD_NAME");
 
   IElementType ATTR_NAME_LABEL = new MybatisParamTokenType("ATTR_NAME_LABEL");
   IElementType ATTR_SEPARATOR = new MybatisParamTokenType("ATTR_SEPARATOR");
   IElementType ATTR_VALUE_LABEL = new MybatisParamTokenType("ATTR_VALUE_LABEL");
-  IElementType FIELD_NAME_LABEL = new MybatisParamTokenType("FIELD_NAME_LABEL");
   IElementType SEPARATOR = new MybatisParamTokenType("SEPARATOR");
 
   class Factory {
@@ -34,9 +32,6 @@ public interface MybatisParamTypes {
       }
       else if (type == ATTR_VALUE) {
         return new MybatisParamAttrValueImpl(node);
-      }
-      else if (type == FIELD_NAME) {
-        return new MybatisParamFieldNameImpl(node);
       }
       throw new AssertionError("Unknown element type: " + type);
     }

@@ -29,14 +29,12 @@ EOL=\R
 WHITE_SPACE=\s+
 
 SEPARATOR=[,]
-FIELD_NAME=[^\s,=]+
 ATTR_NAME=[^\s,=]+
 ATTR_SEPARATOR=[=]
 ATTR_VALUE=[^\s,=]+
 
 %%
 <YYINITIAL> {
-  {FIELD_NAME}             { return FIELD_NAME_LABEL; }
   {SEPARATOR}              { yybegin(IN_ATTR_NAME); return SEPARATOR; }
   {WHITE_SPACE}            { return WHITE_SPACE; }
 }

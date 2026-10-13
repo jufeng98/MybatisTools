@@ -97,10 +97,10 @@ public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
   private static final int [] ZZ_ACTION = zzUnpackAction();
 
   private static final String ZZ_ACTION_PACKED_0 =
-    "\3\0\1\1\1\2\1\3\1\4\1\5\1\6\1\7";
+    "\3\0\1\1\1\2\1\3\1\4\1\5\1\6";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[10];
+    int [] result = new int[9];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -125,11 +125,11 @@ public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
   private static final int [] ZZ_ROWMAP = zzUnpackRowMap();
 
   private static final String ZZ_ROWMAP_PACKED_0 =
-    "\0\0\0\4\0\10\0\14\0\20\0\24\0\24\0\30"+
-    "\0\24\0\34";
+    "\0\0\0\4\0\10\0\14\0\20\0\14\0\24\0\14"+
+    "\0\30";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[10];
+    int [] result = new int[9];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -152,12 +152,12 @@ public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
   private static final int [] ZZ_TRANS = zzUnpacktrans();
 
   private static final String ZZ_TRANS_PACKED_0 =
-    "\1\4\1\5\1\6\1\7\1\10\1\5\1\7\1\11"+
-    "\1\12\1\5\1\6\1\7\1\4\4\0\1\5\6\0"+
-    "\1\10\3\0\1\12\3\0";
+    "\1\4\1\5\1\6\1\4\1\7\1\5\1\4\1\10"+
+    "\1\11\1\5\1\6\1\4\5\0\1\5\2\0\1\7"+
+    "\3\0\1\11\3\0";
 
   private static int [] zzUnpacktrans() {
-    int [] result = new int[32];
+    int [] result = new int[28];
     int offset = 0;
     offset = zzUnpacktrans(ZZ_TRANS_PACKED_0, offset, result);
     return result;
@@ -195,10 +195,10 @@ public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
   private static final int [] ZZ_ATTRIBUTE = zzUnpackAttribute();
 
   private static final String ZZ_ATTRIBUTE_PACKED_0 =
-    "\3\0\2\1\2\11\1\1\1\11\1\1";
+    "\3\0\1\11\1\1\1\11\1\1\1\11\1\1";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[10];
+    int [] result = new int[9];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -526,40 +526,35 @@ public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1:
-            { return FIELD_NAME_LABEL;
+            { return BAD_CHARACTER;
             }
           // fall through
-          case 8: break;
+          case 7: break;
           case 2:
             { return WHITE_SPACE;
             }
           // fall through
-          case 9: break;
+          case 8: break;
           case 3:
             { yybegin(IN_ATTR_NAME); return SEPARATOR;
             }
           // fall through
-          case 10: break;
+          case 9: break;
           case 4:
-            { return BAD_CHARACTER;
-            }
-          // fall through
-          case 11: break;
-          case 5:
             { return ATTR_NAME_LABEL;
             }
           // fall through
-          case 12: break;
-          case 6:
+          case 10: break;
+          case 5:
             { yybegin(IN_ATTR_VALUE); return ATTR_SEPARATOR;
             }
           // fall through
-          case 13: break;
-          case 7:
+          case 11: break;
+          case 6:
             { return ATTR_VALUE_LABEL;
             }
           // fall through
-          case 14: break;
+          case 12: break;
           default:
             zzScanError(ZZ_NO_MATCH);
           }

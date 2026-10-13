@@ -23,10 +23,6 @@ public class MybatisParamVisitor extends PsiElementVisitor {
     visitPsiElement(o);
   }
 
-  public void visitFieldName(@NotNull MybatisParamFieldName o) {
-    visitPsiElement(o);
-  }
-
   public void visitPsiElement(@NotNull PsiElement o) {
     visitElement(o);
   }

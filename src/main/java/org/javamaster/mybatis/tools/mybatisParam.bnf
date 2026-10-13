@@ -15,7 +15,6 @@
   psiImplUtilClass="org.javamaster.mybatis.tools.psi.impl.MybatisParamPsiImplUtil"
 
   tokens=[
-    FIELD_NAME_LABEL='FIELD_NAME_LABEL'
     SEPARATOR='SEPARATOR'
     ATTR_NAME_LABEL='ATTR_NAME_LABEL'
     ATTR_SEPARATOR='ATTR_SEPARATOR'
@@ -23,15 +22,8 @@
   ]
 }
 
-mybatisParamFile ::= fieldName (SEPARATOR attrs)?
+mybatisParamFile ::= (SEPARATOR attrs)?
 
-fieldName ::= FIELD_NAME_LABEL {
-      methods = [
-          getName
-          getReferences
-      ]
-      name = "field name"
-}
 attrs ::= (attr SEPARATOR?)*
 attr ::= attrName ATTR_SEPARATOR attrValue {
     pin = 1

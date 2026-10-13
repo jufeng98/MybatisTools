@@ -107,40 +107,16 @@ public class MybatisParamParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // FIELD_NAME_LABEL
-  public static boolean fieldName(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "fieldName")) return false;
-    if (!nextTokenIs(b, "<field name>", FIELD_NAME_LABEL)) return false;
-    boolean r;
-    Marker m = enter_section_(b, l, _NONE_, FIELD_NAME, "<field name>");
-    r = consumeToken(b, FIELD_NAME_LABEL);
-    exit_section_(b, l, m, r, false, null);
-    return r;
-  }
-
-  /* ********************************************************** */
-  // fieldName (SEPARATOR attrs)?
+  // (SEPARATOR attrs)?
   static boolean mybatisParamFile(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "mybatisParamFile")) return false;
-    if (!nextTokenIs(b, FIELD_NAME_LABEL)) return false;
-    boolean r;
-    Marker m = enter_section_(b);
-    r = fieldName(b, l + 1);
-    r = r && mybatisParamFile_1(b, l + 1);
-    exit_section_(b, m, null, r);
-    return r;
-  }
-
-  // (SEPARATOR attrs)?
-  private static boolean mybatisParamFile_1(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "mybatisParamFile_1")) return false;
-    mybatisParamFile_1_0(b, l + 1);
+    mybatisParamFile_0(b, l + 1);
     return true;
   }
 
   // SEPARATOR attrs
-  private static boolean mybatisParamFile_1_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "mybatisParamFile_1_0")) return false;
+  private static boolean mybatisParamFile_0(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "mybatisParamFile_0")) return false;
     boolean r;
     Marker m = enter_section_(b);
     r = consumeToken(b, SEPARATOR);
