@@ -73,7 +73,18 @@ $fieldsStr
     private fun getSqlElement(editor: Editor, file: PsiFile, project: Project): PsiElement? {
         val caretModel = editor.caretModel
         val position = caretModel.offset
-        return InjectedLanguageManager.getInstance(project).findInjectedElementAt(file, position)
+
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
+
+        val psiElement = file.findElementAt(position)
+        if (psiElement != null) {
+            val injectionHost = injectedLanguageManager.getInjectionHost(psiElement)
+            if (injectionHost != null) {
+                return injectionHost
+            }
+        }
+
+        return injectedLanguageManager.findInjectedElementAt(file, position)
     }
 
     override fun startInWriteAction(): Boolean {
