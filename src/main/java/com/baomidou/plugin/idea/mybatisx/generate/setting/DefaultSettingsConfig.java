@@ -6,7 +6,6 @@ import com.baomidou.plugin.idea.mybatisx.generate.util.XmlUtils;
 import com.intellij.ide.extensionResources.ExtensionsRootType;
 import com.intellij.ide.scratch.ScratchFileService;
 import com.intellij.openapi.extensions.PluginId;
-import com.intellij.openapi.util.text.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -19,34 +18,36 @@ public class DefaultSettingsConfig {
 
     public static final String TEMPLATES = "templates";
 
-    private static File getPath(@NotNull String pathParam) throws IOException {
-        @NotNull PluginId id = Objects.requireNonNull(PluginId.findId("com.baomidou.plugin.idea.mybatisx"));
+    private static File getPath() throws IOException {
+        PluginId id = PluginId.findId("org.javamaster.mybatis.tools.MybatisTools");
+
         final ScratchFileService scratchFileService = ScratchFileService.getInstance();
         final ExtensionsRootType extensionsRootType = ExtensionsRootType.getInstance();
-        final String path = scratchFileService.getRootPath(extensionsRootType) + "/" + id.getIdString() +
-                (StringUtil.isEmpty(pathParam) ? "" : "/"
-                        + pathParam);
+
+        @SuppressWarnings("DataFlowIssue")
+        String path = scratchFileService.getRootPath(extensionsRootType) + "/" + id.getIdString() +
+                "/" + DefaultSettingsConfig.TEMPLATES;
+
         final File file = new File(path);
         if (!file.exists()) {
             extensionsRootType.extractBundledResources(id, "");
         }
+
         return file;
     }
 
     /**
-     * 读取 mybatisx/templates 下面的所有默认模板
-     *
-     * @return
+     * 读取 templates 下面的所有默认模板
      */
     public static Map<String, ConfigSetting> defaultSettings() {
         Map<String, ConfigSetting> map = new TreeMap<>();
         try {
-            File resourceDirectory = getPath(TEMPLATES);
+            File resourceDirectory = getPath();
             if (!resourceDirectory.exists()) {
                 return Collections.emptyMap();
             }
-            for (File file : Objects.requireNonNull(resourceDirectory.listFiles())) {
 
+            for (File file : Objects.requireNonNull(resourceDirectory.listFiles())) {
                 String configName = file.getName();
                 // 模板配置的元数据信息
                 File metaFile = new File(file, ".meta.xml");
@@ -54,6 +55,7 @@ public class DefaultSettingsConfig {
                     log.error("元数据文件不存在,无法加载配置.  元数据信息: {}", metaFile.getAbsolutePath());
                     continue;
                 }
+
                 Map<String, TemplateSettingDTO> defaultTemplateSettingMapping;
 
                 try (FileInputStream metaInputStream = new FileInputStream(metaFile)) {
@@ -64,15 +66,21 @@ public class DefaultSettingsConfig {
                 }
 
                 // 模板一定是.ftl后缀名的文件
-                Set<String> existsFileNames = Arrays.stream(Objects.requireNonNull(file.listFiles(pathname -> pathname.getName().endsWith(".ftl")))).map(File::getName).collect(Collectors.toSet());
+                File[] files = file.listFiles(pathname -> pathname.getName().endsWith(".ftl"));
+
+                Set<String> existsFileNames = Arrays.stream(Objects.requireNonNull(files))
+                        .map(File::getName)
+                        .collect(Collectors.toSet());
+
                 List<TemplateSettingDTO> templateSettingDTOS = defaultTemplateSettingMapping.values().stream()
                         .map(templateSettingDTO -> copyFromTemplateText(templateSettingDTO, existsFileNames))
                         .collect(Collectors.toList());
+
                 if (!templateSettingDTOS.isEmpty()) {
                     map.put(configName, buildConfigSetting(file, templateSettingDTOS));
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("加载配置出错", e);
         }
         return map;

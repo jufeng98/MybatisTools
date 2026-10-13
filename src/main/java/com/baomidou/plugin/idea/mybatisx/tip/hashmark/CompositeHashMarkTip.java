@@ -5,9 +5,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
 import com.intellij.psi.util.InheritanceUtil;
-import com.intellij.psi.xml.XmlAttribute;
-import com.intellij.psi.xml.XmlAttributeValue;
-import com.intellij.psi.xml.XmlTag;
+import com.intellij.psi.xml.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference;
@@ -15,10 +13,7 @@ import org.javamaster.mybatis.tools.utils.PsiUtils;
 import org.javamaster.mybatis.tools.utils.ReferenceUtils;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * #{}提示的内容, 不仅仅只是字段， 还包括mybatis支持的7大属性配置
@@ -70,7 +65,7 @@ public class CompositeHashMarkTip {
         if (psiReferences.length == 1) {
             resolve = psiReferences[0].resolve();
         } else {
-            resolve = psiReferences[psiReferences.length - 2].resolve();
+            resolve = psiReferences[psiReferences.length - 1].resolve();
         }
 
         PsiType psiType;
@@ -106,7 +101,7 @@ public class CompositeHashMarkTip {
         return resolveGenericIfForeachTagItemAttrValue(collectionAttrValue);
     }
 
-    public static @Nullable XmlAttributeValue getItemAttrValueIfParamInForeachTag(PsiElement injectionHost){
+    public static @Nullable XmlAttributeValue getItemAttrValueIfParamInForeachTag(PsiElement injectionHost) {
         PsiElement parent = injectionHost.getParent();
         if (!(parent instanceof XmlTag xmlTag)) {
             return null;
@@ -126,8 +121,8 @@ public class CompositeHashMarkTip {
     }
 
     public static PsiElement resolveIfParamInForeachTag(MybatisFieldNameReference mybatisFieldNameReference,
-                                                         PsiElement injectionHost,
-                                                         PsiElement currentPsiElement) {
+                                                        PsiElement injectionHost,
+                                                        PsiElement currentPsiElement) {
         PsiElement parent = injectionHost.getParent();
         if (!(parent instanceof XmlTag xmlTag)) {
             return null;
@@ -169,7 +164,7 @@ public class CompositeHashMarkTip {
 
             itemPsiElement = resolveGenericIfForeachTagItemAttrValue(collectionAttrValue);
 
-            if (firstMybatisFieldNameReference == mybatisFieldNameReference) {
+            if (firstMybatisFieldNameReference.equals(mybatisFieldNameReference)) {
                 return itemPsiElement;
             }
         }
@@ -178,7 +173,7 @@ public class CompositeHashMarkTip {
             return null;
         }
 
-        if (references.length == 2 && references[1] == mybatisFieldNameReference) {
+        if (references.length == 2 && references[1].equals(mybatisFieldNameReference)) {
             //noinspection ConstantValue
             if (!(itemPsiElement instanceof PsiClass itemPsiCls)) {
                 return null;

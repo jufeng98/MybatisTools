@@ -64,8 +64,6 @@ public abstract class AbstractStatementGenerator {
      * -- SETTER --
      *  Sets patterns.
      *
-     @return the patterns
-      * @param patterns the patterns
      */
     private Set<String> patterns;
 
@@ -114,7 +112,6 @@ public abstract class AbstractStatementGenerator {
      * Apply generate.
      *
      * @param method  the method
-     * @param project
      */
     public static void applyGenerate(@Nullable final PsiMethod method, Project project) {
         if (null == method) {
@@ -163,7 +160,6 @@ public abstract class AbstractStatementGenerator {
      * Execute.
      *
      * @param method  the method
-     * @param project
      */
     public void execute(@NotNull final PsiMethod method, final Project project) {
         PsiClass psiClass = method.getContainingClass();
@@ -197,7 +193,7 @@ public abstract class AbstractStatementGenerator {
     private void setupTag(PsiMethod method, Mapper mapper, Project project) {
         XmlFile containingFile = DomService.getInstance().getContainingFile(mapper);
         if (containingFile.getFileType().isReadOnly()) {
-            Messages.showErrorDialog("xml filetype must not be readonly", "Generate Info");
+            Messages.showErrorDialog("Xml filetype must not be readonly", "Generate Info");
             return;
         }
 

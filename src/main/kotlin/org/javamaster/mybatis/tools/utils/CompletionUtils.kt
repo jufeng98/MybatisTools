@@ -13,6 +13,7 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.InheritanceUtil
+import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.util.xml.DomUtil
 
 /**
@@ -24,7 +25,6 @@ object CompletionUtils {
         psiElement: PsiElement,
         parameters: CompletionParameters,
         completionResultSet: CompletionResultSet,
-        fromOgnl: Boolean,
     ) {
         val injectionHost =
             InjectedLanguageManager.getInstance(psiElement.project).getInjectionHost(psiElement) ?: return
@@ -33,7 +33,9 @@ object CompletionUtils {
 
         val psiMethod = domElement.id.value as? PsiMethod ?: return
 
-        fillVariants(psiMethod, psiElement, injectionHost, parameters, completionResultSet, fromOgnl)
+        val fullOgnl = injectionHost is XmlAttributeValue
+
+        fillVariants(psiMethod, psiElement, injectionHost, parameters, completionResultSet, fullOgnl)
     }
 
     private fun fillVariants(
@@ -42,7 +44,7 @@ object CompletionUtils {
         injectionHost: PsiLanguageInjectionHost,
         parameters: CompletionParameters,
         resultSet: CompletionResultSet,
-        fromOgnl: Boolean,
+        fullOgnl: Boolean,
     ) {
         val parameterList = psiMethod.parameterList
         if (parameterList.isEmpty) {
@@ -147,7 +149,7 @@ object CompletionUtils {
                 @Suppress("USELESS_CAST")
                 val itemPsiClass = itemPsiElement as PsiClass
 
-                fillFieldAndMethodNames("", itemPsiClass, newCompletionResultSet, fromOgnl)
+                fillFieldAndMethodNames("", itemPsiClass, newCompletionResultSet, fullOgnl)
             }
 
             return
@@ -167,11 +169,11 @@ object CompletionUtils {
                         continue
                     }
 
-                    fillParamNames(paramValue, psiParameter, newCompletionResultSet, fromOgnl)
+                    fillParamNames(paramValue, psiParameter, newCompletionResultSet, fullOgnl)
                 } else {
                     val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: return
 
-                    fillFieldAndMethodNames("", psiClass, newCompletionResultSet, fromOgnl)
+                    fillFieldAndMethodNames("", psiClass, newCompletionResultSet, fullOgnl)
                 }
             }
         } else {
@@ -188,7 +190,7 @@ object CompletionUtils {
             if (resolve is PsiParameter || resolve is PsiField) {
                 val psiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
 
-                fillFieldAndMethodNames(fieldPrefix, psiClass, newCompletionResultSet, fromOgnl)
+                fillFieldAndMethodNames(fieldPrefix, psiClass, newCompletionResultSet, fullOgnl)
             }
         }
     }
@@ -197,13 +199,13 @@ object CompletionUtils {
         paramValue: String,
         psiParameter: PsiParameter,
         completionResultSet: CompletionResultSet,
-        fromOgnl: Boolean,
+        fullOgnl: Boolean,
     ) {
         completionResultSet.addElement(
             LookupElementBuilder.create(psiParameter, paramValue).withTypeText(psiParameter.type.presentableText)
         )
 
-        if (fromOgnl) {
+        if (fullOgnl) {
             val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: return
             var qualifiedName = psiClass.qualifiedName
 
@@ -225,14 +227,14 @@ object CompletionUtils {
         fieldPrefix: String,
         psiClass: PsiClass,
         resultSet: CompletionResultSet,
-        fromOgnl: Boolean,
+        fullOgnl: Boolean,
     ) {
         val psiFields = psiClass.allFields
         psiFields.forEach {
             var lookupString = it.name
             resultSet.addElement(LookupElementBuilder.create(it, lookupString).withTypeText(it.type.presentableText))
 
-            if (fromOgnl) {
+            if (fullOgnl) {
                 val psiClazz = PsiUtils.resolvePsiType(it.type)
                 val qualifiedName = psiClazz?.qualifiedName
                 lookupString = it.name
@@ -254,7 +256,7 @@ object CompletionUtils {
             }
         }
 
-        if (fromOgnl) {
+        if (fullOgnl) {
             if (psiClass.qualifiedName?.startsWith("java") == true) {
                 fillMethodNames(psiClass, resultSet)
             }

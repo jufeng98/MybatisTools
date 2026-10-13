@@ -4,22 +4,11 @@ import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry
 import org.javamaster.mybatis.tools.psi.MybatisParamAttrName
 import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue
-import org.javamaster.mybatis.tools.psi.MybatisParamFieldName
 
 /**
  * @author yudong
  */
 object MybatisParamPsiImplUtil {
-
-    @JvmStatic
-    fun getName(mybatisFieldName: MybatisParamFieldName): String {
-        return mybatisFieldName.text
-    }
-
-    @JvmStatic
-    fun getReferences(mybatisFieldName: MybatisParamFieldName): Array<PsiReference> {
-        return ReferenceProvidersRegistry.getReferencesFromProviders(mybatisFieldName)
-    }
 
     @JvmStatic
     fun getName(mybatisAttrName: MybatisParamAttrName): String {
