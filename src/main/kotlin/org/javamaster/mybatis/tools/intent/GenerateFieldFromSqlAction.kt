@@ -3,6 +3,7 @@ package org.javamaster.mybatis.tools.intent
 import com.baomidou.plugin.idea.mybatisx.util.DomUtils
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionName
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -32,7 +33,7 @@ class GenerateFieldFromSqlAction : BaseIntentionAction() {
             return false
         }
 
-        val element = getElement(editor, file)
+        val element = getSqlElement(editor, file, project) ?: return false
 
         PsiTreeUtil.getParentOfType(element, SqlSelectClause::class.java) ?: return false
 
@@ -40,7 +41,7 @@ class GenerateFieldFromSqlAction : BaseIntentionAction() {
     }
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
-        val element = getElement(editor, file) ?: return
+        val element = getSqlElement(editor, file, project) ?: return
 
         val selectClause = PsiTreeUtil.getParentOfType(element, SqlSelectClause::class.java) ?: return
 
@@ -69,10 +70,10 @@ $fieldsStr
         fileEditorManager.openFile(virtualFile, true)
     }
 
-    private fun getElement(editor: Editor, file: PsiFile): PsiElement? {
+    private fun getSqlElement(editor: Editor, file: PsiFile, project: Project): PsiElement? {
         val caretModel = editor.caretModel
         val position = caretModel.offset
-        return file.findElementAt(position)
+        return InjectedLanguageManager.getInstance(project).findInjectedElementAt(file, position)
     }
 
     override fun startInWriteAction(): Boolean {
