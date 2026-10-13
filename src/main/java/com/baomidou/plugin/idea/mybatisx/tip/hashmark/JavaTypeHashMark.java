@@ -1,15 +1,23 @@
 package com.baomidou.plugin.idea.mybatisx.tip.hashmark;
 
+import com.baomidou.plugin.idea.mybatisx.alias.AliasDesc;
+import com.baomidou.plugin.idea.mybatisx.alias.AliasFacade;
 import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper;
-import com.intellij.codeInsight.completion.*;
+import com.intellij.codeInsight.completion.CompletionParameters;
+import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionUtil;
+import com.intellij.codeInsight.completion.JavaClassNameCompletionContributor;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
-import com.intellij.psi.*;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.search.PsiShortNamesCache;
 import lombok.val;
 import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
 
 public class JavaTypeHashMark implements HashMarkTip {
     @Override
@@ -21,14 +29,18 @@ public class JavaTypeHashMark implements HashMarkTip {
     public void tipValue(CompletionParameters parameters, CompletionResultSet completionResultSet, Mapper mapper) {
         val newResult = completionResultSet.withPrefixMatcher(CompletionUtil.findReferenceOrAlphanumericPrefix(parameters));
 
-        newResult.addElement(LookupElementBuilder.create("String"));
-        newResult.addElement(LookupElementBuilder.create("int"));
-        newResult.addElement(LookupElementBuilder.create("float"));
-        newResult.addElement(LookupElementBuilder.create("double"));
-        newResult.addElement(LookupElementBuilder.create("long"));
-        newResult.addElement(LookupElementBuilder.create("ResultSet"));
-        newResult.addElement(LookupElementBuilder.create("ArrayList"));
-        newResult.addElement(LookupElementBuilder.create("hashmap"));
+        AliasFacade aliasFacade = AliasFacade.getInstance(parameters.getPosition().getProject());
+
+        Collection<AliasDesc> aliasDescList = aliasFacade.getAliasDescs(parameters.getPosition());
+        for (AliasDesc aliasDesc : aliasDescList) {
+            PsiClass psiClass = aliasDesc.getClazz();
+
+            LookupElementBuilder lookupElement = LookupElementBuilder
+                    .create(psiClass, aliasDesc.getAlias())
+                    .withTypeText(psiClass.getQualifiedName());
+
+            newResult.addElement(lookupElement);
+        }
 
         JavaClassNameCompletionContributor.addAllClasses(
                 parameters,
@@ -49,11 +61,8 @@ public class JavaTypeHashMark implements HashMarkTip {
             return psiClass;
         }
 
-        @NotNull PsiClass[] psiClasses = PsiShortNamesCache.getInstance(project).getClassesByName(name, searchScope);
-        if (psiClasses.length > 0) {
-            return psiClasses[0];
-        }
+        AliasFacade aliasFacade = AliasFacade.getInstance(project);
 
-        return null;
+        return aliasFacade.findPsiClass(paramAttrValue, name).orElse(null);
     }
 }

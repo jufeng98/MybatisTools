@@ -31,6 +31,7 @@ public class AliasFacade {
         this.project = project;
         this.resolvers = new ArrayList<>();
         this.javaPsiFacade = JavaPsiFacade.getInstance(project);
+
         initResolvers();
     }
 

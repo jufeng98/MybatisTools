@@ -68,7 +68,6 @@ public class InnerAliasResolver extends AliasResolver {
      * 这里支持等手动配置JDK后才开始缓存
      *
      * @param element the element
-     * @return
      */
     @NotNull
     @Override

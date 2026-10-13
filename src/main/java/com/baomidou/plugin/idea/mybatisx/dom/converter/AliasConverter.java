@@ -21,7 +21,7 @@ public class AliasConverter extends ConverterAdaptor<PsiClass> implements Custom
 
     @Nullable
     @Override
-    public PsiClass fromString(@Nullable @NonNls String s, ConvertContext context) {
+    public PsiClass fromString(@Nullable @NonNls String s, @NotNull ConvertContext context) {
         if (StringUtil.isEmptyOrSpaces(s)) {
             return null;
         }
@@ -32,6 +32,7 @@ public class AliasConverter extends ConverterAdaptor<PsiClass> implements Custom
                     .findPsiClass(context.getXmlElement(), s)
                     .orElse(null);
         }
+
         // 根据全程查找
         return DomJavaUtil.findClass(s, context.getFile(), context.getModule(), GlobalSearchScope.allScope(context.getProject()));
     }
