@@ -13,16 +13,20 @@
           <li>Integrate all functions of the MybatisX plugin(copy from MybatisX)</li>
           <li>Integrate mybatis generator Gui (copy from free mybatis plugin)</li>
           <li>Integrate OGNL language support(copy from intellij struct 2 plugin)</li>
+          <li>Generate Java fields based on SQL column name or alias name</li>
+          <li>Generate XML result tags based on the type attribute of tags such as XML resultMap</li>
        </ul>
        <ul>
           <li>在 Mapper 接口类和 xml 文件之间跳转</li>
-          <li>mybatis.xml 智能提示</li>
-          <li>mapper.xml 文件的 if test、when test 等区域的智能输入提示及引用跳转</li>
-          <li>mapper.xml 文件的 #{} / ${} 区域的智能输入提示及引用跳转</li>
+          <li>mybatis.xml 输入智能提示</li>
+          <li>mapper.xml 文件的 if test、when test 等区域的输入智能提示及引用跳转</li>
+          <li>mapper.xml 文件的 #{} / ${} 区域的输入智能提示及引用跳转</li>
           <li>提取控制台 mybatis SQL 日志为完整的可执行 SQL</li>
           <li>集成 MybatisX 插件所有功能(源码来自 MybatisX)</li>
           <li>集成 mybatis generator Gui (源码来自 free mybatis plugin)</li>
           <li>集成 OGNL 语言支持(源码来自 intellij struct 2 插件)</li>
+          <li>根据 SQL 列表或别名生成 Java 字段</li>
+          <li>根据 xml resultMap 等标签的 type 属性生成 xml result 标签</li>
        </ul>
   ]]></description>
 
@@ -56,8 +60,8 @@
         <lang.syntaxHighlighterFactory
                 language="mybatisParam"
                 implementationClass="org.javamaster.mybatis.tools.highlighting.MybatisParamSyntaxHighlighterFactory"/>
-        <multiHostInjector
-                implementation="org.javamaster.mybatis.tools.inject.MybatisInjectionContributor"/>
+        <multiHostInjector order="first"
+                implementation="org.javamaster.mybatis.tools.inject.MybatisMultiHostInjector"/>
         <psi.referenceContributor id="MybatisReferenceContributor"
                                   implementation="org.javamaster.mybatis.tools.contributor.MybatisReferenceContributor"
                                   language="mybatisParam"/>
@@ -109,7 +113,7 @@
                                         implementationClass="com.baomidou.plugin.idea.mybatisx.provider.InjectionLineMarkerProvider"/>
 
         <consoleFilterProvider
-                implementation="org.javamaster.mybatis.tools.console.MyBatisSqlConsoleActionsPostProcessor"/>
+                implementation="org.javamaster.mybatis.tools.console.MyBatisSqlConsoleFilterProvider"/>
 
         <!-- 设置中的配置 -->
         <applicationConfigurable id="mybatisx.settings" displayName="MybatisX"
@@ -135,54 +139,57 @@
         <localInspection language="JAVA" shortName="MybatisXMapperMethodInspection"
                          id="javamaster.MybatisMapperMethodInspection"
                          displayName="Mapper method inspection"
-                         groupName="Mybatis" enabledByDefault="true" level="ERROR"
+                         groupName="MyBatisTools" enabledByDefault="true" level="ERROR"
                          implementationClass="com.baomidou.plugin.idea.mybatisx.inspection.MapperMethodInspection"/>
         <localInspection language="XML" shortName="MybatisXMapperXmlInspection"
                          enabledByDefault="true"
                          level="ERROR"
                          id="javamaster.MybatisMapperXmlInspection"
                          displayName="Mapper xml inspection"
-                         groupName="Mybatis"
+                         groupName="MyBatisTools"
                          hasStaticDescription="true"
                          implementationClass="com.baomidou.plugin.idea.mybatisx.inspection.MapperXmlInspection"/>
+
+        <annotator language="OGNL"
+                   implementationClass="org.javamaster.mybatis.tools.annotator.OgnlReferenceAnnotator"/>
 
         <!--提示动作 start-->
         <!-- 生成参数注解 @Param -->
         <intentionAction id="javamaster.GenerateParamAnnotationIntention">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.intention.GenerateParamAnnotationIntention</className>
+            <category>MyBatisTools/Generate param annotation</category>
         </intentionAction>
         <!-- 通过方法名生成对应的 查询语句 -->
         <intentionAction id="javamaster.GenerateStatementIntention">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.intention.GenerateStatementIntention</className>
+            <category>MyBatisTools/Generate xml statement</category>
         </intentionAction>
         <!-- 生成mybatis mapper.xml文件 -->
         <intentionAction order="first" id="javamaster.GenerateMapperIntention">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.intention.GenerateMapperIntention</className>
+            <category>MyBatisTools/Generate mapper xml file</category>
         </intentionAction>
 
         <!-- 根据jpa名字生成方法和xml文件内容 -->
         <intentionAction id="javamaster.GenerateMapperMethodSmartJpaAction">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.smartjpa.GenerateSmartJpaAction</className>
+            <category>MyBatisTools/Generate smart Jpa</category>
         </intentionAction>
 
         <intentionAction id="javamaster.GenerateMapperMethodSmartAdvanceJpaAction">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.smartjpa.GenerateSmartJpaAdvanceAction</className>
+            <category>MyBatisTools/Generate Jpa advance</category>
         </intentionAction>
 
         <intentionAction>
             <language>XML</language>
             <className>org.javamaster.mybatis.tools.intent.GenerateXmlResultAction</className>
-            <category>Database/Xml generate</category>
-        </intentionAction>
-        <intentionAction>
-            <language>SQL</language>
-            <className>org.javamaster.mybatis.tools.intent.GenerateFieldAction</className>
-            <category>Database/Sql generate</category>
+            <category>MyBatisTools/Xml generate</category>
         </intentionAction>
         <!--提示动作 end-->
 
@@ -199,6 +206,6 @@
 
         <projectService serviceImplementation="com.baomidou.plugin.idea.mybatisx.alias.AnnotationAliasResolver"/>
 
-        <notificationGroup displayType="BALLOON" id="MybatisX Notification" isLogByDefault="true"/>
+        <notificationGroup displayType="BALLOON" id="MyBatisTools Notification" isLogByDefault="true"/>
     </extensions>
 </idea-plugin>

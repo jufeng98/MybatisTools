@@ -1,6 +1,7 @@
 package com.baomidou.plugin.idea.mybatisx.inspection;
 
 import com.baomidou.plugin.idea.mybatisx.setting.config.AbstractStatementGenerator;
+import com.intellij.codeInsight.intention.preview.IntentionPreviewUtils;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -37,7 +38,12 @@ public class StatementNotExistsQuickFix extends GenericQuickFix {
 
     @Override
     public void applyFix(@NotNull Project project, @NotNull ProblemDescriptor descriptor) {
-        AbstractStatementGenerator.applyGenerate(method.dereference(), project);
+        if (IntentionPreviewUtils.isIntentionPreviewActive()) {
+            return;
+        }
+
+        PsiMethod psiMethod = method.getElement();
+        AbstractStatementGenerator.applyGenerate(psiMethod, project);
     }
 
     /**
@@ -47,7 +53,7 @@ public class StatementNotExistsQuickFix extends GenericQuickFix {
      */
     @Nullable
     public PsiMethod getMethod() {
-        return method.dereference();
+        return method.getElement();
     }
 
     /**
