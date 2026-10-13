@@ -15,6 +15,7 @@ import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.util.PsiTreeUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.javamaster.mybatis.tools.utils.DatabasePluginUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -86,8 +87,10 @@ public class MapperMethodCompletionContributor extends CompletionContributor {
         log.info("MapperMethodCompletionContributor.fillCompletionVariants start");
 
         try {
-            SmartJpaCompletionProvider smartJpaCompletionProvider = new SmartJpaCompletionProvider();
-            smartJpaCompletionProvider.addCompletion(parameters, result, mapperClass);
+            if (DatabasePluginUtils.INSTANCE.getDatabasePluginAvailable()) {
+                SmartJpaCompletionProvider smartJpaCompletionProvider = new SmartJpaCompletionProvider();
+                smartJpaCompletionProvider.addCompletion(parameters, result, mapperClass);
+            }
         } catch (ProcessCanceledException e) {
             log.info("未知的取消原因", e);
             throw e;

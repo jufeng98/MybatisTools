@@ -1,11 +1,9 @@
 package org.javamaster.mybatis.tools.inject
 
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
-import com.intellij.ide.plugins.PluginManager
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.lang.ognl.OgnlLanguage
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
@@ -15,6 +13,7 @@ import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.xml.XmlText
 import com.intellij.util.SmartList
 import org.javamaster.mybatis.tools.MybatisParamLanguage
+import org.javamaster.mybatis.tools.utils.DatabasePluginUtils.databasePluginAvailable
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.start
 import java.util.regex.Pattern
@@ -28,11 +27,6 @@ class MybatisMultiHostInjector : MultiHostInjector {
     val sharpPrefixStr: String = "#{"
     val dollarPrefixStr: String = "\${"
     val pattern: Pattern = Pattern.compile("sql|select|insert|update|delete|statement")
-    val databasePluginAvailable by lazy {
-        val pluginId = PluginId.findId("com.intellij.database") ?: return@lazy false
-        val plugin = PluginManager.getInstance().findEnabledPlugin(pluginId)
-        plugin != null
-    }
 
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, context: PsiElement) {
         if (!MapperUtils.isElementWithinMybatisFile(context)) {

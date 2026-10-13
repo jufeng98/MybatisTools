@@ -15,7 +15,10 @@ import com.intellij.util.containers.JBIterable;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.PriorityQueue;
 
 /**
  * The type Platform db generator.
@@ -50,7 +53,7 @@ public class PlatformDbGenerator extends PlatformSimpleGenerator {
             for (DbDataSource dataSource : dataSources) {
                 JBIterable<? extends DasTable> tables = DasUtil.getTables(dataSource);
                 for (DasTable table : tables) {
-                    String entityTableName = entityClass.getName().toLowerCase();
+                    String entityTableName = Objects.requireNonNull(entityClass.getName()).toLowerCase();
                     String tableName = table.getName();
                     String guessTableName = tableName.replace("_", "").toUpperCase();
                     // 完全相等的情况下就不用候选了
@@ -70,7 +73,8 @@ public class PlatformDbGenerator extends PlatformSimpleGenerator {
         if (!priorityQueue.isEmpty()) {
             return priorityQueue.peek();
         }
-        return entityClass.getName().toUpperCase();
+
+        return Objects.requireNonNull(entityClass.getName()).toUpperCase();
     }
 
 }
