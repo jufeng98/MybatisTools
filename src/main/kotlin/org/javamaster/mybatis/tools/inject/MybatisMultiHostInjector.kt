@@ -1,9 +1,11 @@
 package org.javamaster.mybatis.tools.inject
 
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.lang.ognl.OgnlLanguage
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
@@ -11,8 +13,6 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.xml.XmlText
-import com.intellij.psi.xml.XmlToken
-import com.intellij.sql.psi.SqlLanguage
 import com.intellij.util.SmartList
 import org.javamaster.mybatis.tools.MybatisParamLanguage
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
@@ -28,6 +28,11 @@ class MybatisMultiHostInjector : MultiHostInjector {
     val sharpPrefixStr: String = "#{"
     val dollarPrefixStr: String = "\${"
     val pattern: Pattern = Pattern.compile("sql|select|insert|update|delete|statement")
+    val databasePluginAvailable by lazy {
+        val pluginId = PluginId.findId("com.intellij.database") ?: return@lazy false
+        val plugin = PluginManager.getInstance().findEnabledPlugin(pluginId)
+        plugin != null
+    }
 
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, context: PsiElement) {
         if (!MapperUtils.isElementWithinMybatisFile(context)) {
@@ -48,74 +53,40 @@ class MybatisMultiHostInjector : MultiHostInjector {
 
         val allParamRanges = mutableListOf<Pair<List<TextRange>, PsiElement>>()
 
-        registrar.startInjecting(SqlLanguage.INSTANCE)
+        if (databasePluginAvailable) {
+            SqlInjector.startInject(registrar)
+        }
 
         for ((index, it) in xmlTexts.withIndex()) {
             val text = it.text
-            val injectionHost = it as PsiLanguageInjectionHost
 
-            val next = if (index < xmlTexts.size - 2) {
-                xmlTexts.elementAt(index + 1)
-            } else {
-                null
+            val variablesRanges = collectParamRanges(text)
+
+            if (databasePluginAvailable) {
+                val injectionHost = it as PsiLanguageInjectionHost
+
+                val next = if (index < xmlTexts.size - 2) {
+                    xmlTexts.elementAt(index + 1)
+                } else {
+                    null
+                }
+
+
+                SqlInjector.injectSqlLangIntoXmlText(registrar, injectionHost, next, text, variablesRanges)
             }
 
-
-            val paramRanges = injectSqlLangIntoXmlText(registrar, injectionHost, next, text)
-
-            allParamRanges.add(Pair(paramRanges, it))
+            allParamRanges.add(Pair(variablesRanges, it))
         }
 
-        registrar.doneInjecting()
+        if (databasePluginAvailable) {
+            registrar.doneInjecting()
+        }
 
         allParamRanges.forEach {
             val injectionHost = it.second as PsiLanguageInjectionHost
 
             injectLangToParams(it.first, registrar, injectionHost, injectionHost.text)
         }
-    }
-
-    private fun injectSqlLangIntoXmlText(
-        registrar: MultiHostRegistrar,
-        host: PsiLanguageInjectionHost,
-        next: XmlText?,
-        text: String,
-    ): List<TextRange> {
-        val sibling = host.prevSibling.prevSibling
-        val prefix = if (sibling is XmlToken && host.parent is XmlTag && sibling.text == "where") {
-
-            val siblingText = next?.text
-            if (siblingText == null) {
-                "where "
-            } else {
-                val str = siblingText.trimStart().lowercase()
-                if (str.startsWith("and") || str.startsWith("or")) {
-                    "where 1 = 1 "
-                } else {
-                    "where 1 = 1 and "
-                }
-            }
-        } else {
-            null
-        }
-
-        var lastVariableRangeEndOffset = 0
-
-        val variablesRanges = collectParamRanges(text)
-
-        for (variableRange in variablesRanges) {
-            val range = TextRange.create(lastVariableRangeEndOffset, variableRange.startOffset)
-
-            registrar.addPlace(prefix, variableRange.substring(text), host, range)
-
-            lastVariableRangeEndOffset = variableRange.endOffset
-        }
-
-        val range = TextRange.create(lastVariableRangeEndOffset, text.length)
-
-        registrar.addPlace(prefix, null, host, range.shiftRight(0))
-
-        return variablesRanges
     }
 
     private fun injectLangToParams(
