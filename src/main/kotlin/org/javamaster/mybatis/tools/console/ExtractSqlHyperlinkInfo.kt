@@ -1,13 +1,17 @@
 package org.javamaster.mybatis.tools.console
 
 import com.intellij.execution.filters.HyperlinkInfo
-import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.ScrollType
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.LightVirtualFile
 import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.time.DateFormatUtils
 import org.javamaster.mybatis.tools.console.MyBatisSqlConsoleFilter.Companion.PARAM_KEY
 import org.javamaster.mybatis.tools.console.MyBatisSqlConsoleFilter.Companion.PRE_KEY
 import org.javamaster.mybatis.tools.sql.BasicFormatter
-import java.awt.datatransfer.StringSelection
 import java.math.BigDecimal
 import java.sql.Time
 import java.sql.Timestamp
@@ -28,16 +32,51 @@ class ExtractSqlHyperlinkInfo(private val line: String, private val sqlLine: Str
 
         val wholeSql = parseSql(sql, params)
 
-        val formatSql = BasicFormatter.format(wholeSql)
+        val formatSql = BasicFormatter.format(wholeSql) + ";"
 
-        val copyPasteManager = CopyPasteManager.getInstance()
-        copyPasteManager.setContents(StringSelection(formatSql))
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        val allEditors = fileEditorManager.allEditors
 
-        // NotifyUtil.notifyBalloonInfo(project, "Tip:完成提取并格式化SQL后复制到剪切板!")
+        val fileName = "mybatis-log.sql"
+
+        val editor = allEditors.firstOrNull { it.file is LightVirtualFile && it.file.name == fileName }
+        if (editor == null) {
+            val virtualFile = LightVirtualFile(fileName, formatSql)
+
+            fileEditorManager.openFile(virtualFile, true)
+        } else {
+            val textEditor = editor as TextEditor
+            val myEditor = textEditor.editor
+            val caretModel = myEditor.caretModel
+            val scrollingModel = myEditor.scrollingModel
+            val doc = myEditor.document
+
+            val m = TIME_PATTERN.matcher(line)
+            val dateStr = if (m.find()) {
+                m.group(1)
+            } else {
+                DateFormatUtils.format(Date(), "yyyy-MM-dd HH:mm:ss,SSS")
+            }
+
+            var offset = 0
+            WriteCommandAction.runWriteCommandAction(project) {
+                doc.insertString(doc.textLength, "\n-- $dateStr --\n")
+
+                offset = doc.textLength
+
+                doc.insertString(doc.textLength, formatSql)
+            }
+
+            myEditor.contentComponent.requestFocus()
+
+            caretModel.primaryCaret.moveToOffset(offset)
+            scrollingModel.scrollToCaret(ScrollType.CENTER)
+        }
     }
 
     companion object {
         private val MASK_PATTERN = Pattern.compile("\\?")
+        val TIME_PATTERN: Pattern = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2},\\d{3})")
         private val NEED_BRACKETS: Set<String>
 
         init {

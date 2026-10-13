@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 /**
  * @author yudong
  */
-class MyBatisSqlConsoleActionsPostProcessor : ConsoleFilterProvider {
+class MyBatisSqlConsoleFilterProvider : ConsoleFilterProvider {
 
     override fun getDefaultFilters(project: Project): Array<Filter> {
         return arrayOf(MyBatisSqlConsoleFilter())

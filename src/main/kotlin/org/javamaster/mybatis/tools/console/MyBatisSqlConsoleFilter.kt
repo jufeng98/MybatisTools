@@ -31,6 +31,7 @@ class MyBatisSqlConsoleFilter : Filter {
         val startOffset = entireLength - line.length
 
         val hyperlinkInfo = ExtractSqlHyperlinkInfo(line, sqlLine!!)
+
         return Filter.Result(
             startOffset + paramIdx, startOffset + paramIdx + PARAM_KEY.length - 2, hyperlinkInfo
         )
