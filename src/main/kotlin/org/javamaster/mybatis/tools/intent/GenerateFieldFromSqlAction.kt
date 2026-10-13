@@ -1,6 +1,6 @@
 package org.javamaster.mybatis.tools.intent
 
-import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
+import com.baomidou.plugin.idea.mybatisx.util.DomUtils
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionName
 import com.intellij.openapi.editor.Editor
@@ -28,7 +28,7 @@ class GenerateFieldFromSqlAction : BaseIntentionAction() {
     }
 
     override fun isAvailable(project: Project, editor: Editor, file: PsiFile): Boolean {
-        if (!MapperUtils.isElementWithinMybatisFile(file)) {
+        if (!DomUtils.isMybatisFile(file)) {
             return false
         }
 
