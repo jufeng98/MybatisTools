@@ -23,6 +23,7 @@ public class GenerateStatementChooser extends JavaFileIntentionChooser {
         if (!isPositionOfMethodDeclaration(element)) {
             return false;
         }
+
         PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
         PsiClass clazz = PsiTreeUtil.getParentOfType(element, PsiClass.class);
         if (method != null && (method.hasModifierProperty(PsiModifier.DEFAULT)
@@ -31,6 +32,7 @@ public class GenerateStatementChooser extends JavaFileIntentionChooser {
                 || method.getBody() != null)) {
             return false;
         }
+
         //  不应该判断当前模块是不是已经有了这个mapper. 因为无法判断
         // !isTargetPresentInXml(method) &&
         return null != method && null != clazz &&

@@ -40,7 +40,7 @@ public class GenerateMapperIntention extends GenericIntention {
     @NotNull
     @Override
     public String getText() {
-        return "[MybatisX] Generate mapper of xml";
+        return "[MybatisTools] Generate mapper of xml file";
     }
 
     @Override
@@ -78,12 +78,21 @@ public class GenerateMapperIntention extends GenericIntention {
                 return true;
             }
         };
+
         UiComponentFacade uiComponentFacade = UiComponentFacade.getInstance(project);
+
+        ClickableListener chooseFolderListener = getChooseFolderListener(editor, clazz);
+
+        String[] pathTextForShown = getPathTextForShown(project, keys, pathMap);
+        if (pathTextForShown.length == 0) {
+            return;
+        }
+
         uiComponentFacade.showListPopupWithSingleClickable("Choose folder",
                 popupListener,
                 "Choose another",
-                getChooseFolderListener(editor, clazz),
-                getPathTextForShown(project, keys, pathMap));
+                chooseFolderListener,
+                pathTextForShown);
     }
 
     private ClickableListener getChooseFolderListener(final Editor editor, final PsiClass clazz) {
@@ -113,12 +122,17 @@ public class GenerateMapperIntention extends GenericIntention {
     private String[] getPathTextForShown(Project project, List<String> paths, final Map<String, PsiDirectory> pathMap) {
         Collections.sort(paths);
         final String projectBasePath = project.getBasePath();
+        if (projectBasePath == null) {
+            return new String[0];
+        }
 
-        return paths.stream().map(input -> {
-            String relativePath = FileUtil.getRelativePath(projectBasePath, input, File.separatorChar);
-            Module module = ModuleUtil.findModuleForPsiElement(pathMap.get(input));
-            return null == module ? relativePath : ("[" + module.getName() + "] " + relativePath);
-        }).toArray(String[]::new);
+        return paths.stream()
+                .map(input -> {
+                    String relativePath = FileUtil.getRelativePath(projectBasePath, input, File.separatorChar);
+                    Module module = ModuleUtil.findModuleForPsiElement(pathMap.get(input));
+                    return null == module ? relativePath : ("[" + module.getName() + "] " + relativePath);
+                })
+                .toArray(String[]::new);
     }
 
     private Map<String, PsiDirectory> getPathMap(Collection<PsiDirectory> directories) {
@@ -134,10 +148,12 @@ public class GenerateMapperIntention extends GenericIntention {
         if (null == directory) {
             return;
         }
+
         if (!directory.isWritable()) {
             HintManager.getInstance().showErrorHint(editor, "Target directory is not writable");
             return;
         }
+
         try {
             Properties properties = new Properties();
             properties.setProperty("NAMESPACE", mapperClass.getQualifiedName());
@@ -148,6 +164,7 @@ public class GenerateMapperIntention extends GenericIntention {
                     directory,
                     properties,
                     project);
+
             if (psiFile != null) {
                 EditorService.getInstance(mapperClass.getProject()).scrollTo(psiFile, 0);
             }

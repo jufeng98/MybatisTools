@@ -9,4 +9,15 @@
         </action>
     </actions>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <annotator language="SQL"
+                   implementationClass="org.javamaster.mybatis.tools.annotator.ColumnNameAnnotator"/>
+
+        <intentionAction>
+            <language>SQL</language>
+            <className>org.javamaster.mybatis.tools.intent.GenerateFieldFromSqlAction</className>
+            <category>MyBatisTools/Sql generate</category>
+        </intentionAction>
+    </extensions>
+
 </idea-plugin>

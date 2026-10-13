@@ -145,12 +145,6 @@ public class GenerateSmartJpaAdvanceAction extends PsiElementBaseIntentionAction
      * 创建 条件字段包装器， 用于if,where 这样的标签
      *
      * @param project         the project
-     * @param defaultDateWord
-     * @param allFields
-     * @param resultFields
-     * @param conditionFields
-     * @param entityClass
-     * @param isSelect
      * @return the condition field wrapper
      */
     protected Optional<ConditionFieldWrapper> getConditionFieldWrapper(@NotNull Project project,
@@ -231,13 +225,13 @@ public class GenerateSmartJpaAdvanceAction extends PsiElementBaseIntentionAction
     @NotNull
     @Override
     public String getText() {
-        return "[MybatisX] Generate Mybatis Sql for Advance";
+        return "[mybatisTools] generate mybatis sql for advance";
     }
 
     @NotNull
     @Override
     public String getFamilyName() {
-        return "Statement Complete";
+        return "Statement complete";
     }
 
     @Override

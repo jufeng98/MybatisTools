@@ -35,9 +35,6 @@ public class MapperMethodInspection extends MapperInspection {
     };
     public static final String MAP_KEY = "org.apache.ibatis.annotations.MapKey";
     public static final String MAP = "java.util.Map";
-    public static final String COLLECTION = "java.util.Collection";
-    public static final String LIST = "java.util.List";
-    public static final String SET = "java.util.Set";
     private static final Set<String> STATEMENT_PROVIDER_NAMES = new HashSet<>() {
         {
             add("org.apache.ibatis.annotations.SelectProvider");
@@ -54,16 +51,21 @@ public class MapperMethodInspection extends MapperInspection {
                 || JavaUtils.isAnyAnnotationPresent(method, Annotation.STATEMENT_SYMMETRIES)) {
             return EMPTY_ARRAY;
         }
+
         List<ProblemDescriptor> res = createProblemDescriptors(method, manager, isOnTheFly);
+
         return res.toArray(new ProblemDescriptor[0]);
     }
 
     private List<ProblemDescriptor> createProblemDescriptors(PsiMethod method, InspectionManager manager, boolean isOnTheFly) {
         ArrayList<ProblemDescriptor> res = Lists.newArrayList();
+
         Optional<ProblemDescriptor> p1 = checkStatementExists(method, manager, isOnTheFly);
         p1.ifPresent(res::add);
+
         Optional<ProblemDescriptor> p2 = checkResultType(method, manager, isOnTheFly);
         p2.ifPresent(res::add);
+
         return res;
     }
 
@@ -75,6 +77,7 @@ public class MapperMethodInspection extends MapperInspection {
         if (ele.isEmpty()) {
             found = false;
         }
+
         Select select = null;
         if (found) {
             DomElement domElement = ele.get();
@@ -84,12 +87,14 @@ public class MapperMethodInspection extends MapperInspection {
                 found = false;
             }
         }
+
         if (found) {
             PsiIdentifier ide = method.getNameIdentifier();
             if (null == ide || null != select.getResultMap().getValue()) {
                 found = false;
             }
         }
+
         PsiType returnType = method.getReturnType();
         Optional<PsiClass> target = AbstractStatementGenerator.getSelectResultType(method);
         if (found) {
@@ -97,6 +102,7 @@ public class MapperMethodInspection extends MapperInspection {
                 found = false;
             }
         }
+
         // 验证MapKey注解
         if (found) {
             final PsiClass targetClass = target.get();
@@ -119,6 +125,7 @@ public class MapperMethodInspection extends MapperInspection {
                 found = false;
             }
         }
+
         // 有可能出错的情况
         if (found) {
             final PsiClass targetClass = target.get();
@@ -150,6 +157,7 @@ public class MapperMethodInspection extends MapperInspection {
                         isOnTheFly);
             }
         }
+
         return Optional.ofNullable(descriptor);
     }
 
@@ -170,6 +178,7 @@ public class MapperMethodInspection extends MapperInspection {
                 return mapClass != null && psiClass.isInheritor(mapClass, true);
             }
         }
+
         return false;
     }
 
@@ -177,6 +186,7 @@ public class MapperMethodInspection extends MapperInspection {
         if (child == null) {
             return false;
         }
+
         return child.equals(parent) || child.isInheritor(parent, true);
     }
 
@@ -190,6 +200,7 @@ public class MapperMethodInspection extends MapperInspection {
                 return Optional.empty();
             }
         }
+
         JavaService instance = JavaService.getInstance(method.getProject());
         if (instance.findStatement(method).isEmpty() && null != ide) {
             if (isMybatisPlusMethod(method)) {
@@ -205,6 +216,7 @@ public class MapperMethodInspection extends MapperInspection {
             return Optional.of(manager.createProblemDescriptor(ide, "Statement with id=\"#ref\" not defined in mapper xml",
                     new StatementNotExistsQuickFix(method), ProblemHighlightType.GENERIC_ERROR, isOnTheFly));
         }
+
         return Optional.empty();
     }
 
@@ -213,6 +225,7 @@ public class MapperMethodInspection extends MapperInspection {
         if (parentOfType == null) {
             return false;
         }
+
         PsiMethod[] methodsBySignature = parentOfType.findMethodsBySignature(method, true);
         if (methodsBySignature.length > 1) {
             for (int index = methodsBySignature.length; index > 0; index--) {
@@ -220,12 +233,15 @@ public class MapperMethodInspection extends MapperInspection {
                 if (mapperClass == null) {
                     continue;
                 }
+
                 if (MYBATIS_PLUS_BASE_MAPPER_NAMES.contains(mapperClass.getQualifiedName())) {
                     return true;
                 }
             }
+
             return true;
         }
+
         return false;
     }
 

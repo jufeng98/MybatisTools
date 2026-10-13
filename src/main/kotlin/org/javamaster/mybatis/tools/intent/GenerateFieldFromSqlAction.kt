@@ -1,24 +1,26 @@
 package org.javamaster.mybatis.tools.intent
 
+import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionName
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.sql.psi.SqlSelectClause
-import org.javamaster.mybatis.tools.utils.StringUtil
-import java.awt.datatransfer.StringSelection
+import com.intellij.testFramework.LightVirtualFile
+import org.javamaster.mybatis.tools.utils.GenerateUtils
 
 /**
  * @author yudong
  */
-class GenerateFieldAction : BaseIntentionAction() {
+class GenerateFieldFromSqlAction : BaseIntentionAction() {
+
     override fun getText(): @IntentionName String {
         @Suppress("DialogTitleCapitalization")
-        return "生成Java类字段定义"
+        return "根据 SQL 的列名或列别名生成 Java 类字段"
     }
 
     override fun getFamilyName(): String {
@@ -26,6 +28,10 @@ class GenerateFieldAction : BaseIntentionAction() {
     }
 
     override fun isAvailable(project: Project, editor: Editor, file: PsiFile): Boolean {
+        if (!MapperUtils.isElementWithinMybatisFile(file)) {
+            return false
+        }
+
         val element = getElement(editor, file)
 
         PsiTreeUtil.getParentOfType(element, SqlSelectClause::class.java) ?: return false
@@ -38,28 +44,29 @@ class GenerateFieldAction : BaseIntentionAction() {
 
         val selectClause = PsiTreeUtil.getParentOfType(element, SqlSelectClause::class.java) ?: return
 
-        val expressions = selectClause.expressions
-        val fieldsStr = expressions.map {
-            val name = it.name
-            val fieldName = StringUtil.toCamelCase(name)
-            val dataType = it.dasType.toDataType()
-            val typeName = dataType.typeName
+        val fieldsStr = selectClause.expressions
+            .mapNotNull {
+                val name = it.name ?: return@mapNotNull null
 
-            return@map if (typeName.contains("bigint")) {
-                "private Long $fieldName;"
-            } else if (typeName.contains("int")) {
-                "private Integer $fieldName;"
-            } else if (typeName.contains("date") || typeName.contains("time")) {
-                "private Date $fieldName;"
-            } else if (typeName.contains("char") || typeName.contains("text")) {
-                "private String $fieldName;"
-            } else {
-                "private $typeName $fieldName;"
+                val dataType = it.dasType.toDataType()
+
+                GenerateUtils.generateJavaField(name, dataType.typeName)
             }
-        }.joinToString("\n")
+            .joinToString("\n")
 
-        CopyPasteManager.getInstance().setContents(StringSelection(fieldsStr))
-//        NotifyUtil.notifyBalloonInfo(project, "已生成 field 字段并放入到剪切板!")
+        val fileEditorManager = FileEditorManager.getInstance(project)
+        val virtualFile = LightVirtualFile(
+            "FieldNameFromSql.java",
+            """
+import java.util.*;
+                
+public class FieldNameFromSql {
+$fieldsStr
+}
+            """.trimIndent()
+        )
+
+        fileEditorManager.openFile(virtualFile, true)
     }
 
     private fun getElement(editor: Editor, file: PsiFile): PsiElement? {
