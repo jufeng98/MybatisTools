@@ -4,6 +4,10 @@ import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.psi.PsiElement;
+import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,5 +39,10 @@ public class ModeHashMarkTip implements HashMarkTip {
         for (String mode : MODE_LIST) {
             completionResultSet.addElement(LookupElementBuilder.create(mode));
         }
+    }
+
+    @Override
+    public @Nullable PsiElement resolveValue(@NotNull MybatisParamAttrValue paramAttrValue, @NotNull Mapper mapper) {
+        return null;
     }
 }

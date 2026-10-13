@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
  */
 class MybatisStaticClassMethodReference(
     psiElement: PsiElement,
-    private val from: TextRange,
+    val from: TextRange,
     private val fullClassName: String,
 ) : PsiReferenceBase<PsiElement>(psiElement, from) {
 

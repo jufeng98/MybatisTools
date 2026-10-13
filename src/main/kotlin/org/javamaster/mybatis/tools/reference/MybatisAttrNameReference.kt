@@ -6,6 +6,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReferenceBase
 import org.javamaster.mybatis.tools.handler.EqualsEndInsertHandler
+import org.javamaster.mybatis.tools.psi.impl.OpenBrowserFakePsiElement
 
 /**
  * @author yudong
@@ -16,7 +17,7 @@ class MybatisAttrNameReference(
 ) : PsiReferenceBase<PsiElement>(psiElement, from) {
 
     override fun resolve(): PsiElement? {
-        return null
+        return OpenBrowserFakePsiElement("https://mybatis.org/mybatis-3/sqlmap-xml.html", myElement)
     }
 
     override fun getVariants(): Array<Any> {

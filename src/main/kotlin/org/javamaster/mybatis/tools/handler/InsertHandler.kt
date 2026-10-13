@@ -4,6 +4,9 @@ import com.intellij.codeInsight.completion.BasicInsertHandler
 import com.intellij.codeInsight.completion.InsertionContext
 import com.intellij.codeInsight.lookup.LookupElement
 
+/**
+ * @author yudong
+ */
 object EqualsEndInsertHandler : BasicInsertHandler<LookupElement>() {
 
     override fun handleInsert(context: InsertionContext, item: LookupElement) {

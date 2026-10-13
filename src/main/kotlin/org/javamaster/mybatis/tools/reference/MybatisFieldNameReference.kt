@@ -9,6 +9,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiReferenceBase
 import com.intellij.psi.xml.XmlElement
 import com.intellij.util.xml.DomUtil
+import org.apache.commons.collections.CollectionUtils
 import java.util.*
 
 /**
@@ -38,4 +39,26 @@ class MybatisFieldNameReference(
         )
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (other !is MybatisFieldNameReference) {
+            return false
+        }
+
+        if (myElement != other.myElement) {
+            return false
+        }
+
+        if (!CollectionUtils.isEqualCollection(nameLevels, other.nameLevels)) {
+            return false
+        }
+
+        return from.substring(myElement.text) == other.from.substring(other.myElement.text)
+    }
+
+    override fun hashCode(): Int {
+        var result = myElement.hashCode()
+        result = 31 * result + from.hashCode()
+        result = 31 * result + nameLevels.hashCode()
+        return result
+    }
 }

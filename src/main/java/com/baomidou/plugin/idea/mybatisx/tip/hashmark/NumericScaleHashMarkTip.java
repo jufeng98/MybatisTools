@@ -4,6 +4,10 @@ import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper;
 import com.intellij.codeInsight.completion.CompletionParameters;
 import com.intellij.codeInsight.completion.CompletionResultSet;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.psi.PsiElement;
+import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class NumericScaleHashMarkTip implements HashMarkTip {
     @Override
@@ -19,5 +23,10 @@ public class NumericScaleHashMarkTip implements HashMarkTip {
     public void tipValue(CompletionParameters parameters, CompletionResultSet completionResultSet, Mapper mapper) {
         completionResultSet.addElement(LookupElementBuilder.create("2"));
         completionResultSet.addElement(LookupElementBuilder.create("4"));
+    }
+
+    @Override
+    public @Nullable PsiElement resolveValue(@NotNull MybatisParamAttrValue paramAttrValue, @NotNull Mapper mapper) {
+        return null;
     }
 }

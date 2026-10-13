@@ -4,10 +4,14 @@ import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper;
 import com.baomidou.plugin.idea.mybatisx.util.JavaUtils;
 import com.intellij.codeInsight.completion.*;
 import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiModifier;
+import com.intellij.psi.*;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.searches.ClassInheritorsSearch;
 import com.intellij.util.Query;
+import lombok.val;
+import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -57,5 +61,14 @@ public class TypeHandlerHashMarkTip implements HashMarkTip {
             JavaPsiClassReferenceElement item = JavaClassNameCompletionContributor.createClassLookupItem(typeHandlerImplClass, false);
             completionResultSet.addElement(item);
         }
+    }
+
+    @Override
+    public @Nullable PsiElement resolveValue(@NotNull MybatisParamAttrValue paramAttrValue, @NotNull Mapper mapper) {
+        val project = paramAttrValue.getProject();
+        String name = paramAttrValue.getText();
+        GlobalSearchScope searchScope = GlobalSearchScope.everythingScope(project);
+
+        return JavaPsiFacade.getInstance(project).findClass(name, searchScope);
     }
 }
