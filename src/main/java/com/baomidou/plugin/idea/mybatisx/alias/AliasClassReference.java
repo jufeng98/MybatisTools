@@ -1,5 +1,7 @@
 package com.baomidou.plugin.idea.mybatisx.alias;
 
+import com.intellij.codeInsight.lookup.LookupElementBuilder;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReferenceBase;
 import com.intellij.psi.xml.XmlAttributeValue;
@@ -39,7 +41,13 @@ public class AliasClassReference extends PsiReferenceBase<XmlAttributeValue> {
         AliasFacade aliasFacade = AliasFacade.getInstance(attributeValue.getProject());
 
         return aliasFacade.getAliasDescs(attributeValue).stream()
-                .map(AliasDesc::getAlias)
-                .toArray(String[]::new);
+                .map(it -> {
+                    PsiClass psiClass = it.getClazz();
+
+                    return LookupElementBuilder
+                            .create(psiClass, it.getAlias())
+                            .withTypeText(psiClass.getQualifiedName());
+                })
+                .toArray(LookupElementBuilder[]::new);
     }
 }

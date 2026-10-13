@@ -68,6 +68,9 @@
         <completion.contributor language="mybatisParam"
                                 implementationClass="org.javamaster.mybatis.tools.completion.MybatisCompletionContributor"/>
 
+        <completion.contributor language="XML"
+                                implementationClass="org.javamaster.mybatis.tools.completion.XmlCompletionContributor"/>
+
         <completion.contributor language="OGNL"
                                 implementationClass="org.javamaster.mybatis.tools.completion.OgnlCompletionContributor"/>
 
