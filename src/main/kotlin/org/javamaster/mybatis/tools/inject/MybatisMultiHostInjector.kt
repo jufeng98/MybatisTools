@@ -89,8 +89,10 @@ class MybatisMultiHostInjector : MultiHostInjector {
         injectionHost: PsiLanguageInjectionHost,
         text: String,
     ) {
+        val hostTextRange = injectionHost.textRange
+
         paramRanges.forEach {
-            if (it.length > injectionHost.textRange.length) {
+            if (it.endOffset > hostTextRange.length) {
                 return@forEach
             }
 
