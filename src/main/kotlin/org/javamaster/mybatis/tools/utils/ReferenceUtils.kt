@@ -3,6 +3,8 @@ package org.javamaster.mybatis.tools.utils
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
+import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceProvider
+import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceSet
 import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference
 import org.javamaster.mybatis.tools.reference.MybatisStaticClassMethodReference
 import org.javamaster.mybatis.tools.reference.MybatisStaticClassReference
@@ -63,15 +65,29 @@ object ReferenceUtils {
             return psiReferences
         }
 
+        val referenceProvider = JavaClassReferenceProvider()
+
         val idx = text.indexOf("@", 1)
         if (idx == -1) {
             val from = TextRange(1, text.length)
             val fullClassName = from.substring(text)
-            psiReferences.add(MybatisStaticClassReference(psiElement, from, fullClassName))
+
+            val referenceSet = JavaClassReferenceSet(fullClassName, psiElement, 1, false, referenceProvider)
+            val references = referenceSet.references.map {
+                MybatisStaticClassReference(psiElement, it.rangeInElement, it)
+            }
+
+            psiReferences.addAll(references)
         } else {
             val from = TextRange(1, idx)
             val fullClassName = from.substring(text)
-            psiReferences.add(MybatisStaticClassReference(psiElement, from, fullClassName))
+
+            val referenceSet = JavaClassReferenceSet(fullClassName, psiElement, 1, false, referenceProvider)
+            val references = referenceSet.references.map {
+                MybatisStaticClassReference(psiElement, it.rangeInElement, it)
+            }
+
+            psiReferences.addAll(references)
 
             if (text.length > idx + 1) {
                 val paramIdx = text.indexOf("(", idx + 1)
