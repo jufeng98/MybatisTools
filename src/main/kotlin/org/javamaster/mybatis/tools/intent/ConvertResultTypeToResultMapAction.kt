@@ -68,6 +68,11 @@ class ConvertResultTypeToResultMapAction : BaseIntentionAction() {
             return
         }
 
+        if (psiClass.qualifiedName?.startsWith("java") == true) {
+            TooltipUtils.showTip("无法转换 $fullClassName !", project)
+            return
+        }
+
         val factory = XmlElementFactory.getInstance(project)
 
         val resultMapTag = factory.createTagFromText(

@@ -96,7 +96,7 @@ class AddIfTestTagAction : BaseIntentionAction() {
         val ifTagStart = "\n$space$ifTagStartText"
         doc.insertString(startOffset + start, ifTagStart)
 
-        val ifTagEnd = "\n$space</if>\n"
+        val ifTagEnd = "\n$space</if>"
         doc.insertString(startOffset + end + ifTagStart.length, ifTagEnd)
     }
 
