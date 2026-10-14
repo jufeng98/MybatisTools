@@ -1,0 +1,11 @@
+select
+    tse.order_code,
+    tui.nick_name   nickName,
+    tuba.back_name  backName,
+    tuba.back_phone backPhone
+from
+    test_service_exchange tse
+inner join test_user_info tui on tui.id = tse.user_info_id
+inner join test_user_back_address tuba on tuba.service_exchange_id = tse.id
+where
+    tse.order_status = 1

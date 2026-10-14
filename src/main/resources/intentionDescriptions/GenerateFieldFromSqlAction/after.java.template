@@ -1,0 +1,6 @@
+public class FieldNameFromSql {
+    private String orderCode;
+    private String backName;
+    private String backPhone;
+    private String nickName;
+}

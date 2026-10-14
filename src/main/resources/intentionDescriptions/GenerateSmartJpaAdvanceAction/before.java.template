@@ -1,0 +1,7 @@
+package org.test.mapper;
+
+public interface ExampleMapper extends BaseMapper<Blog> {
+
+    selectTitleAndContentByIdInAndCreateTimeBetweenOrderByAgeDesc
+
+}

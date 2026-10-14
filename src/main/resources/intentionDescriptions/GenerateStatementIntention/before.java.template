@@ -1,0 +1,7 @@
+package org.test.mapper;
+
+public interface ExampleMapper {
+
+    int count(String clothesCode);
+
+}

@@ -1,0 +1,9 @@
+package org.test.mapper;
+
+import org.apache.ibatis.annotations.Param;
+
+public interface ExampleMapper {
+
+    int count(@Param("clothesCode") String clothesCode);
+
+}
