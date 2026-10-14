@@ -90,6 +90,10 @@ class MybatisMultiHostInjector : MultiHostInjector {
         text: String,
     ) {
         paramRanges.forEach {
+            if (it.length > injectionHost.textRange.length) {
+                return@forEach
+            }
+
             val paramStr = it.substring(text)
             val idx = paramStr.indexOf(",")
             if (idx == -1) {
@@ -137,11 +141,13 @@ class MybatisMultiHostInjector : MultiHostInjector {
             }
 
             if (actualStartIndex >= closeBraceIndex) {
+                index = closeBraceIndex + 1
                 continue
             }
 
             val paramStr = text.substring(actualStartIndex, closeBraceIndex)
             if (StringUtil.isEmptyOrSpaces(paramStr)) {
+                index = closeBraceIndex + 1
                 continue
             }
 
