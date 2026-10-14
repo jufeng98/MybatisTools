@@ -1,5 +1,6 @@
 package org.javamaster.mybatis.tools.utils;
 
+import com.google.common.base.CaseFormat;
 import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -738,6 +739,23 @@ public class StringUtil {
         }
 
         return String.format("%" + textLength + "s", input);
+    }
+
+    public static String camelToUnderline(String name) {
+        return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
+    }
+
+    public static int countStartSpace(String text) {
+        int count = 0;
+        for (char c : text.toCharArray()) {
+            if (c == ' ') {
+                count++;
+            } else {
+                break;
+            }
+        }
+
+        return count;
     }
 
     public static boolean isNumber(String input) {

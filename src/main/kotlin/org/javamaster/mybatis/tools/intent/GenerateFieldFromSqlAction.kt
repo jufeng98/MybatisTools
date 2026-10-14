@@ -3,6 +3,7 @@ package org.javamaster.mybatis.tools.intent
 import com.baomidou.plugin.idea.mybatisx.util.DomUtils
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionName
+import com.intellij.database.util.common.isInstanceOf
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -10,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.sql.psi.SqlElement
 import com.intellij.sql.psi.SqlSelectClause
 import com.intellij.testFramework.LightVirtualFile
 import org.javamaster.mybatis.tools.utils.GenerateUtils
@@ -74,15 +76,15 @@ $fieldsStr
         val caretModel = editor.caretModel
         val position = caretModel.offset
 
-        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
-
         val psiElement = file.findElementAt(position)
         if (psiElement != null) {
-            val injectionHost = injectedLanguageManager.getInjectionHost(psiElement)
-            if (injectionHost != null) {
-                return injectionHost
+            val parent = psiElement.parent
+            if (parent isInstanceOf (SqlElement::class.java)) {
+                return parent
             }
         }
+
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
 
         return injectedLanguageManager.findInjectedElementAt(file, position)
     }

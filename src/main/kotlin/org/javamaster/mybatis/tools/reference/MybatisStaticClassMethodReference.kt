@@ -1,10 +1,10 @@
 package org.javamaster.mybatis.tools.reference
 
+import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReferenceBase
-import com.intellij.psi.search.GlobalSearchScope
+import org.javamaster.mybatis.tools.utils.PsiUtils
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
 
 /**
@@ -17,10 +17,9 @@ class MybatisStaticClassMethodReference(
 ) : PsiReferenceBase<PsiElement>(psiElement, from) {
 
     override fun resolve(): PsiElement? {
-        val project = myElement.project
-        val psiClass =
-            JavaPsiFacade.getInstance(project).findClass(fullClassName, GlobalSearchScope.everythingScope(project))
-                ?: return null
+        val module = ModuleUtil.findModuleForPsiElement(myElement)
+
+        val psiClass = PsiUtils.resolvePsiClass(fullClassName, module, myElement.project) ?: return null
 
         val text = myElement.parent.text
 

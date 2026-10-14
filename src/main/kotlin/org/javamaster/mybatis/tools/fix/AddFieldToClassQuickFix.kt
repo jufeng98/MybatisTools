@@ -7,10 +7,9 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
-import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiElementFactory
-import com.intellij.psi.search.GlobalSearchScope
 import org.javamaster.mybatis.tools.utils.GenerateUtils
+import org.javamaster.mybatis.tools.utils.PsiUtils
 
 /**
  * @author yudong
@@ -24,12 +23,9 @@ class AddFieldToClassQuickFix(val fieldName: String, val fullClassName: String, 
     }
 
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
-        val module = ModuleUtil.findModuleForFile(descriptor.psiElement.containingFile) ?: return
+        val module = ModuleUtil.findModuleForPsiElement(descriptor.psiElement)
 
-        val scope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module)
-        val javaPsiFacade = JavaPsiFacade.getInstance(project)
-
-        val psiClass = javaPsiFacade.findClass(fullClassName, scope) ?: return
+        val psiClass = PsiUtils.resolvePsiClass(fullClassName, module, project) ?: return
 
         FileEditorManager.getInstance(project).openFile(psiClass.containingFile.virtualFile, true)
 

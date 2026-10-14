@@ -3,6 +3,7 @@ package org.javamaster.mybatis.tools.utils
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.tip.hashmark.CompositeHashMarkTip
+import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionUtil
@@ -10,10 +11,12 @@ import com.intellij.codeInsight.completion.JavaClassNameCompletionContributor
 import com.intellij.codeInsight.completion.util.MethodParenthesesHandler
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.openapi.module.ModuleUtil
 import com.intellij.psi.*
-import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.InheritanceUtil
+import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlAttributeValue
+import com.intellij.psi.xml.XmlTag
 import com.intellij.util.xml.DomUtil
 
 /**
@@ -77,8 +80,9 @@ object CompletionUtils {
             } else {
                 val fullClsName = currentPsiElementText.substring(firstIdx + 1, lastIdx)
 
-                val psiClass = JavaPsiFacade.getInstance(project)
-                    .findClass(fullClsName, GlobalSearchScope.everythingScope(project))
+                val module = ModuleUtil.findModuleForFile(psiMethod.containingFile)
+
+                val psiClass = PsiUtils.resolvePsiClass(fullClsName, module, project)
                 if (psiClass == null) {
                     return
                 }
@@ -281,6 +285,47 @@ object CompletionUtils {
                     .withPresentableText(lookupString)
                     .withInsertHandler(MethodParenthesesHandler.getInstance(!it.parameterList.isEmpty))
             )
+        }
+    }
+
+    fun fillColumnAttrValueVariants(
+        attribute: XmlAttribute,
+        resultSet: CompletionResultSet,
+    ) {
+        val xmlTag = attribute.parent
+        val parentXmlTag = xmlTag.parent
+        if (parentXmlTag !is XmlTag) {
+            return
+        }
+
+        val propertyValue = xmlTag.getAttributeValue("property")
+
+        if (!propertyValue.isNullOrBlank()) {
+            resultSet.addElement(LookupElementBuilder.create(propertyValue))
+
+            val underlineName = StringUtil.camelToUnderline(propertyValue)
+            resultSet.addElement(LookupElementBuilder.create(underlineName))
+        }
+
+        if (!DatabasePluginUtils.databasePluginAvailable) {
+            return
+        }
+
+        val domElement = DomUtil.findDomElement(attribute, IdDomElement::class.java) ?: return
+
+        val resultMapId = MapperUtils.getResultMapId(parentXmlTag) ?: return
+
+        val mapper = MapperUtils.getMapper(domElement)
+
+        val firstSelect = mapper.selects
+            .firstOrNull { it.xmlTag?.getAttributeValue("resultMap") == resultMapId }
+
+        val firstSelectXmlTag = firstSelect?.xmlTag
+
+        val columnNames = XmlSqlUtils.collectColumnNames(firstSelectXmlTag, parentXmlTag.project) ?: return
+
+        columnNames.forEach {
+            resultSet.addElement(LookupElementBuilder.create(it))
         }
     }
 

@@ -13,6 +13,7 @@ import com.baomidou.plugin.idea.mybatisx.ui.JpaAdvanceDialog;
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
+import com.intellij.codeInsight.intention.preview.IntentionPreviewUtils;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -37,6 +38,9 @@ public class GenerateSmartJpaAdvanceAction extends PsiElementBaseIntentionAction
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
         try {
+            if (IntentionPreviewUtils.isIntentionPreviewActive()) {
+                return;
+            }
 
             PsiTypeElement statementElement = PsiTreeUtil.getParentOfType(element, PsiTypeElement.class);
             if (statementElement == null) {
@@ -225,7 +229,7 @@ public class GenerateSmartJpaAdvanceAction extends PsiElementBaseIntentionAction
     @NotNull
     @Override
     public String getText() {
-        return "[mybatisTools] generate mybatis sql for advance";
+        return "Generate mybatis sql for advance";
     }
 
     @NotNull

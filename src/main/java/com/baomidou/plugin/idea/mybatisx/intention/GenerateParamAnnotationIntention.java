@@ -25,7 +25,7 @@ public class GenerateParamAnnotationIntention extends GenericIntention {
     @NotNull
     @Override
     public String getText() {
-        return "[MybatisTools] Generate @Param";
+        return "Generate @Param";
     }
 
     @Override

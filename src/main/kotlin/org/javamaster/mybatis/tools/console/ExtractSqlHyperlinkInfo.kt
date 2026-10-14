@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import com.intellij.psi.util.PsiUtil
 import com.intellij.testFramework.LightVirtualFile
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
@@ -37,19 +38,20 @@ class ExtractSqlHyperlinkInfo(private val line: String, private val sqlLine: Str
         val fileEditorManager = FileEditorManager.getInstance(project)
         val allEditors = fileEditorManager.allEditors
 
-        val fileName = "mybatis-log.sql"
+        val fileName = "mybatis-sql-log.sql"
 
-        val editor = allEditors.firstOrNull { it.file is LightVirtualFile && it.file.name == fileName }
-        if (editor == null) {
+        val fileEditor = allEditors.firstOrNull { it.file is LightVirtualFile && it.file.name == fileName }
+        if (fileEditor == null) {
             val virtualFile = LightVirtualFile(fileName, formatSql)
 
             fileEditorManager.openFile(virtualFile, true)
         } else {
-            val textEditor = editor as TextEditor
-            val myEditor = textEditor.editor
-            val caretModel = myEditor.caretModel
-            val scrollingModel = myEditor.scrollingModel
-            val doc = myEditor.document
+            val textEditor = fileEditor as TextEditor
+            val editor = textEditor.editor
+
+            val caretModel = editor.caretModel
+            val scrollingModel = editor.scrollingModel
+            val doc = editor.document
 
             val m = TIME_PATTERN.matcher(line)
             val dateStr = if (m.find()) {
@@ -67,7 +69,8 @@ class ExtractSqlHyperlinkInfo(private val line: String, private val sqlLine: Str
                 doc.insertString(doc.textLength, formatSql)
             }
 
-            myEditor.contentComponent.requestFocus()
+            val psiFile = PsiUtil.getPsiFile(project, editor.virtualFile)
+            psiFile.navigate(true)
 
             caretModel.primaryCaret.moveToOffset(offset)
             scrollingModel.scrollToCaret(ScrollType.CENTER)

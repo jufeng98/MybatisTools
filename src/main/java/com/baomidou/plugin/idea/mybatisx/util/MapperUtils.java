@@ -12,6 +12,7 @@ import com.intellij.psi.xml.XmlElement;
 import com.intellij.psi.xml.XmlTag;
 import com.intellij.util.Processor;
 import com.intellij.util.xml.*;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.*;
 
@@ -372,6 +373,20 @@ public final class MapperUtils {
 
     private static Collection<Configuration> getMybatisConfigurations(Project project) {
         return DomUtils.findDomElements(project, Configuration.class);
+    }
+
+    public static String getResultMapId(XmlTag xmlTag) {
+        String name = xmlTag.getName();
+        if (name.equals("resultMap")) {
+            return xmlTag.getAttributeValue("id");
+        }
+
+        if (name.equals("collection") || name.equals("association")) {
+            val tag = (XmlTag) xmlTag.getParent();
+            return tag.getAttributeValue("id");
+        }
+
+        return null;
     }
 
     /**

@@ -26,7 +26,7 @@ public class GenerateStatementIntention extends GenericIntention {
     @NotNull
     @Override
     public String getText() {
-        return "[MybatisTools] Generate new statement";
+        return "Generate new statement";
     }
 
 

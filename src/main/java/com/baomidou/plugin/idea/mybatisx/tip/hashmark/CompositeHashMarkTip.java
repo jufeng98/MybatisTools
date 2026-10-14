@@ -220,7 +220,7 @@ public class CompositeHashMarkTip {
             return null;
         }
 
-        return PsiUtils.INSTANCE.resolveTarget(paramPsiCls, nameLevels);
+        return PsiUtils.INSTANCE.resolveTarget(currentPsiElement, paramPsiCls, nameLevels);
     }
 
     public static @Nullable PsiParameter getPsiParameter(PsiParameterList parameterList, LinkedList<String> nameLevel, Project project) {

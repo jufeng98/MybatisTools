@@ -1,19 +1,21 @@
 package org.javamaster.mybatis.tools.intent
 
+import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
+import com.baomidou.plugin.idea.mybatisx.util.MapperUtils.getResultMapId
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionFamilyName
 import com.intellij.codeInspection.util.IntentionName
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
-import com.intellij.psi.*
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.util.InheritanceUtil
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.xml.XmlTag
-import org.javamaster.mybatis.tools.utils.TooltipUtils
+import com.intellij.util.xml.DomUtil
+import org.javamaster.mybatis.tools.utils.*
 
 /**
  * @author yudong
@@ -34,7 +36,7 @@ class GenerateXmlResultAction : BaseIntentionAction() {
             return false
         }
 
-        val element = getElement(editor, psiFile)
+        val element = getElement(editor, psiFile) ?: return false
 
         val xmlTag = PsiTreeUtil.getParentOfType(element, XmlTag::class.java) ?: return false
 
@@ -49,95 +51,51 @@ class GenerateXmlResultAction : BaseIntentionAction() {
     }
 
     override fun invoke(project: Project, editor: Editor, psiFile: PsiFile) {
-        val element = getElement(editor, psiFile)!!
-        val xmlTag = PsiTreeUtil.getParentOfType(element, XmlTag::class.java)!!
+        val element = getElement(editor, psiFile) ?: return
+
+        val xmlTag = PsiTreeUtil.getParentOfType(element, XmlTag::class.java) ?: return
 
         val type = tryGetType(xmlTag) ?: return
 
-        val module = ModuleUtil.findModuleForFile(psiFile) ?: return
+        val resultMapId = getResultMapId(xmlTag)
 
-        val scope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module)
+        val domElement = DomUtil.findDomElement(element, IdDomElement::class.java)
 
-        val javaPsiFacade = JavaPsiFacade.getInstance(project)
-        val psiClass = javaPsiFacade.findClass(type, scope)
+        val psiMethod = domElement?.id?.value as? PsiMethod?
+
+        val module = if (psiMethod != null) {
+            ModuleUtil.findModuleForPsiElement(psiMethod)
+        } else {
+            null
+        }
+
+        val psiClass = PsiUtils.resolvePsiClass(type, module, project)
         if (psiClass == null) {
             TooltipUtils.showTip("无法解析 $type !", project)
             return
         }
 
-        var noId = true
-        var first = true
+        val columnNames = if (DatabasePluginUtils.databasePluginAvailable) {
+            if (domElement != null) {
+                val mapper = MapperUtils.getMapper(domElement)
 
-        val resultStr = psiClass.allFields
-            .map {
-                val pair = handleCollectionOrAssociation(it)
-                if (pair != null) {
-                    return@map pair
-                }
+                val firstSelect = mapper.selects
+                    .firstOrNull { it.xmlTag?.getAttributeValue("resultMap") == resultMapId }
 
-                val spaceStr = if (first) {
-                    ""
-                } else {
-                    if (xmlTag.name == "collection" || xmlTag.name == "association") {
-                        "            "
-                    } else {
-                        "        "
-                    }
-                }
+                val firstSelectXmlTag = firstSelect?.xmlTag
 
-                first = false
-
-                val name = it.name
-                val str = if ((name == "id" || name.contains("Id")) && noId) {
-                    noId = false
-                    """$spaceStr<id property="$name" column="$name"/>"""
-                } else {
-                    """$spaceStr<result property="$name" column="$name"/>"""
-                }
-                Pair(str, 1)
+                XmlSqlUtils.collectColumnNames(firstSelectXmlTag, project)
+            } else {
+                null
             }
-            .sortedBy { it.second }
-            .joinToString("\n") { it.first }
-
-        val caretModel = editor.caretModel
-        val position = caretModel.offset
-        val document = PsiDocumentManager.getInstance(project).getDocument(psiFile)!!
-        document.insertString(position, resultStr)
-    }
-
-    private fun handleCollectionOrAssociation(psiField: PsiField): Pair<String, Int>? {
-        val fieldType = psiField.type
-        val name = psiField.name
-        if (fieldType !is PsiClassType) return null
-
-        val fieldPsiClass = fieldType.resolve() ?: return null
-
-        val isCollection = InheritanceUtil.isInheritor(fieldPsiClass, "java.util.Collection")
-        if (isCollection) {
-            val typeParameters = fieldType.parameters
-            if (typeParameters.isEmpty()) {
-                return null
-            }
-
-            val typePsiType = typeParameters[0] as PsiClassType
-            val typePsiClass = typePsiType.resolve() ?: return null
-            val str = """
-        <collection property="$name" ofType="${typePsiClass.qualifiedName}">
-        
-        </collection>"""
-            return Pair(str, 3)
         } else {
+            null
+        }
 
-            val packageName = PsiUtil.getPackageName(fieldPsiClass) ?: return null
-            if (packageName.startsWith("java")) {
-                return null
-            }
+        val resultMapContents = GenerateUtils.generateResultMapContents(psiClass, columnNames, project)
 
-            val str = """
-        <association property="$name" javaType="${fieldPsiClass.qualifiedName}">
-            
-        </association>"""
-            return Pair(str, 2)
+        resultMapContents.forEach {
+            xmlTag.addSubTag(it, false)
         }
     }
 
@@ -166,4 +124,7 @@ class GenerateXmlResultAction : BaseIntentionAction() {
         return null
     }
 
+    override fun startInWriteAction(): Boolean {
+        return true
+    }
 }

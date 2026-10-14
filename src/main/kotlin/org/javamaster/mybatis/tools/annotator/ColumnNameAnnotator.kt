@@ -11,21 +11,17 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
-import com.intellij.psi.JavaPsiFacade
+import com.intellij.patterns.PsiJavaPatterns.psiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.SmartPointerManager
-import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
-import com.intellij.sql.psi.SqlAsExpression
-import com.intellij.sql.psi.SqlExpression
-import com.intellij.sql.psi.SqlJoinExpression
-import com.intellij.sql.psi.SqlReferenceExpression
-import com.intellij.sql.psi.SqlSelectClause
+import com.intellij.sql.psi.*
 import com.intellij.util.xml.DomUtil
 import org.javamaster.mybatis.tools.fix.AddColumnToResultMapQuickFix
 import org.javamaster.mybatis.tools.fix.AddFieldToClassQuickFix
+import org.javamaster.mybatis.tools.utils.PsiUtils
 import org.javamaster.mybatis.tools.utils.StringUtil
 
 /**
@@ -104,12 +100,9 @@ class ColumnNameAnnotator : Annotator {
         holder: AnnotationHolder,
         project: Project,
     ) {
-        val module = ModuleUtil.findModuleForFile(element.containingFile) ?: return
+        val module = ModuleUtil.findModuleForFile(element.containingFile)
 
-        val scope = GlobalSearchScope.moduleWithDependenciesAndLibrariesScope(module)
-        val javaPsiFacade = JavaPsiFacade.getInstance(project)
-
-        val psiClass = javaPsiFacade.findClass(resultTypeStr, scope) ?: return
+        val psiClass = PsiUtils.resolvePsiClass(resultTypeStr, module, project) ?: return
 
         if (!psiClass.isWritable) {
             return
