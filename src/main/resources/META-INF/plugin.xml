@@ -61,7 +61,7 @@
                 language="mybatisParam"
                 implementationClass="org.javamaster.mybatis.tools.highlighting.MybatisParamSyntaxHighlighterFactory"/>
         <multiHostInjector order="first"
-                implementation="org.javamaster.mybatis.tools.inject.MybatisMultiHostInjector"/>
+                           implementation="org.javamaster.mybatis.tools.inject.MybatisMultiHostInjector"/>
         <psi.referenceContributor id="MybatisReferenceContributor"
                                   implementation="org.javamaster.mybatis.tools.contributor.MybatisReferenceContributor"
                                   language="mybatisParam"/>
@@ -126,6 +126,9 @@
         <completion.contributor id="javamaster.MapperMethodCompletionContributor" language="JAVA"
                                 implementationClass="com.baomidou.plugin.idea.mybatisx.system.contributor.MapperMethodCompletionContributor"/>
 
+        <completion.contributor language="SQL"
+                                implementationClass="org.javamaster.mybatis.tools.completion.SqlCompletionContributor"/>
+
         <!--文件模板组，新建文件选择模板, 这里只是定义一个模板, 在mapper类方法定义完成后, 可以根据这个空模板生成一个文件 -->
         <fileTemplateGroup id="javamaster.MybatisFileTemplateDescriptorFactory"
                            implementation="com.baomidou.plugin.idea.mybatisx.system.template.MybatisFileTemplateDescriptorFactory"/>
@@ -139,15 +142,15 @@
                                              implementation="com.baomidou.plugin.idea.mybatisx.system.refactoring.MapperRefactoringProvider"/>
 
         <!-- 语法校验，让没有生成代码的方法产生错误 -->
-        <localInspection language="JAVA" shortName="MybatisXMapperMethodInspection"
-                         id="javamaster.MybatisMapperMethodInspection"
+        <localInspection language="JAVA" shortName="MapperMethodInspection"
+                         id="javamaster.MapperMethodInspection"
                          displayName="Mapper method inspection"
                          groupName="MyBatisTools" enabledByDefault="true" level="ERROR"
                          implementationClass="com.baomidou.plugin.idea.mybatisx.inspection.MapperMethodInspection"/>
-        <localInspection language="XML" shortName="MybatisXMapperXmlInspection"
+        <localInspection language="XML" shortName="MapperXmlInspection"
                          enabledByDefault="true"
                          level="ERROR"
-                         id="javamaster.MybatisMapperXmlInspection"
+                         id="javamaster.MapperXmlInspection"
                          displayName="Mapper xml inspection"
                          groupName="MyBatisTools"
                          hasStaticDescription="true"
@@ -161,38 +164,45 @@
         <intentionAction id="javamaster.GenerateParamAnnotationIntention">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.intention.GenerateParamAnnotationIntention</className>
-            <category>MyBatisTools/Generate param annotation</category>
+            <category>MyBatisTools/Generate</category>
         </intentionAction>
         <!-- 通过方法名生成对应的 查询语句 -->
         <intentionAction id="javamaster.GenerateStatementIntention">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.intention.GenerateStatementIntention</className>
-            <category>MyBatisTools/Generate xml statement</category>
+            <category>MyBatisTools/Generate</category>
         </intentionAction>
         <!-- 生成mybatis mapper.xml文件 -->
         <intentionAction order="first" id="javamaster.GenerateMapperIntention">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.intention.GenerateMapperIntention</className>
-            <category>MyBatisTools/Generate mapper xml file</category>
+            <category>MyBatisTools/Generate</category>
         </intentionAction>
-
         <!-- 根据jpa名字生成方法和xml文件内容 -->
         <intentionAction id="javamaster.GenerateMapperMethodSmartJpaAction">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.smartjpa.GenerateSmartJpaAction</className>
-            <category>MyBatisTools/Generate smart Jpa</category>
+            <category>MyBatisTools/Generate</category>
         </intentionAction>
-
         <intentionAction id="javamaster.GenerateMapperMethodSmartAdvanceJpaAction">
             <language>JAVA</language>
             <className>com.baomidou.plugin.idea.mybatisx.smartjpa.GenerateSmartJpaAdvanceAction</className>
-            <category>MyBatisTools/Generate Jpa advance</category>
+            <category>MyBatisTools/Generate</category>
         </intentionAction>
-
         <intentionAction>
             <language>XML</language>
             <className>org.javamaster.mybatis.tools.intent.GenerateXmlResultAction</className>
-            <category>MyBatisTools/Xml generate</category>
+            <category>MyBatisTools/Generate</category>
+        </intentionAction>
+        <intentionAction>
+            <language>XML</language>
+            <className>org.javamaster.mybatis.tools.intent.ConvertResultTypeToResultMapAction</className>
+            <category>MyBatisTools/Generate</category>
+        </intentionAction>
+        <intentionAction>
+            <language>XML</language>
+            <className>org.javamaster.mybatis.tools.intent.AddIfTestTagAction</className>
+            <category>MyBatisTools/Generate</category>
         </intentionAction>
         <!--提示动作 end-->
 

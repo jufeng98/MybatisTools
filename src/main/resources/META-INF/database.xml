@@ -16,7 +16,7 @@
         <intentionAction>
             <language>SQL</language>
             <className>org.javamaster.mybatis.tools.intent.GenerateFieldFromSqlAction</className>
-            <category>MyBatisTools/Sql generate</category>
+            <category>MyBatisTools/Generate</category>
         </intentionAction>
     </extensions>
 

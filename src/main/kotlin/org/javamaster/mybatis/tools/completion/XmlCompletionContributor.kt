@@ -8,6 +8,7 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlAttributeValue
+import org.javamaster.mybatis.tools.utils.CompletionUtils
 
 class XmlCompletionContributor : CompletionContributor() {
     private val set = setOf("resultType", "parameterType")
@@ -18,13 +19,19 @@ class XmlCompletionContributor : CompletionContributor() {
 
         if (psiElement is XmlAttributeValue && MapperUtils.isElementWithinMybatisFile(psiElement)) {
             val attribute = psiElement.parent as XmlAttribute
-            if (set.contains(attribute.name)) {
+            val name = attribute.name
+
+            if (set.contains(name)) {
                 val hashMarkTip = CompositeHashMarkTip.hashMarkTips
                     .first {
                         it is JavaTypeHashMark
                     }
 
                 hashMarkTip.tipValue(parameters, result, null)
+            }
+
+            if (name == "column") {
+                CompletionUtils.fillColumnAttrValueVariants(attribute, result)
             }
         }
     }
