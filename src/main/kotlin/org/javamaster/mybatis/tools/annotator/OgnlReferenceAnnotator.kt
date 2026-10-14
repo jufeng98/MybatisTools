@@ -42,25 +42,24 @@ class OgnlReferenceAnnotator : Annotator {
             if (reference is MybatisFieldNameReference) {
                 val resolve = reference.resolve()
                 if (resolve == null) {
-                    annoOgnl(holder, reference.absoluteRange)
+                    annoOgnl(holder, reference.absoluteRange, "无法解析字段或方法")
                 }
             } else if (reference is MybatisStaticClassReference) {
                 val resolve = reference.resolve()
                 if (resolve == null) {
-                    annoOgnl(holder, reference.absoluteRange)
+                    annoOgnl(holder, reference.absoluteRange, "无法解析包名或类名")
                 }
             } else if (reference is MybatisStaticClassMethodReference) {
                 val resolve = reference.resolve()
                 if (resolve == null) {
-                    annoOgnl(holder, reference.absoluteRange)
+                    annoOgnl(holder, reference.absoluteRange, "无法解析方法")
                 }
             }
         }
     }
 
-    private fun annoOgnl(holder: AnnotationHolder, from: TextRange) {
-        @Suppress("DialogTitleCapitalization")
-        holder.newAnnotation(HighlightSeverity.ERROR, "无法解析字段或方法")
+    private fun annoOgnl(holder: AnnotationHolder, from: TextRange, tip: String) {
+        holder.newAnnotation(HighlightSeverity.ERROR, tip)
             .range(from)
             .create()
     }
