@@ -16,7 +16,7 @@ import org.javamaster.mybatis.tools.MybatisParamLanguage
 import org.javamaster.mybatis.tools.utils.DatabasePluginUtils.databasePluginAvailable
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
 import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.start
-import java.util.regex.Pattern
+import kotlin.math.min
 
 /**
  * 对 mybatis mapper xml 文件里的 #{} / ${} 等注入语言
@@ -26,7 +26,7 @@ import java.util.regex.Pattern
 class MybatisMultiHostInjector : MultiHostInjector {
     val sharpPrefixStr: String = "#{"
     val dollarPrefixStr: String = "\${"
-    val pattern: Pattern = Pattern.compile("sql|select|insert|update|delete|statement")
+    private val tagNames = setOf("sql", "select", "insert", "update", "delete", "statement")
 
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, context: PsiElement) {
         if (!MapperUtils.isElementWithinMybatisFile(context)) {
@@ -36,7 +36,7 @@ class MybatisMultiHostInjector : MultiHostInjector {
         val xmlTag = context as XmlTag
 
         val name = xmlTag.name
-        if (!pattern.matcher(name).find()) {
+        if (name !in tagNames) {
             return
         }
 
@@ -132,9 +132,13 @@ class MybatisMultiHostInjector : MultiHostInjector {
         val textRanges = mutableListOf<TextRange>()
 
         while (index < text.length) {
-            var openBraceIndex = text.indexOf(sharpPrefixStr, index)
-            if (openBraceIndex == -1) {
-                openBraceIndex = text.indexOf(dollarPrefixStr, index)
+            val sharpBraceIndex = text.indexOf(sharpPrefixStr, index)
+            val dollarBraceIndex = text.indexOf(dollarPrefixStr, index)
+
+            val openBraceIndex = when {
+                sharpBraceIndex == -1 -> dollarBraceIndex
+                dollarBraceIndex == -1 -> sharpBraceIndex
+                else -> min(sharpBraceIndex, dollarBraceIndex)
             }
 
             val actualStartIndex = openBraceIndex + 2
@@ -162,7 +166,7 @@ class MybatisMultiHostInjector : MultiHostInjector {
         return textRanges
     }
 
-    override fun elementsToInjectIn(): List<Class<out PsiElement>> {
+    override fun elementsToInjectIn(): List<Class<XmlTag>> {
         return SmartList(XmlTag::class.java)
     }
 }

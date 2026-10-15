@@ -1,6 +1,7 @@
 package org.javamaster.mybatis.tools.fix
 
 import com.intellij.codeInsight.intention.PriorityAction
+import com.intellij.codeInsight.intention.preview.IntentionPreviewUtils
 import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -8,6 +9,7 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
 import com.intellij.psi.PsiElementFactory
+import com.intellij.util.application
 import org.javamaster.mybatis.tools.utils.GenerateUtils
 import org.javamaster.mybatis.tools.utils.PsiUtils
 
@@ -23,6 +25,14 @@ class AddFieldToClassQuickFix(val fieldName: String, val fullClassName: String, 
     }
 
     override fun applyFix(project: Project, descriptor: ProblemDescriptor) {
+        if (IntentionPreviewUtils.isIntentionPreviewActive()) {
+            return
+        }
+
+        if (!application.isDispatchThread) {
+            return
+        }
+
         val module = ModuleUtil.findModuleForPsiElement(descriptor.psiElement)
 
         val psiClass = PsiUtils.resolvePsiClass(fullClassName, module, project) ?: return
