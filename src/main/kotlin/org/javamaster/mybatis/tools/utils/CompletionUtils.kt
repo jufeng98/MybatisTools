@@ -11,8 +11,11 @@ import com.intellij.codeInsight.completion.JavaClassNameCompletionContributor
 import com.intellij.codeInsight.completion.util.MethodParenthesesHandler
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.lang.ognl.psi.OgnlIndexedExpression
+import com.intellij.lang.ognl.psi.OgnlReferenceExpression
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.psi.*
+import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlAttributeValue
@@ -24,13 +27,13 @@ import com.intellij.util.xml.DomUtil
  */
 object CompletionUtils {
 
-    fun fillMybatisVariants(
-        psiElement: PsiElement,
+    fun fillMybatisOgnlReferenceVariants(
+        referenceExpression: OgnlReferenceExpression,
         parameters: CompletionParameters,
         completionResultSet: CompletionResultSet,
     ) {
-        val injectionHost =
-            InjectedLanguageManager.getInstance(psiElement.project).getInjectionHost(psiElement) ?: return
+        val project = referenceExpression.project
+        val injectionHost = InjectedLanguageManager.getInstance(project).getInjectionHost(referenceExpression) ?: return
 
         val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return
 
@@ -38,12 +41,31 @@ object CompletionUtils {
 
         val fullOgnl = injectionHost is XmlAttributeValue
 
-        fillVariants(psiMethod, psiElement, injectionHost, parameters, completionResultSet, fullOgnl)
+        fillOgnlReferenceVariants(
+            psiMethod, referenceExpression, injectionHost, parameters, completionResultSet, fullOgnl
+        )
     }
 
-    private fun fillVariants(
+    fun fillMybatisOgnlIndexVariants(
+        indexedExpression: OgnlIndexedExpression,
+        parameters: CompletionParameters,
+        completionResultSet: CompletionResultSet,
+    ) {
+        val project = indexedExpression.project
+        val injectionHost = InjectedLanguageManager.getInstance(project).getInjectionHost(indexedExpression) ?: return
+
+        val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return
+
+        domElement.id.value as? PsiMethod ?: return
+
+        val fullOgnl = injectionHost is XmlAttributeValue
+
+        fillOgnlIndexVariants(indexedExpression, parameters, completionResultSet, fullOgnl)
+    }
+
+    private fun fillOgnlReferenceVariants(
         psiMethod: PsiMethod,
-        currentPsiElement: PsiElement,
+        referenceExpression: OgnlReferenceExpression,
         injectionHost: PsiLanguageInjectionHost,
         parameters: CompletionParameters,
         resultSet: CompletionResultSet,
@@ -56,7 +78,7 @@ object CompletionUtils {
 
         val prefix = CompletionUtil.findReferenceOrAlphanumericPrefix(parameters)
 
-        var currentPsiElementText = currentPsiElement.text
+        var currentPsiElementText = referenceExpression.text
         val project = psiMethod.project
 
         if (currentPsiElementText.startsWith("@")) {
@@ -181,7 +203,7 @@ object CompletionUtils {
                 }
             }
         } else {
-            val psiReferences = ReferenceUtils.convert(currentPsiElementText, currentPsiElement)
+            val psiReferences = ReferenceUtils.convert(currentPsiElementText, referenceExpression)
 
             val resolve = if (psiReferences.size == 1) {
                 psiReferences[0].resolve()
@@ -195,6 +217,46 @@ object CompletionUtils {
                 val psiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
 
                 fillFieldAndMethodNames(fieldPrefix, psiClass, newCompletionResultSet, fullOgnl)
+            }
+        }
+    }
+
+    private fun fillOgnlIndexVariants(
+        indexedExpression: OgnlIndexedExpression,
+        parameters: CompletionParameters,
+        resultSet: CompletionResultSet,
+        fullOgnl: Boolean,
+    ) {
+        val indexReferences = indexedExpression.references
+        if (indexReferences.isEmpty()) {
+            return
+        }
+
+        val resolve = if (indexReferences.size == 1) {
+            val referenceQualifier = indexedExpression.referenceQualifier
+            val psiReferences = ReferenceUtils.convert(referenceQualifier.text, referenceQualifier)
+            if (psiReferences.isEmpty()) {
+                return
+            }
+
+            psiReferences.last().resolve()
+        } else {
+            indexReferences[indexReferences.lastIndex - 1].resolve()
+        }
+
+        val prefix = CompletionUtil.findReferenceOrAlphanumericPrefix(parameters)
+        val newCompletionResultSet = resultSet.withPrefixMatcher(prefix)
+
+        if (resolve is PsiParameter || resolve is PsiField) {
+            val genericParameters = (resolve.type as PsiClassReferenceType).parameters
+            if (genericParameters.isNotEmpty()) {
+                val genericPsiClass = PsiUtils.resolvePsiType(genericParameters[0]) ?: return
+
+                fillFieldAndMethodNames("", genericPsiClass, newCompletionResultSet, fullOgnl)
+            } else {
+                val fieldPsiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
+
+                fillFieldAndMethodNames("", fieldPsiClass, newCompletionResultSet, fullOgnl)
             }
         }
     }

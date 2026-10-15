@@ -83,6 +83,10 @@
 
 ![addIfTag.gif](images/addIfTag.gif)
 
+#### 其他
+
+- 解决 Spring Service 注入 mapper 时 IDEA 出现红色波浪线提示Could not autowire的报错问题(包括TkMapper) 
+
 ## 作者信息
 
 - 作者博客：[知乎](https://www.zhihu.com/people/liang-yu-dong-44)

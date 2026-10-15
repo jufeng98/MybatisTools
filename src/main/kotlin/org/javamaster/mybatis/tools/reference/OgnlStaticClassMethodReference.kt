@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
 /**
  * @author yudong
  */
-class MybatisStaticClassMethodReference(
+class OgnlStaticClassMethodReference(
     psiElement: PsiElement,
     val from: TextRange,
     private val fullClassName: String,

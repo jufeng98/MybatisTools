@@ -90,9 +90,10 @@ class MybatisMultiHostInjector : MultiHostInjector {
         text: String,
     ) {
         val hostTextRange = injectionHost.textRange
+        val length = hostTextRange.length
 
         paramRanges.forEach {
-            if (it.endOffset > hostTextRange.length) {
+            if (it.endOffset > length) {
                 return@forEach
             }
 

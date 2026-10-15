@@ -1,21 +1,70 @@
 package org.javamaster.mybatis.tools.utils
 
+import com.intellij.lang.ognl.psi.OgnlIndexedExpression
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiReference
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceProvider
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceSet
-import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference
-import org.javamaster.mybatis.tools.reference.MybatisStaticClassMethodReference
-import org.javamaster.mybatis.tools.reference.MybatisStaticClassReference
+import com.intellij.psi.util.InheritanceUtil
+import org.javamaster.mybatis.tools.psi.impl.MapValueFakePsiElement
+import org.javamaster.mybatis.tools.reference.OgnlFieldNameReference
+import org.javamaster.mybatis.tools.reference.OgnlIndexFieldNameReference
+import org.javamaster.mybatis.tools.reference.OgnlStaticClassMethodReference
+import org.javamaster.mybatis.tools.reference.OgnlStaticClassReference
+import org.javamaster.mybatis.tools.utils.PsiUtils.resolvePsiType
 import java.util.*
 
+/**
+ * @author yudong
+ */
 object ReferenceUtils {
 
-    fun convert(text: String, psiElement: PsiElement): Array<PsiReference> {
-        val starts = text.startsWith("@")
+    fun resolveTarget(
+        currentPsiElement: PsiElement,
+        paramPsiCls: PsiClass,
+        nameLevels: LinkedList<String>,
+    ): PsiElement? {
+        var psiField: PsiField? = null
 
-        if (starts) {
+        try {
+            var fieldTypeCls = paramPsiCls
+            var propertyName = nameLevels.pop()
+
+            while (true) {
+                if (InheritanceUtil.isInheritor(fieldTypeCls, "java.util.Map")) {
+                    return MapValueFakePsiElement(currentPsiElement, fieldTypeCls)
+                }
+
+                psiField = fieldTypeCls.findFieldByName(propertyName, true)
+                if (psiField == null) {
+                    val psiMethods = fieldTypeCls.findMethodsByName(propertyName, true)
+                    if (psiMethods.isNotEmpty()) {
+                        return psiMethods[0]
+                    }
+
+                    return null
+                }
+
+                if (psiField.type !is PsiClassType) {
+                    return psiField
+                }
+
+                val psiType = psiField.type as PsiClassType
+
+                fieldTypeCls = resolvePsiType(psiType) ?: return null
+
+                propertyName = nameLevels.pop()
+            }
+        } catch (_: NoSuchElementException) {
+        }
+
+        return psiField
+    }
+
+    fun convert(text: String, psiElement: PsiElement): Array<PsiReference> {
+        val isStaticMethod = text.startsWith("@")
+
+        if (isStaticMethod) {
             val psiReferences = convertStaticMethod(text, psiElement)
 
             return psiReferences.toTypedArray()
@@ -32,27 +81,48 @@ object ReferenceUtils {
                     nameLevels.add(textRangeList[j].substring(text))
                 }
 
-                psiReferences.add(MybatisFieldNameReference(psiElement, textRange, nameLevels))
+                psiReferences.add(OgnlFieldNameReference(psiElement, textRange, nameLevels))
             }
 
             return psiReferences.toTypedArray()
         }
     }
 
-    fun convertFieldName(text: String): MutableList<TextRange> {
+    fun createIndexReferences(
+        indexedExpression: OgnlIndexedExpression,
+        textRanges: List<TextRange>,
+        text: String,
+    ): Array<PsiReference> {
+        val psiReferences = mutableListOf<PsiReference>()
+
+        for (i in textRanges.indices) {
+            val textRange = textRanges[i]
+
+            val nameLevels = LinkedList<String>()
+            for (j in 0..<i + 1) {
+                nameLevels.add(textRanges[j].substring(text))
+            }
+
+            psiReferences.add(OgnlIndexFieldNameReference(indexedExpression, textRange, nameLevels))
+        }
+
+        return psiReferences.toTypedArray()
+    }
+
+    fun convertFieldName(fieldName: String): MutableList<TextRange> {
         val textRangeList = mutableListOf<TextRange>()
 
         var lastIdx = 0
-        var idx = text.indexOf(".")
+        var idx = fieldName.indexOf(".")
         while (idx != -1) {
             val textRange = TextRange(lastIdx, idx)
             textRangeList.add(textRange)
 
             lastIdx = idx + 1
-            idx = text.indexOf(".", lastIdx)
+            idx = fieldName.indexOf(".", lastIdx)
         }
 
-        val textRange = TextRange(lastIdx, text.length)
+        val textRange = TextRange(lastIdx, fieldName.length)
         textRangeList.add(textRange)
 
         return textRangeList
@@ -74,7 +144,7 @@ object ReferenceUtils {
 
             val referenceSet = JavaClassReferenceSet(fullClassName, psiElement, 1, false, referenceProvider)
             val references = referenceSet.references.map {
-                MybatisStaticClassReference(psiElement, it.rangeInElement, it)
+                OgnlStaticClassReference(psiElement, it.rangeInElement, it)
             }
 
             psiReferences.addAll(references)
@@ -84,7 +154,7 @@ object ReferenceUtils {
 
             val referenceSet = JavaClassReferenceSet(fullClassName, psiElement, 1, false, referenceProvider)
             val references = referenceSet.references.map {
-                MybatisStaticClassReference(psiElement, it.rangeInElement, it)
+                OgnlStaticClassReference(psiElement, it.rangeInElement, it)
             }
 
             psiReferences.addAll(references)
@@ -97,7 +167,7 @@ object ReferenceUtils {
                     TextRange(idx + 1, paramIdx)
                 }
 
-                psiReferences.add(MybatisStaticClassMethodReference(psiElement, textRange, fullClassName))
+                psiReferences.add(OgnlStaticClassMethodReference(psiElement, textRange, fullClassName))
             }
         }
 

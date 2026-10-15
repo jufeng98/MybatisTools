@@ -8,7 +8,7 @@ import com.intellij.psi.PsiReferenceBase
 /**
  * @author yudong
  */
-class MybatisStaticClassReference(
+class OgnlStaticClassReference(
     psiElement: PsiElement,
     from: TextRange,
     val reference: PsiReference,

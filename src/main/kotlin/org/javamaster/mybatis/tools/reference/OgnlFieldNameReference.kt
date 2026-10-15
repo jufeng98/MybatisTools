@@ -15,7 +15,7 @@ import java.util.*
 /**
  * @author yudong
  */
-class MybatisFieldNameReference(
+class OgnlFieldNameReference(
     psiElement: PsiElement,
     val from: TextRange,
     private val nameLevels: LinkedList<String>,
@@ -34,13 +34,13 @@ class MybatisFieldNameReference(
 
         val psiMethod = domElement.id.value as? PsiMethod ?: return null
 
-        return CompositeHashMarkTip.findReference(
+        return CompositeHashMarkTip.resolveTarget(
             this, psiMethod, injectionHost, myElement, LinkedList<String>(nameLevels), project
         )
     }
 
     override fun equals(other: Any?): Boolean {
-        if (other !is MybatisFieldNameReference) {
+        if (other !is OgnlFieldNameReference) {
             return false
         }
 

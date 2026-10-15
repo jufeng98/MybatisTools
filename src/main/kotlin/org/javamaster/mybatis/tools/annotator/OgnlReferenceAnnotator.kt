@@ -8,9 +8,9 @@ import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.ognl.psi.OgnlReferenceExpression
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
-import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference
-import org.javamaster.mybatis.tools.reference.MybatisStaticClassMethodReference
-import org.javamaster.mybatis.tools.reference.MybatisStaticClassReference
+import org.javamaster.mybatis.tools.reference.OgnlFieldNameReference
+import org.javamaster.mybatis.tools.reference.OgnlStaticClassMethodReference
+import org.javamaster.mybatis.tools.reference.OgnlStaticClassReference
 
 /**
  * @author yudong
@@ -39,17 +39,17 @@ class OgnlReferenceAnnotator : Annotator {
         }
 
         for (reference in references) {
-            if (reference is MybatisFieldNameReference) {
+            if (reference is OgnlFieldNameReference) {
                 val resolve = reference.resolve()
                 if (resolve == null) {
                     annoOgnl(holder, reference.absoluteRange, "无法解析字段或方法")
                 }
-            } else if (reference is MybatisStaticClassReference) {
+            } else if (reference is OgnlStaticClassReference) {
                 val resolve = reference.resolve()
                 if (resolve == null) {
                     annoOgnl(holder, reference.absoluteRange, "无法解析包名或类名")
                 }
-            } else if (reference is MybatisStaticClassMethodReference) {
+            } else if (reference is OgnlStaticClassMethodReference) {
                 val resolve = reference.resolve()
                 if (resolve == null) {
                     annoOgnl(holder, reference.absoluteRange, "无法解析方法")

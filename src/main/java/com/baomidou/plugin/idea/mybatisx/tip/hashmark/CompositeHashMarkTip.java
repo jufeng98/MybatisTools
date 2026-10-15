@@ -8,7 +8,7 @@ import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.psi.xml.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.javamaster.mybatis.tools.reference.MybatisFieldNameReference;
+import org.javamaster.mybatis.tools.reference.OgnlFieldNameReference;
 import org.javamaster.mybatis.tools.utils.PsiUtils;
 import org.javamaster.mybatis.tools.utils.ReferenceUtils;
 import org.jetbrains.annotations.Nullable;
@@ -120,7 +120,7 @@ public class CompositeHashMarkTip {
         return itemAttr.getValueElement();
     }
 
-    public static PsiElement resolveIfParamInForeachTag(MybatisFieldNameReference mybatisFieldNameReference,
+    public static PsiElement resolveIfParamInForeachTag(OgnlFieldNameReference ognlFieldNameReference,
                                                         PsiElement injectionHost,
                                                         PsiElement currentPsiElement) {
         PsiElement parent = injectionHost.getParent();
@@ -139,7 +139,7 @@ public class CompositeHashMarkTip {
         }
 
         PsiReference firstPsiReference = references[0];
-        if (!(firstPsiReference instanceof MybatisFieldNameReference firstMybatisFieldNameReference)) {
+        if (!(firstPsiReference instanceof OgnlFieldNameReference firstOgnlFieldNameReference)) {
             return null;
         }
 
@@ -151,7 +151,7 @@ public class CompositeHashMarkTip {
         String text = currentPsiElement.getText();
 
         PsiElement itemPsiElement = null;
-        if (firstMybatisFieldNameReference.getFrom().substring(text).equals(itemAttr.getValue())) {
+        if (firstOgnlFieldNameReference.getFrom().substring(text).equals(itemAttr.getValue())) {
             XmlAttribute collectionAttr = xmlTag.getAttribute("collection");
             if (collectionAttr == null) {
                 return null;
@@ -164,7 +164,7 @@ public class CompositeHashMarkTip {
 
             itemPsiElement = resolveGenericIfForeachTagItemAttrValue(collectionAttrValue);
 
-            if (firstMybatisFieldNameReference.equals(mybatisFieldNameReference)) {
+            if (firstOgnlFieldNameReference.equals(ognlFieldNameReference)) {
                 return itemPsiElement;
             }
         }
@@ -173,13 +173,13 @@ public class CompositeHashMarkTip {
             return null;
         }
 
-        if (references.length == 2 && references[1].equals(mybatisFieldNameReference)) {
+        if (references.length == 2 && references[1].equals(ognlFieldNameReference)) {
             //noinspection ConstantValue
             if (!(itemPsiElement instanceof PsiClass itemPsiCls)) {
                 return null;
             }
 
-            String fieldName = mybatisFieldNameReference.getFrom().substring(text);
+            String fieldName = ognlFieldNameReference.getFrom().substring(text);
 
             return itemPsiCls.findFieldByName(fieldName, true);
         }
@@ -187,7 +187,7 @@ public class CompositeHashMarkTip {
         return null;
     }
 
-    public static PsiElement findReference(MybatisFieldNameReference mybatisFieldNameReference, PsiMethod psiMethod,
+    public static PsiElement resolveTarget(OgnlFieldNameReference ognlFieldNameReference, PsiMethod psiMethod,
                                            PsiElement injectionHost, PsiElement currentPsiElement,
                                            LinkedList<String> nameLevels, Project project) {
         PsiElement itemPsiElement = resolveGenericIfForeachTagItemAttrValue(injectionHost);
@@ -195,7 +195,7 @@ public class CompositeHashMarkTip {
             return itemPsiElement;
         }
 
-        itemPsiElement = resolveIfParamInForeachTag(mybatisFieldNameReference, injectionHost, currentPsiElement);
+        itemPsiElement = resolveIfParamInForeachTag(ognlFieldNameReference, injectionHost, currentPsiElement);
         if (itemPsiElement != null) {
             return itemPsiElement;
         }
@@ -220,7 +220,7 @@ public class CompositeHashMarkTip {
             return null;
         }
 
-        return PsiUtils.INSTANCE.resolveTarget(currentPsiElement, paramPsiCls, nameLevels);
+        return ReferenceUtils.INSTANCE.resolveTarget(currentPsiElement, paramPsiCls, nameLevels);
     }
 
     public static @Nullable PsiParameter getPsiParameter(PsiParameterList parameterList, LinkedList<String> nameLevel, Project project) {
