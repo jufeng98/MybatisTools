@@ -1,1 +1,7 @@
-<idea-plugin/>
+<idea-plugin>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <semContributor implementation="org.javamaster.mybatis.tools.contributor.MybatisSemContributor"/>
+    </extensions>
+
+</idea-plugin>
