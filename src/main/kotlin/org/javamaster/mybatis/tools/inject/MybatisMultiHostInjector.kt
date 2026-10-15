@@ -11,11 +11,8 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.xml.XmlText
-import com.intellij.util.SmartList
 import org.javamaster.mybatis.tools.MybatisParamLanguage
 import org.javamaster.mybatis.tools.utils.DatabasePluginUtils.databasePluginAvailable
-import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
-import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.start
 import kotlin.math.min
 
 /**
@@ -24,8 +21,8 @@ import kotlin.math.min
  * @author yudong
  */
 class MybatisMultiHostInjector : MultiHostInjector {
-    val sharpPrefixStr: String = "#{"
-    val dollarPrefixStr: String = "\${"
+    private val sharpPrefixStr: String = "#{"
+    private val dollarPrefixStr: String = "\${"
     private val tagNames = setOf("sql", "select", "insert", "update", "delete", "statement")
 
     override fun getLanguagesToInject(registrar: MultiHostRegistrar, context: PsiElement) {
@@ -33,10 +30,9 @@ class MybatisMultiHostInjector : MultiHostInjector {
             return
         }
 
-        val xmlTag = context as XmlTag
+        val xmlTag = context as? XmlTag ?: return
 
-        val name = xmlTag.name
-        if (name !in tagNames) {
+        if (xmlTag.name !in tagNames) {
             return
         }
 
@@ -45,13 +41,13 @@ class MybatisMultiHostInjector : MultiHostInjector {
             return
         }
 
-        val allParamRanges = mutableListOf<Pair<List<TextRange>, PsiElement>>()
+        val allParamRanges = mutableListOf<Pair<List<TextRange>, XmlText>>()
 
         if (databasePluginAvailable) {
             SqlInjector.startInject(registrar)
         }
 
-        for ((index, it) in xmlTexts.withIndex()) {
+        xmlTexts.forEachIndexed { index, it ->
             val text = it.text
 
             val variablesRanges = collectParamRanges(text)
@@ -59,12 +55,7 @@ class MybatisMultiHostInjector : MultiHostInjector {
             if (databasePluginAvailable) {
                 val injectionHost = it as PsiLanguageInjectionHost
 
-                val next = if (index < xmlTexts.size - 2) {
-                    xmlTexts.elementAt(index + 1)
-                } else {
-                    null
-                }
-
+                val next = xmlTexts.elementAtOrNull(index + 1)
 
                 SqlInjector.injectSqlLangIntoXmlText(registrar, injectionHost, next, text, variablesRanges)
             }
@@ -89,44 +80,33 @@ class MybatisMultiHostInjector : MultiHostInjector {
         injectionHost: PsiLanguageInjectionHost,
         text: String,
     ) {
-        val hostTextRange = injectionHost.textRange
-        val length = hostTextRange.length
+        val length = injectionHost.textLength
 
         paramRanges.forEach {
             if (it.endOffset > length) {
                 return@forEach
             }
 
-            val paramStr = it.substring(text)
-            val idx = paramStr.indexOf(",")
-            if (idx == -1) {
+            val idx = text.indexOf(",", it.startOffset)
+            val splitIndex = if (idx != -1 && idx < it.endOffset) idx else -1
+
+            if (splitIndex == -1) {
                 registrar.startInjecting(OgnlLanguage.INSTANCE)
-
                 registrar.addPlace("%{", "}", injectionHost, it)
-
                 registrar.doneInjecting()
             } else {
-                val splitIndex = text.indexOf(",", it.start)
-
                 registrar.startInjecting(OgnlLanguage.INSTANCE)
-
-                val range1 = TextRange(it.start, splitIndex)
-                registrar.addPlace("%{", "}", injectionHost, range1)
-
+                registrar.addPlace("%{", "}", injectionHost, TextRange(it.startOffset, splitIndex))
                 registrar.doneInjecting()
 
                 registrar.startInjecting(MybatisParamLanguage.INSTANCE)
-
-                val range2 = TextRange(splitIndex, it.end)
-                registrar.addPlace(null, null, injectionHost, range2)
-
+                registrar.addPlace(null, null, injectionHost, TextRange(splitIndex, it.endOffset))
                 registrar.doneInjecting()
             }
         }
     }
 
     private fun collectParamRanges(text: String): List<TextRange> {
-        var closeBraceIndex: Int
         var index = 0
 
         val textRanges = mutableListOf<TextRange>()
@@ -141,9 +121,13 @@ class MybatisMultiHostInjector : MultiHostInjector {
                 else -> min(sharpBraceIndex, dollarBraceIndex)
             }
 
+            if (openBraceIndex < 0) {
+                break
+            }
+
             val actualStartIndex = openBraceIndex + 2
-            closeBraceIndex = text.indexOf("}", actualStartIndex)
-            if (openBraceIndex < 0 || closeBraceIndex < 0) {
+            val closeBraceIndex = text.indexOf("}", actualStartIndex)
+            if (closeBraceIndex < 0) {
                 break
             }
 
@@ -166,7 +150,8 @@ class MybatisMultiHostInjector : MultiHostInjector {
         return textRanges
     }
 
-    override fun elementsToInjectIn(): List<Class<XmlTag>> {
-        return SmartList(XmlTag::class.java)
+    override fun elementsToInjectIn(): List<Class<out PsiElement>> {
+        return listOf(XmlTag::class.java)
     }
+
 }
