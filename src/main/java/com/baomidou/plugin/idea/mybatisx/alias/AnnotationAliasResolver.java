@@ -44,18 +44,24 @@ public class AnnotationAliasResolver extends AliasResolver {
     public Set<AliasDesc> getClassAliasDescriptions(@Nullable PsiElement element) {
         Optional<PsiClass> clazz = Annotation.ALIAS.toPsiClass(project);
         if (clazz.isPresent()) {
-            Collection<PsiClass> res = AnnotatedElementsSearch.searchPsiClasses(clazz.get(), GlobalSearchScope.allScope(project)).findAll();
-            return res.stream().map(psiClass -> {
-                Optional<String> txt = JavaUtils.getAnnotationValueText(psiClass, Annotation.ALIAS);
-                if (txt.isEmpty()) {
-                    return null;
-                }
-                AliasDesc ad = new AliasDesc();
-                ad.setAlias(txt.get());
-                ad.setClazz(psiClass);
-                return ad;
-            }).collect(Collectors.toSet());
+            Collection<PsiClass> res = AnnotatedElementsSearch.searchPsiClasses(clazz.get(), GlobalSearchScope.allScope(project))
+                    .findAll();
+
+            return res.stream()
+                    .map(psiClass -> {
+                        Optional<String> txt = JavaUtils.getAnnotationValueText(psiClass, Annotation.ALIAS);
+                        if (txt.isEmpty()) {
+                            return null;
+                        }
+
+                        AliasDesc ad = new AliasDesc();
+                        ad.setAlias(txt.get());
+                        ad.setClazz(psiClass);
+                        return ad;
+                    })
+                    .collect(Collectors.toSet());
         }
+
         return Collections.emptySet();
     }
 

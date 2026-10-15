@@ -53,6 +53,7 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
         if (springBootExtensionExists != null && !springBootExtensionExists) {
             return Collections.emptyList();
         }
+
         Set<String> pkgSet = new HashSet<>();
         SpringBootConfigurationFileService springBootConfigurationFileService;
         try {
@@ -61,8 +62,10 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
             if (springBootExtensionExists == null) {
                 springBootExtensionExists = false;
             }
+
             return Collections.emptyList();
         }
+
         Collection<Module> modulesOfType = ModuleUtil.getModulesOfType(project, JavaModuleType.getModuleType());
         for (Module module : modulesOfType) {
             List<VirtualFile> configurationFiles = springBootConfigurationFileService.findConfigFiles(module, true);
@@ -71,15 +74,13 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
             }
         }
 
-
         return pkgSet;
     }
 
     private void readAliasesPackage(Set<String> pkgSet, VirtualFile configurationFile) {
         FileType fileType = configurationFile.getFileType();
         // yml ,yaml 后缀读取支持
-        if (fileType.getDefaultExtension().equals(YML) ||
-                fileType.getDefaultExtension().equals(YAML)) {
+        if (fileType.getDefaultExtension().equals(YML) || fileType.getDefaultExtension().equals(YAML)) {
             // 读取 yml 文件内容
             String content = null;
             try (InputStream inputStream = configurationFile.getInputStream()) {
@@ -101,6 +102,7 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
                 }
             }
         }
+
         // properties 读取支持
         if (fileType.getDefaultExtension().equals(PROPERTIES)) {
             readClassesFromProperties(pkgSet, configurationFile);
@@ -109,6 +111,7 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
 
     private void readClassesFromProperties(Set<String> pkgSet, VirtualFile configurationFile) {
         Properties properties = new Properties();
+
         try (InputStream inputStream = configurationFile.getInputStream()) {
             properties.load(inputStream);
             String typeAliasesPackage = findTypeAliasesPackageByProperties(properties);
@@ -127,17 +130,21 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
         if (typeAliasesPackage == null) {
             typeAliasesPackage = properties.getProperty("mybatis.typeAliasesPackage");
         }
+
         if (typeAliasesPackage == null) {
             typeAliasesPackage = properties.getProperty("mybatis-plus.type-aliases-package");
         }
+
         if (typeAliasesPackage == null) {
             typeAliasesPackage = properties.getProperty("mybatis-plus.typeAliasesPackage");
         }
+
         return typeAliasesPackage;
     }
 
     private void readClassesFromYaml(Set<String> classSet, String fileName, String content) {
         Yaml yaml = new Yaml();
+
         try {
             Iterable<Object> objects = yaml.loadAll(content);
             for (Object object : objects) {
@@ -159,30 +166,37 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
     }
 
     private Object findAliasPackage(Object config) {
+        if (config == null) {
+            return null;
+        }
+
         Object typeAliasesPackage = null;
-        if (config != null) {
-            if (config instanceof Map<?, ?> mapConfig) {
-                typeAliasesPackage = mapConfig.get("type-aliases-package");
-                if (typeAliasesPackage == null) {
-                    typeAliasesPackage = mapConfig.get("typeAliasesPackage");
-                }
+
+        if (config instanceof Map<?, ?> mapConfig) {
+            typeAliasesPackage = mapConfig.get("type-aliases-package");
+            if (typeAliasesPackage == null) {
+                typeAliasesPackage = mapConfig.get("typeAliasesPackage");
             }
         }
+
         return typeAliasesPackage;
     }
 
     @Nullable
     private Object findConfig(Object object) {
         Object config = null;
+
         if (object instanceof Map<?, ?> jsonObject) {
             config = jsonObject.get("mybatis");
             if (config == null) {
                 config = jsonObject.get("mybatis-plus");
             }
+
             if (config == null) {
                 config = jsonObject.get("mybatisPlus");
             }
         }
+
         return config;
     }
 }

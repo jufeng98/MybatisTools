@@ -49,24 +49,32 @@ public class BeanAliasResolver extends PackageAliasResolver {
     @Override
     public Collection<String> getPackages(@Nullable PsiElement element) {
         // 兼容低版本获取不到 ServiceManager 报错的场景。 直接忽略
-        SpringModelUtils instance;
+        SpringModelUtils springModelUtils;
         try {
-            instance = SpringModelUtils.getInstance();
+            springModelUtils = SpringModelUtils.getInstance();
         } catch (Throwable e) {
             log.warn("获取SpringManager异常, 无法通过bean定义别名", e);
             return Collections.emptyList();
         }
+
         Set<String> packages = new HashSet<>();
+
         Set<PsiClass> classes = findSqlSessionFactories();
+
         for (PsiClass sqlSessionFactoryClass : classes) {
-            CommonSpringModel springModel = instance.getPsiClassSpringModel(sqlSessionFactoryClass);
+            CommonSpringModel springModel = springModelUtils.getPsiClassSpringModel(sqlSessionFactoryClass);
+
             SpringModelSearchParameters.BeanClass beanClass = SpringModelSearchParameters.BeanClass.byClass(sqlSessionFactoryClass);
+
             springModel.processByClass(beanClass, springBeanPointer -> {
-                String propertyStringValue = SpringPropertyUtils.getPropertyStringValue(springBeanPointer.getSpringBean(), MAPPER_ALIAS_PROPERTY);
+                String propertyStringValue = SpringPropertyUtils.getPropertyStringValue(springBeanPointer.getSpringBean(),
+                        MAPPER_ALIAS_PROPERTY);
+
                 if (!StringUtils.isEmpty(propertyStringValue)) {
                     packages.add(propertyStringValue);
                     return true;
                 }
+
                 return false;
             });
         }
@@ -75,10 +83,12 @@ public class BeanAliasResolver extends PackageAliasResolver {
 
     private Set<PsiClass> findSqlSessionFactories() {
         Set<PsiClass> sqlSessionFactorySet = new HashSet<>();
+
         for (String mapperAliasPackageClass : BeanAliasResolver.MAPPER_ALIAS_PACKAGE_CLASSES) {
             Optional<PsiClass> clazz = JavaUtils.findClazz(project, mapperAliasPackageClass);
             clazz.ifPresent(sqlSessionFactorySet::add);
         }
+
         return sqlSessionFactorySet;
     }
 

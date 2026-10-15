@@ -34,33 +34,41 @@ public abstract class PackageAliasResolver extends AliasResolver {
     @Override
     public Set<AliasDesc> getClassAliasDescriptions(@Nullable PsiElement element) {
         Set<AliasDesc> result = new HashSet<>();
+
         for (String pkgName : getPackages(element)) {
             if (null == pkgName) {
                 continue;
             }
             addPackages(result, pkgName);
         }
+
         return result;
     }
 
     /**
-     * @param result
      * @param pkgNameCandidate 可能具有通配符的包名
      */
     private void addPackages(Set<AliasDesc> result, String pkgNameCandidate) {
         // mybatis 通配符支持
         String[] packages = SpringStringUtils.tokenizeToStringArray(pkgNameCandidate, ",; \t\n");
+
+        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
+
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
+
         for (String packageName : packages) {
             String firstPackage = findPackageName(pkgNameCandidate, packageName);
-            JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
+
             PsiPackage basePackage = javaPsiFacade.findPackage(firstPackage);
-            if (basePackage != null) {
-                AntPathMatcher antPathMatcher = new AntPathMatcher();
-                if (antPathMatcher.match(pkgNameCandidate, basePackage.getQualifiedName())) {
-                    addPackage(result, basePackage.getQualifiedName());
-                }
-                matchSubPackages(pkgNameCandidate, basePackage, result);
+            if (basePackage == null) {
+                continue;
             }
+
+            if (antPathMatcher.match(pkgNameCandidate, basePackage.getQualifiedName())) {
+                addPackage(result, basePackage.getQualifiedName());
+            }
+
+            matchSubPackages(pkgNameCandidate, basePackage, result);
         }
 
 
@@ -73,24 +81,25 @@ public abstract class PackageAliasResolver extends AliasResolver {
         if (firstWildcard > -1) {
             firstPackage = pkgName.substring(0, firstWildcard);
         }
+
         if (firstPackage == null) {
             firstPackage = packageName;
         }
+
         return firstPackage;
     }
 
     /**
      * 匹配子包
-     *
-     * @param pkgName
-     * @param basePackage
-     * @param result
      */
     private void matchSubPackages(String pkgName, PsiPackage basePackage, Set<AliasDesc> result) {
+        AntPathMatcher antPathMatcher = new AntPathMatcher();
+
         for (PsiPackage subPackage : basePackage.getSubPackages()) {
-            AntPathMatcher antPathMatcher = new AntPathMatcher();
-            if (antPathMatcher.match(pkgName, subPackage.getQualifiedName())) {
-                addPackage(result, subPackage.getQualifiedName());
+            String qualifiedName = subPackage.getQualifiedName();
+
+            if (antPathMatcher.match(pkgName, qualifiedName)) {
+                addPackage(result, qualifiedName);
             } else {
                 matchSubPackages(pkgName, subPackage, result);
             }
@@ -100,17 +109,21 @@ public abstract class PackageAliasResolver extends AliasResolver {
 
     private void addPackage(Set<AliasDesc> result, String pkgName) {
         PsiPackage pkg = javaPsiFacade.findPackage(pkgName);
-        if (null != pkg) {
-            addAliasDesc(result, pkg);
-            for (PsiPackage tmp : pkg.getSubPackages()) {
-                addAliasDesc(result, tmp);
-            }
+        if (null == pkg) {
+            return;
+        }
+
+        addAliasDesc(result, pkg);
+
+        for (PsiPackage tmp : pkg.getSubPackages()) {
+            addAliasDesc(result, tmp);
         }
     }
 
     private void addAliasDesc(Set<AliasDesc> result, PsiPackage pkg) {
         for (PsiClass clazz : pkg.getClasses()) {
             String aliasName = StringUtils.lowerCaseFirstChar(clazz.getName());
+
             addAliasDesc(result, clazz, aliasName);
         }
     }

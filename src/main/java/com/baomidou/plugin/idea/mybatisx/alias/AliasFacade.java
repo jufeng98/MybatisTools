@@ -48,11 +48,14 @@ public class AliasFacade {
     private void initResolvers() {
         try {
             Class.forName("com.intellij.spring.model.utils.SpringModelUtils");
+
             this.registerResolver(AliasResolverFactory.createBeanResolver(project));
+
             // support springboot alias
             this.registerResolver(AliasResolverFactory.createSpringBootResolver(project));
         } catch (ClassNotFoundException ignored) {
         }
+
         this.registerResolver(AliasResolverFactory.createSingleAliasResolver(project));
         this.registerResolver(AliasResolverFactory.createConfigPackageResolver(project));
         this.registerResolver(AliasResolverFactory.createAnnotationResolver(project));
@@ -72,10 +75,12 @@ public class AliasFacade {
         if (fullName == null) {
             fullName = shortName;
         }
+
         PsiClass clazz = javaPsiFacade.findClass(fullName, GlobalSearchScope.allScope(project));
         if (null != clazz) {
             return Optional.of(clazz);
         }
+
         for (AliasResolver resolver : resolvers) {
             for (AliasDesc desc : resolver.getClassAliasDescriptions(element)) {
                 if (desc != null && desc.getAlias().equalsIgnoreCase(fullName)) {
@@ -83,6 +88,7 @@ public class AliasFacade {
                 }
             }
         }
+
         return Optional.empty();
     }
 
@@ -95,9 +101,11 @@ public class AliasFacade {
     @NotNull
     public Collection<AliasDesc> getAliasDescs(@Nullable PsiElement element) {
         ArrayList<AliasDesc> result = new ArrayList<>();
+
         for (AliasResolver resolver : resolvers) {
             result.addAll(resolver.getClassAliasDescriptions(element));
         }
+
         return result;
     }
 
@@ -129,7 +137,6 @@ public class AliasFacade {
     public void registerResolver(@NotNull AliasResolver resolver) {
         this.resolvers.add(resolver);
     }
-
 
     private static class InternalAlias {
 

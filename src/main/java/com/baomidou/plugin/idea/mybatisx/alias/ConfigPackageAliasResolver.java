@@ -30,10 +30,12 @@ public class ConfigPackageAliasResolver extends PackageAliasResolver {
     @Override
     public Collection<String> getPackages(@Nullable PsiElement element) {
         final ArrayList<String> result = Lists.newArrayList();
+
         MapperUtils.processConfiguredPackage(project, pkg -> {
             result.add(pkg.getName().getStringValue());
             return true;
         });
+
         return result;
     }
 

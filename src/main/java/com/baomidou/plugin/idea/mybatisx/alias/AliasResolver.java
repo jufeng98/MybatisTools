@@ -9,7 +9,6 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -29,9 +28,6 @@ public abstract class AliasResolver {
      * <p>
      * -- SETTER --
      * Sets project.
-     *
-     * @return the project
-     * @param project the project
      */
     protected Project project;
 
@@ -50,17 +46,15 @@ public abstract class AliasResolver {
      * @param descs the descs
      * @param clazz the clazz
      * @param alias the alias
-     * @return the optional
      */
-    protected Optional<AliasDesc> addAliasDesc(@NotNull Set<AliasDesc> descs, @Nullable PsiClass clazz, @Nullable String alias) {
+    protected void addAliasDesc(@NotNull Set<AliasDesc> descs, @Nullable PsiClass clazz, @Nullable String alias) {
         if (null == alias || !JavaUtils.isModelClazz(clazz)) {
-            return Optional.empty();
+            return;
         }
         AliasDesc desc = new AliasDesc();
         descs.add(desc);
         desc.setClazz(clazz);
         desc.setAlias(alias);
-        return Optional.of(desc);
     }
 
     /**

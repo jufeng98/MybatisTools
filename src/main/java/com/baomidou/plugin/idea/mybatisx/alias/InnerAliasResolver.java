@@ -53,6 +53,7 @@ public class InnerAliasResolver extends AliasResolver {
 
     private void addAliasDesc(Set<AliasDesc> aliasDescs, String clazz, String alias) {
         Optional<PsiClass> psiClassOptional = JavaUtils.findClazz(project, clazz);
+
         if (psiClassOptional.isPresent()) {
             PsiClass psiClass = psiClassOptional.get();
             AliasDesc aliasDesc = AliasDesc.create(psiClass, alias);
@@ -80,9 +81,11 @@ public class InnerAliasResolver extends AliasResolver {
                 }
             }
         }
+
         if (innerAliasDescs == null) {
             return Collections.emptySet();
         }
+
         return innerAliasDescs;
     }
 
