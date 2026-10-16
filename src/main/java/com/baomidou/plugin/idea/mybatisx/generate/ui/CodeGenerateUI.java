@@ -5,11 +5,10 @@ import com.baomidou.plugin.idea.mybatisx.generate.util.DomainPlaceHolder;
 import com.baomidou.plugin.idea.mybatisx.util.CollectionUtils;
 import com.baomidou.plugin.idea.mybatisx.util.StringUtils;
 import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.module.*;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ui.configuration.ChooseModulesDialog;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.TableView;
@@ -515,7 +514,8 @@ public class CodeGenerateUI {
 
         private void chooseModule(JTextField textField, ModuleInfoGo moduleUIInfo) {
             Module[] modules = ModuleManager.getInstance(project).getModules();
-            ChooseModulesDialog dialog = new ChooseModulesDialog(project, Arrays.asList(modules), "Choose Module", "Choose Single Module");
+            ChooseModulesDialog dialog = new ChooseModulesDialog(project, Arrays.asList(modules), "Choose Module",
+                    "Choose single module");
             dialog.setSingleSelectionMode();
             dialog.show();
 
@@ -569,11 +569,7 @@ public class CodeGenerateUI {
         }
 
         private String findModulePath(Module module) {
-            VirtualFile contentRoots = module.getModuleFile();
-            if (contentRoots != null) {
-                return contentRoots.getPath();
-            }
-            return "";
+            return ModuleUtilCore.getModuleDirPath(module);
         }
 
         @Nullable

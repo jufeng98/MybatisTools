@@ -67,13 +67,12 @@ public final class UiComponentFacade {
      * @param clickableTitle    the clickable title
      * @param clickableListener the clickable listener
      * @param objs              the objs
-     * @return the jb popup
      */
-    public JBPopup showListPopupWithSingleClickable(@NotNull String popupTitle,
-                                                    @NotNull ListSelectionListener popupListener,
-                                                    @NotNull String clickableTitle,
-                                                    @Nullable final ClickableListener clickableListener,
-                                                    @NotNull Object[] objs) {
+    public void showListPopupWithSingleClickable(@NotNull String popupTitle,
+                                                 @NotNull ListSelectionListener popupListener,
+                                                 @NotNull String clickableTitle,
+                                                 @Nullable final ClickableListener clickableListener,
+                                                 @NotNull Object[] objs) {
         PopupChooserBuilder<?> builder = createListPopupBuilder(popupTitle, popupListener, objs);
         JBCheckBox checkBox = new JBCheckBox(clickableTitle);
         builder.setSouthComponent(checkBox);
@@ -86,7 +85,6 @@ public final class UiComponentFacade {
             });
         }
         setPositionForShown(popup);
-        return popup;
     }
 
     /**
@@ -95,15 +93,13 @@ public final class UiComponentFacade {
      * @param title    the title
      * @param listener the listener
      * @param objs     the objs
-     * @return the jb popup
      */
-    public JBPopup showListPopup(@NotNull String title,
-                                 @Nullable final ListSelectionListener listener,
-                                 @NotNull Object[] objs) {
+    public void showListPopup(@NotNull String title,
+                              @Nullable final ListSelectionListener listener,
+                              @NotNull Object[] objs) {
         PopupChooserBuilder<?> builder = createListPopupBuilder(title, listener, objs);
         JBPopup popup = builder.createPopup();
         setPositionForShown(popup);
-        return popup;
     }
 
     private void setPositionForShown(JBPopup popup) {

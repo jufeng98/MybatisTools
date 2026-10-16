@@ -9,7 +9,6 @@ import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiElementRef
 import com.intellij.semantic.SemKey
 import com.intellij.spring.model.CommonSpringBean
-import com.intellij.spring.model.extensions.myBatis.SpringMyBatisBeansProvider
 import com.intellij.spring.model.jam.converters.SpringAntPatternPackageReferenceSet
 import com.intellij.spring.model.jam.stereotype.SpringJamComponentScanArchetype
 import com.intellij.spring.search.SpringGlobalSearchScopes
@@ -58,7 +57,7 @@ class SpringMyBatisMapperScanJamComponent : SpringJamComponentScanArchetype {
                         val packages = referenceSet.resolvePackage()
 
                         for (mapperPackage in packages) {
-                            SpringMyBatisBeansProvider.processBasePackage(searchScope, mapperPackage, mapperBeans)
+                            ReflectiveBeansProviderBridge.processBasePackage(searchScope, mapperPackage, mapperBeans)
                         }
                     }
                 }
@@ -69,11 +68,8 @@ class SpringMyBatisMapperScanJamComponent : SpringJamComponentScanArchetype {
     }
 
     companion object {
-        private val annoMeta: JamAnnotationMeta = JamAnnotationMeta(
-            com.intellij.spring.model.extensions.myBatis.SpringMyBatisMapperScanJamComponent.MAPPER_SCAN_ANNOTATION,
-            ARCHETYPE,
-            META_KEY
-        )
+        const val MAPPER_SCAN_ANNO = "org.mybatis.spring.annotation.MapperScan"
+        private val annoMeta: JamAnnotationMeta = JamAnnotationMeta(MAPPER_SCAN_ANNO, ARCHETYPE, META_KEY)
 
         private val semKey: SemKey<SpringMyBatisMapperScanJamComponent> =
             COMPONENT_SCAN_JAM_KEY.subKey("MybatisComponentScanJamComponent")

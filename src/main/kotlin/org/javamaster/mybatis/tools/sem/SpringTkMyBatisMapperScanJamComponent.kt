@@ -9,7 +9,6 @@ import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiElementRef
 import com.intellij.semantic.SemKey
 import com.intellij.spring.model.CommonSpringBean
-import com.intellij.spring.model.extensions.myBatis.SpringMyBatisBeansProvider
 import com.intellij.spring.model.jam.converters.SpringAntPatternPackageReferenceSet
 import com.intellij.spring.model.jam.stereotype.SpringJamComponentScanArchetype
 import com.intellij.spring.search.SpringGlobalSearchScopes
@@ -38,7 +37,7 @@ class SpringTkMyBatisMapperScanJamComponent : SpringJamComponentScanArchetype {
 
         if (module == mapperScanModule) {
             for (mapperPackage in psiPackages) {
-                SpringMyBatisBeansProvider.processBasePackage(searchScope, mapperPackage, mapperBeans)
+                ReflectiveBeansProviderBridge.processBasePackage(searchScope, mapperPackage, mapperBeans)
             }
         } else {
             // 处理当 MapperScan 注解不在当前模块的情况
@@ -56,7 +55,7 @@ class SpringTkMyBatisMapperScanJamComponent : SpringJamComponentScanArchetype {
                         val packages = referenceSet.resolvePackage()
 
                         for (mapperPackage in packages) {
-                            SpringMyBatisBeansProvider.processBasePackage(searchScope, mapperPackage, mapperBeans)
+                            ReflectiveBeansProviderBridge.processBasePackage(searchScope, mapperPackage, mapperBeans)
                         }
                     }
                 }

@@ -61,7 +61,7 @@ intellijPlatform {
     autoReload = false
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "230"
+            sinceBuild = "232"
             untilBuild = provider { null }
         }
     }

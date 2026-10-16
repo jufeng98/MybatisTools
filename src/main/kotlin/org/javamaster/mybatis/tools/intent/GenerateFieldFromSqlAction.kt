@@ -3,7 +3,6 @@ package org.javamaster.mybatis.tools.intent
 import com.baomidou.plugin.idea.mybatisx.util.DomUtils
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionName
-import com.intellij.database.util.common.isInstanceOf
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -79,7 +78,7 @@ $fieldsStr
         val psiElement = file.findElementAt(position)
         if (psiElement != null) {
             val parent = psiElement.parent
-            if (parent isInstanceOf (SqlElement::class.java)) {
+            if (parent is SqlElement) {
                 return parent
             }
         }

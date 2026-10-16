@@ -5,7 +5,6 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReferenceBase
 import org.javamaster.mybatis.tools.utils.PsiUtils
-import org.jetbrains.kotlin.idea.base.codeInsight.handlers.fixers.end
 
 /**
  * @author yudong
@@ -29,7 +28,7 @@ class OgnlStaticClassMethodReference(
             return null
         }
 
-        val params = text.substring(from.end + 1).split(",")
+        val params = text.substring(from.endOffset + 1).split(",")
 
         // 简单判断方法参数数量
         for (method in methods) {
