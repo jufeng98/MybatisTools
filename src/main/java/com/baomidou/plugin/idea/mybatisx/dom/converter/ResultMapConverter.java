@@ -24,6 +24,7 @@ public class ResultMapConverter extends IdBasedTagConverter {
         if (mapper == null) {
             return Collections.emptyList();
         }
+
         DomElement invocationElement = context.getInvocationElement();
         if (isContextElementOfResultMap(mapper, invocationElement)) {
             return doFilterResultMapItself(mapper, (ResultMap) invocationElement.getParent());

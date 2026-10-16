@@ -25,29 +25,37 @@ public class ColumnConverter extends ConverterAdaptor<XmlAttributeValue> impleme
         if (stringValue == null) {
             return PsiReference.EMPTY_ARRAY;
         }
+
         // 社区版就不需要跳转到数据库的列了
         if (!PluginExistsUtils.existsDbTools()) {
             return PsiReference.EMPTY_ARRAY;
         }
+
         int offsetInElement = ElementManipulators.getOffsetInElement(element);
 
         Optional<PsiClass> mapperClassOptional = findMapperClass(context);
+
         PsiClass mapperClass = mapperClassOptional.orElse(null);
         return new ResultColumnReferenceSet(stringValue, element, offsetInElement, mapperClass).getPsiReferences();
     }
 
     private Optional<PsiClass> findMapperClass(ConvertContext context) {
         XmlTag rootTag = context.getFile().getRootTag();
-        if (rootTag != null) {
-            XmlAttribute namespace = rootTag.getAttribute(NAMESPACE);
-            if (namespace != null) {
-                String value = namespace.getValue();
-                if (!StringUtils.isEmpty(value)) {
-                    return JavaUtils.findClazz(context.getProject(), value);
-                }
-            }
+        if (rootTag == null) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        XmlAttribute namespace = rootTag.getAttribute(NAMESPACE);
+        if (namespace == null) {
+            return Optional.empty();
+        }
+
+        String value = namespace.getValue();
+        if (StringUtils.isEmpty(value)) {
+            return Optional.empty();
+        }
+
+        return JavaUtils.findClazz(context.getProject(), value);
     }
 
     @Nullable

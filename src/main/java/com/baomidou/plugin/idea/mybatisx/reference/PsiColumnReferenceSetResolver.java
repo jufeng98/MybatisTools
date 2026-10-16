@@ -42,9 +42,6 @@ public class PsiColumnReferenceSetResolver {
      * <p>
      * -- SETTER --
      * Sets project.
-     *
-     * @return the project
-     * @param project the project
      */
     @Setter
     @Getter
@@ -57,9 +54,6 @@ public class PsiColumnReferenceSetResolver {
      * <p>
      * -- SETTER --
      * Sets element.
-     *
-     * @return the element
-     * @param element the element
      */
     @Setter
     @Getter
@@ -82,6 +76,7 @@ public class PsiColumnReferenceSetResolver {
      * @param index the index
      * @return the optional
      */
+    @SuppressWarnings("unused")
     public final Optional<DasTable> resolve(int index) {
         return getStartElement();
     }
@@ -92,7 +87,9 @@ public class PsiColumnReferenceSetResolver {
      * @return the start element
      */
     public Optional<DasTable> getStartElement() {
-        return getStartElement(Iterables.getFirst(texts, null));
+        String first = Iterables.getFirst(texts, null);
+
+        return getStartElement(first);
     }
 
 
@@ -102,18 +99,20 @@ public class PsiColumnReferenceSetResolver {
     }
 
 
+    @SuppressWarnings("unused")
     public Optional<DasTable> getStartElement(@Nullable String firstText) {
         Optional<PsiClass> clazz = MapperBacktrackingUtils.getEntityClass(getElement());
         if (clazz.isEmpty()) {
             return Optional.empty();
         }
+
         PsiClass entityClass = clazz.get();
-        assert firstText != null;
-        EntityMappingResolverFactory entityMappingResolverFactory
-                = new EntityMappingResolverFactory(project);
+        EntityMappingResolverFactory entityMappingResolverFactory = new EntityMappingResolverFactory(project);
 
         String tableName = entityMappingResolverFactory.findTableName(entityClass);
+
         DbPsiFacade dbPsiFacade = DbPsiFacade.getInstance(project);
+
         for (DbDataSource dataSource : dbPsiFacade.getDataSources()) {
             JBIterable<? extends DasNamespace> schemas = DasUtil.getSchemas(dataSource);
             for (DasNamespace schema : schemas) {
@@ -123,18 +122,22 @@ public class PsiColumnReferenceSetResolver {
                 }
             }
         }
+
         return Optional.empty();
     }
 
     public Optional<DbElement> findColumns(DasTable dasTable) {
         String firstText = Iterables.getFirst(texts, null);
-        DbPsiFacade dbPsiFacade = DbPsiFacade.getInstance(project);
+
         DasColumn child = DasUtil.findChild(dasTable, DasColumn.class, ObjectKind.COLUMN, firstText);
-        if (child != null) {
-            if (child instanceof DbElement) {
-                return Optional.of((DbElement) child);
-            }
+        if (child == null) {
+            return Optional.empty();
         }
+
+        if (child instanceof DbElement) {
+            return Optional.of((DbElement) child);
+        }
+
         return Optional.empty();
     }
 

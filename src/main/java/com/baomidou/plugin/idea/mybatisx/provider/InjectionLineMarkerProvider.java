@@ -31,6 +31,7 @@ public class InjectionLineMarkerProvider extends RelatedItemLineMarkerProvider {
         if (!(element instanceof PsiField field)) {
             return;
         }
+
         if (!isTargetField(field)) {
             return;
         }
@@ -56,6 +57,7 @@ public class InjectionLineMarkerProvider extends RelatedItemLineMarkerProvider {
                         .setAlignment(GutterIconRenderer.Alignment.CENTER)
                         .setTarget(psiClass)
                         .setTooltipTitle("Data access object found - " + psiClass.getQualifiedName());
+
         result.add(builder.createLineMarkerInfo(field.getNameIdentifier()));
     }
 
@@ -63,17 +65,19 @@ public class InjectionLineMarkerProvider extends RelatedItemLineMarkerProvider {
         if (JavaUtils.isAnnotationPresent(field, Annotation.AUTOWIRED)) {
             return true;
         }
+
         Optional<PsiAnnotation> resourceAnno = JavaUtils.getPsiAnnotation(field, Annotation.RESOURCE);
-        if (resourceAnno.isPresent()) {
-            PsiAnnotationMemberValue nameValue = resourceAnno.get().findAttributeValue("name");
-            if (nameValue == null) {
-                return true;
-            } else {
-                String name = nameValue.getText().replace("\"", "");
-                return StringUtils.isBlank(name) || name.equals(field.getName());
-            }
+        if (resourceAnno.isEmpty()) {
+            return false;
         }
-        return false;
+
+        PsiAnnotationMemberValue nameValue = resourceAnno.get().findAttributeValue("name");
+        if (nameValue == null) {
+            return true;
+        }
+
+        String name = nameValue.getText().replace("\"", "");
+        return StringUtils.isBlank(name) || name.equals(field.getName());
     }
 
 }

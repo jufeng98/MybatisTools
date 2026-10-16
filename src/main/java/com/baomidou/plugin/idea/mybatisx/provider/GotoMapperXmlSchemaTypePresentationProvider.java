@@ -14,13 +14,17 @@ import org.jetbrains.annotations.Nullable;
 public class GotoMapperXmlSchemaTypePresentationProvider implements GotoTargetPresentationProvider {
     private static String getPresentableTest(XmlTagImpl element) {
         XmlAttribute attr = element.getAttribute("id", XmlUtil.XML_SCHEMA_URI);
+
         attr = attr == null ? element.getAttribute("id") : attr;
+
         return (attr == null || attr.getValue() == null ? element.getName() : attr.getValue());
     }
 
     private static String getContainerText(XmlTagImpl element) {
         final PsiFile file = element.getContainingFile();
+
         String databaseId = getDatabaseId(element);
+
         return databaseId + file.getVirtualFile().getName();
     }
 
@@ -31,22 +35,27 @@ public class GotoMapperXmlSchemaTypePresentationProvider implements GotoTargetPr
         if (databaseIdAttr != null) {
             databaseId = databaseIdAttr.getValue() + ",";
         }
+
         if (databaseId == null) {
             databaseId = "";
         }
+
         return databaseId;
     }
 
     @Override
     public @Nullable TargetPresentation getTargetPresentation(@NotNull PsiElement element, boolean differentNames) {
-        if (element instanceof XmlTagImpl xmlTag) {
-            if (MapperUtils.isElementWithinMybatisFile(element)) {
-                return TargetPresentation
-                        .builder(getPresentableTest(xmlTag))
-                        .containerText(getContainerText(xmlTag))
-                        .presentation();
-            }
+        if (!(element instanceof XmlTagImpl xmlTag)) {
+            return null;
         }
-        return null;
+
+        if (!MapperUtils.isElementWithinMybatisFile(element)) {
+            return null;
+        }
+
+        return TargetPresentation
+                .builder(getPresentableTest(xmlTag))
+                .containerText(getContainerText(xmlTag))
+                .presentation();
     }
 }

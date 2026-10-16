@@ -57,53 +57,63 @@ public class EntityMappingResolverFactory {
             Optional<PsiClass> entity = entityMappingResolver.findEntity(mapperClass);
             entity.ifPresent(entityMappingHolder::setEntityClass);
         }
-        PsiClass entityClass = entityMappingHolder.getEntityClass();
-        if (entityClass != null) {
-            String tableName = null;
-            for (EntityMappingResolver entityMappingResolver : entityMappingResolverList) {
-                Optional<String> tableNameOptional = entityMappingResolver.findTableName(entityClass);
-                if (tableNameOptional.isPresent()) {
-                    tableName = tableNameOptional.get();
-                    entityMappingHolder.setFields(entityMappingResolver.findFields(mapperClass, entityClass));
-                    break;
-                }
-            }
-            // default tableName and fields
-            if (tableName == null) {
-                tableName = getUnderLineFromEntityClassName(entityClass.getName());
-                for (EntityMappingResolver entityMappingResolver : entityMappingResolverList) {
-                    List<TxField> fields = entityMappingResolver.findFields(mapperClass, entityClass);
-                    if (CollectionUtils.isNotEmpty(fields)) {
-                        entityMappingHolder.setFields(fields);
-                    }
-                }
-            }
-            entityMappingHolder.setTableName(tableName);
 
-            // 字段以 resultMap 标签的配置为准
-            Map<String, TxField> resultMapMapping = defaultMappingResolver.findFields(mapperClass, entityClass).stream()
-                    .collect(Collectors.toMap(TxField::getFieldName, v -> v, (l, r) -> l));
-            // 处理字段上面没有注解的情况,
-            List<TxField> fields = entityMappingHolder.getFields();
-            if (CollectionUtils.isNotEmpty(fields)) {
-                for (TxField field : fields) {
-                    TxField defaultField = resultMapMapping.get(field.getFieldName());
-                    String columnName = findColumnName(field, defaultField);
-                    field.setColumnName(columnName);
-                    // 采用合并的方式设置主键, 默认识别的主键+resultMap的主键都标记为主键
-                    if (defaultField != null) {
-                        final Boolean primaryKey = defaultField.getPrimaryKey();
-                        if (primaryKey) {
-                            field.setPrimaryKey(true);
-                        }
-                        // 处理jdbcType, 强制以 resultMap 为准
-                        if (defaultField.getJdbcType() != null) {
-                            field.setJdbcType(defaultField.getJdbcType());
-                        }
-                    }
+        PsiClass entityClass = entityMappingHolder.getEntityClass();
+        if (entityClass == null) {
+            return entityMappingHolder;
+        }
+
+        String tableName = null;
+        for (EntityMappingResolver entityMappingResolver : entityMappingResolverList) {
+            Optional<String> tableNameOptional = entityMappingResolver.findTableName(entityClass);
+            if (tableNameOptional.isPresent()) {
+                tableName = tableNameOptional.get();
+                entityMappingHolder.setFields(entityMappingResolver.findFields(mapperClass, entityClass));
+                break;
+            }
+        }
+
+        // default tableName and fields
+        if (tableName == null) {
+            tableName = getUnderLineFromEntityClassName(entityClass.getName());
+
+            for (EntityMappingResolver entityMappingResolver : entityMappingResolverList) {
+                List<TxField> fields = entityMappingResolver.findFields(mapperClass, entityClass);
+                if (CollectionUtils.isNotEmpty(fields)) {
+                    entityMappingHolder.setFields(fields);
                 }
             }
         }
+
+        entityMappingHolder.setTableName(tableName);
+
+        // 字段以 resultMap 标签的配置为准
+        Map<String, TxField> resultMapMapping = defaultMappingResolver.findFields(mapperClass, entityClass).stream()
+                .collect(Collectors.toMap(TxField::getFieldName, v -> v, (l, r) -> l));
+
+        // 处理字段上面没有注解的情况,
+        List<TxField> fields = entityMappingHolder.getFields();
+        if (CollectionUtils.isEmpty(fields)) {
+            return entityMappingHolder;
+        }
+
+        for (TxField field : fields) {
+            TxField defaultField = resultMapMapping.get(field.getFieldName());
+            String columnName = findColumnName(field, defaultField);
+            field.setColumnName(columnName);
+            // 采用合并的方式设置主键, 默认识别的主键+resultMap的主键都标记为主键
+            if (defaultField != null) {
+                final Boolean primaryKey = defaultField.getPrimaryKey();
+                if (primaryKey) {
+                    field.setPrimaryKey(true);
+                }
+                // 处理jdbcType, 强制以 resultMap 为准
+                if (defaultField.getJdbcType() != null) {
+                    field.setJdbcType(defaultField.getJdbcType());
+                }
+            }
+        }
+
         return entityMappingHolder;
     }
 
@@ -114,14 +124,17 @@ public class EntityMappingResolverFactory {
         if (defaultField != null) {
             columnName = defaultField.getColumnName();
         }
+
         // 原先映射的列名
         if (columnName == null) {
             columnName = field.getColumnName();
         }
+
         // 如果没有映射, 默认按照下划线映射
         if (columnName == null) {
             columnName = StringUtils.camelToSlash(field.getFieldName());
         }
+
         return columnName;
     }
 
@@ -134,9 +147,11 @@ public class EntityMappingResolverFactory {
                 tableName = tableNameOptional.get();
             }
         }
+
         if (tableName == null) {
             tableName = getUnderLineFromEntityClassName(entityClass.getName());
         }
+
         return tableName;
     }
 
@@ -144,7 +159,9 @@ public class EntityMappingResolverFactory {
     @NotNull
     private String getUnderLineFromEntityClassName(String camelName) {
         String[] strings = org.apache.commons.lang3.StringUtils.splitByCharacterTypeCamelCase(camelName);
-        return Arrays.stream(strings).map(StringUtils::lowerCaseFirstChar)
+
+        return Arrays.stream(strings)
+                .map(StringUtils::lowerCaseFirstChar)
                 .collect(Collectors.joining("_"));
     }
 

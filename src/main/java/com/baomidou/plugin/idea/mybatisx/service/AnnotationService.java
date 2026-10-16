@@ -46,11 +46,13 @@ public class AnnotationService {
         if (JavaUtils.isAnnotationPresent(parameter, annotation) || null == modifierList) {
             return;
         }
+
         JavaService.getInstance(parameter.getProject()).importClazz((PsiJavaFile) parameter.getContainingFile(), annotation.getQualifiedName());
 
         PsiElementFactory elementFactory = JavaPsiFacade.getInstance(project).getElementFactory();
         PsiAnnotation psiAnnotation = elementFactory.createAnnotationFromText(annotation.toString(), parameter);
         modifierList.add(psiAnnotation);
+
         JavaCodeStyleManager.getInstance(project).shortenClassReferences(psiAnnotation.getParent());
     }
 
@@ -62,6 +64,7 @@ public class AnnotationService {
     public void addAnnotationWithParameterNameForMethodParameters(@NotNull PsiMethod method) {
         PsiParameterList parameterList = method.getParameterList();
         PsiParameter[] parameters = parameterList.getParameters();
+
         for (PsiParameter param : parameters) {
             addAnnotationWithParameterName(param);
         }

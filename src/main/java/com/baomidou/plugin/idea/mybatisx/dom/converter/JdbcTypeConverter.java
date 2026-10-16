@@ -27,9 +27,11 @@ public class JdbcTypeConverter extends ConverterAdaptor<XmlAttributeValue> imple
     @Override
     public PsiReference @NotNull [] createReferences(GenericDomValue<XmlAttributeValue> value, PsiElement element, ConvertContext context) {
         final String stringValue = value.getStringValue();
+
         if (stringValue == null) {
             return PsiReference.EMPTY_ARRAY;
         }
+
         return new JdbcReference(stringValue, element).getPsiReferences();
     }
 
@@ -40,6 +42,7 @@ public class JdbcTypeConverter extends ConverterAdaptor<XmlAttributeValue> imple
         if (ctxElement instanceof GenericAttributeValue<?> genericAttributeValue) {
             return genericAttributeValue.getXmlAttributeValue();
         }
+
         return null;
     }
 
@@ -101,11 +104,13 @@ public class JdbcTypeConverter extends ConverterAdaptor<XmlAttributeValue> imple
             if (objects != null) {
                 return objects;
             }
+
             // 找不到JdbcType类则始终不缓存
             Optional<PsiClass> classOptional = findJdbcTypeClass(project);
             if (classOptional.isEmpty()) {
                 return PsiReference.EMPTY_ARRAY;
             }
+
             PsiClass psiClass = classOptional.get();
             List<Object> fields = new ArrayList<>(psiClass.getAllFields().length);
             // 过滤非JdbcType类型的变量
@@ -114,6 +119,7 @@ public class JdbcTypeConverter extends ConverterAdaptor<XmlAttributeValue> imple
                     fields.add(enumField);
                 }
             }
+
             objects = fields.toArray();
             jdbcTypeVariantHolder.setVariants(objects);
             return objects;
@@ -138,12 +144,15 @@ public class JdbcTypeConverter extends ConverterAdaptor<XmlAttributeValue> imple
             if (firstText == null) {
                 return Optional.empty();
             }
+
             Optional<PsiClass> jdbcTypeOptional = findJdbcTypeClass(project);
             if (jdbcTypeOptional.isEmpty()) {
                 return Optional.empty();
             }
+
             PsiClass psiClass = jdbcTypeOptional.get();
             String paramText = firstText.toUpperCase();
+
             PsiField foundField = null;
             for (PsiField enumField : psiClass.getAllFields()) {
                 if (enumField.getName().equalsIgnoreCase(paramText)) {
@@ -153,9 +162,11 @@ public class JdbcTypeConverter extends ConverterAdaptor<XmlAttributeValue> imple
                     }
                 }
             }
+
             if (foundField != null) {
                 return Optional.of(foundField);
             }
+
             return Optional.empty();
         }
 

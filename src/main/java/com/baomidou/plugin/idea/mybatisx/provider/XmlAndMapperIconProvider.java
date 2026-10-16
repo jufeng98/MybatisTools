@@ -42,12 +42,15 @@ public class XmlAndMapperIconProvider extends IconProvider {
         if (isDefaultIcon()) {
             return null;
         }
+
         if (isMapperClass(element)) {
             return IconLoader.getIcon(IMAGES_STATEMENT_SVG, this.getClass());
         }
+
         if (MapperUtils.isElementWithinMybatisFile(element)) {
             return IconLoader.getIcon(IMAGES_MAPPER_METHOD_SVG, this.getClass());
         }
+
         return null;
     }
 
@@ -55,9 +58,8 @@ public class XmlAndMapperIconProvider extends IconProvider {
      * XML 和 Mapper 都使用默认图标
      */
     private boolean isDefaultIcon() {
-        return getInstance().getMapperIcon() != null &&
-                MybatisXSettings.MapperIcon.DEFAULT.name()
-                        .equals(getInstance().getMapperIcon());
+        return getInstance().getMapperIcon() != null
+                && MybatisXSettings.MapperIcon.DEFAULT.name().equals(getInstance().getMapperIcon());
     }
 
     private boolean isMapperClass(@NotNull PsiElement element) {
@@ -65,9 +67,11 @@ public class XmlAndMapperIconProvider extends IconProvider {
         if (!language.isKindOf(JavaLanguage.INSTANCE)) {
             return false;
         }
+
         if (!(element instanceof PsiClass mayMapperClass)) {
             return false;
         }
+
         if (!mayMapperClass.isInterface()) {
             return false;
         }

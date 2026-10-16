@@ -34,9 +34,6 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
      * <p>
      * -- SETTER --
      * Sets resolver.
-     *
-     * @return the resolver
-     * @param resolver the resolver
      */
     @Setter
     @Getter
@@ -49,9 +46,6 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
      * <p>
      * -- SETTER --
      * Sets index.
-     *
-     * @return the index
-     * @param index the index
      */
     @Setter
     @Getter
@@ -63,7 +57,6 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
      * @param element     the element
      * @param range       the range
      * @param index       the index
-     * @param mapperClass
      */
     public ContextPsiColumnReference(XmlAttributeValue element, TextRange range, int index, PsiClass mapperClass) {
         super(element, range, false);
@@ -75,51 +68,51 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
     /**
      * 如果能找到正确的列, 线条转到正确的列
      * 无法找到数据库的列, 引用当前节点
-     *
-     * @return
      */
     @Nullable
     @Override
     public PsiElement resolve() {
-        PsiElement element = null;
         Optional<DasTable> resolved = resolver.resolve(index);
         // 找到表则加入字段验证
-        if (resolved.isPresent()) {
-            DasTable dasTable = resolved.get();
-            Optional<DbElement> columns = resolver.findColumns(dasTable);
-            if (columns.isPresent()) {
-                element = columns.get();
-            }
+        if (resolved.isEmpty()) {
+            return null;
         }
-        return element;
+
+        DasTable dasTable = resolved.get();
+        Optional<DbElement> columns = resolver.findColumns(dasTable);
+
+        return columns.orElse(null);
+
     }
 
     /**
      * 获取用于提示的变量列表
-     *
-     * @return
      */
-
     @Override
     public Object @NotNull [] getVariants() {
         Project project = getElement().getProject();
 
-        EntityMappingResolverFactory entityMappingResolverFactory
-                = new EntityMappingResolverFactory(project);
+        EntityMappingResolverFactory entityMappingResolverFactory = new EntityMappingResolverFactory(project);
+
         EntityMappingHolder entityMappingHolder = entityMappingResolverFactory.searchEntity(mapperClass);
+
         String tableName = entityMappingHolder.getTableName();
         if (StringUtils.isEmpty(tableName)) {
             return new Object[0];
         }
+
         DbPsiFacade dbPsiFacade = DbPsiFacade.getInstance(project);
+
         List<DbElement> dbElementList = getDbElements(tableName, dbPsiFacade);
-        return !dbElementList.isEmpty() ? dbElementList.toArray() : PsiReference.EMPTY_ARRAY;
+
+        return dbElementList.toArray();
     }
 
     @NotNull
     private List<DbElement> getDbElements(String tableName, DbPsiFacade dbPsiFacade) {
         for (DbDataSource dataSource : dbPsiFacade.getDataSources()) {
             JBIterable<? extends DasNamespace> schemas = DasUtil.getSchemas(dataSource);
+
             for (DasNamespace schema : schemas) {
                 DasTable dasTable = DasUtil.findChild(schema, DasTable.class, ObjectKind.TABLE, tableName);
                 if (dasTable != null) {
@@ -135,6 +128,7 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
                 }
             }
         }
+
         return Collections.emptyList();
     }
 

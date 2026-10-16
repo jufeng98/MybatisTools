@@ -14,8 +14,6 @@ import java.util.stream.Collectors;
  * The type Jpa mapping resolver.
  */
 public abstract class JpaMappingResolver {
-
-
     /**
      * The constant JAVAX_PERSISTENCE_TABLE.
      */
@@ -41,17 +39,19 @@ public abstract class JpaMappingResolver {
      * @return the optional
      */
     public static Optional<PsiClass> findEntityClassByMapperClass(PsiClass mapperClass) {
-        JavaPsiFacade instance = JavaPsiFacade.getInstance(mapperClass.getProject());
+        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(mapperClass.getProject());
         PsiReferenceList extendsList = mapperClass.getExtendsList();
         if (extendsList == null) {
             return Optional.empty();
         }
+
         @NotNull PsiJavaCodeReferenceElement[] referenceElements = extendsList.getReferenceElements();
         for (PsiJavaCodeReferenceElement referenceElement : referenceElements) {
             PsiReferenceParameterList parameterList = referenceElement.getParameterList();
             if (parameterList == null) {
                 continue;
             }
+
             @NotNull PsiType[] typeArguments = parameterList.getTypeArguments();
             for (PsiType type : typeArguments) {
                 String canonicalText = type.getCanonicalText();
@@ -59,14 +59,17 @@ public abstract class JpaMappingResolver {
                 if (StringUtils.isEmpty(canonicalText) || canonicalText.startsWith("java")) {
                     continue;
                 }
-                PsiClass entityClass = instance.findClass(canonicalText, mapperClass.getResolveScope());
+
+                PsiClass entityClass = javaPsiFacade.findClass(canonicalText, mapperClass.getResolveScope());
                 if (entityClass == null) {
                     continue;
                 }
+
                 PsiAnnotation annotation = entityClass.getAnnotation(JAVAX_PERSISTENCE_TABLE);
                 if (annotation == null) {
                     continue;
                 }
+
                 return Optional.of(entityClass);
             }
         }
@@ -77,16 +80,19 @@ public abstract class JpaMappingResolver {
         if (entityClass == null) {
             throw new IllegalArgumentException("无法确认实体类, 请尝试重新打开Mapper");
         }
-        String tableName = null;
+
+        String tableName;
         PsiAnnotation annotation = entityClass.getAnnotation(JAVAX_PERSISTENCE_TABLE);
         if (annotation == null) {
             return Optional.empty();
         }
+
         PsiAnnotationMemberValue originTable = annotation.findAttributeValue(TABLE_NAME);
         PsiLiteralExpression expression = (PsiLiteralExpression) originTable;
         if (expression == null || expression.getValue() == null) {
             return Optional.empty();
         }
+
         tableName = expression.getValue().toString();
         return Optional.ofNullable(tableName);
     }
@@ -103,24 +109,29 @@ public abstract class JpaMappingResolver {
         PsiAnnotation annotation = field.getAnnotation(JAVAX_PERSISTENCE_COLUMN);
         if (annotation != null) {
             PsiAnnotationMemberValue originFieldAnnotation = annotation.findAttributeValue(COLUMN_NAME);
-            PsiConstantEvaluationHelper constantEvaluationHelper = JavaPsiFacade.getInstance(field.getProject()).getConstantEvaluationHelper();
             if (originFieldAnnotation != null) {
+                JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(field.getProject());
+                PsiConstantEvaluationHelper constantEvaluationHelper = javaPsiFacade.getConstantEvaluationHelper();
+
                 Object value = constantEvaluationHelper.computeConstantExpression(originFieldAnnotation);
                 if (value != null) {
                     columnName = value.toString();
                 }
             }
         }
+
         // 驼峰转下划线
         if (columnName == null) {
             columnName = getUnderLineName(field.getName());
         }
+
         return columnName;
     }
 
     @NotNull
     private String getUnderLineName(String camelName) {
         String[] strings = org.apache.commons.lang3.StringUtils.splitByCharacterTypeCamelCase(camelName);
+
         return Arrays.stream(strings)
                 .map(StringUtils::lowerCaseFirstChar)
                 .collect(Collectors.joining("_"));
@@ -135,6 +146,7 @@ public abstract class JpaMappingResolver {
     protected List<TxField> initDataByCamel(PsiClass entityClass) {
         // 去除有 static, transient 标记的字段
         List<PsiField> psiFieldList = FieldUtil.getPsiFieldList(entityClass);
+
         return psiFieldList.stream()
                 .filter(this::filterField)
                 .map(field -> {
@@ -152,18 +164,21 @@ public abstract class JpaMappingResolver {
                         txField.setPrimaryKey(true);
                     }
 
-                    txField.setClassName(field.getContainingClass().getQualifiedName());
+                    PsiClass containingClass = field.getContainingClass();
+                    if (containingClass != null) {
+                        txField.setClassName(containingClass.getQualifiedName());
+                    }
+
                     Optional<String> jdbcTypeByJavaType = JdbcTypeUtils.findJdbcTypeByJavaType(field.getType().getCanonicalText());
                     jdbcTypeByJavaType.ifPresent(txField::setJdbcType);
+
                     return txField;
-                }).collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
     }
 
     /**
      * JPA 提示忽略静态字段
-     *
-     * @param field
-     * @return
      */
     protected boolean filterField(PsiField field) {
         return !field.hasModifierProperty(PsiModifier.STATIC);

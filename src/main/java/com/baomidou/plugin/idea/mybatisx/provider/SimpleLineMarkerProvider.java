@@ -33,16 +33,20 @@ public abstract class SimpleLineMarkerProvider<F extends PsiElement, T extends P
         }
 
         Optional<? extends T[]> processResult = apply((F) element);
-        if (processResult.isPresent()) {
-            T[] arrays = processResult.get();
-            NavigationGutterIconBuilder<T> navigationGutterIconBuilder = NavigationGutterIconBuilder.create(getIcon(), DEFAULT_PSI_CONVERTOR, PSI_GOTO_RELATED_ITEM_PROVIDER);
-            if (arrays.length > 0) {
-                navigationGutterIconBuilder.setTooltipTitle(getTooltip(arrays[0], element));
-            }
-            navigationGutterIconBuilder.setTargets(arrays);
-            RelatedItemLineMarkerInfo<PsiElement> lineMarkerInfo = navigationGutterIconBuilder.createLineMarkerInfo(element);
-            result.add(lineMarkerInfo);
+        if (processResult.isEmpty()) {
+            return;
         }
+
+        T[] arrays = processResult.get();
+        NavigationGutterIconBuilder<T> navigationGutterIconBuilder = NavigationGutterIconBuilder.create(getIcon(),
+                DEFAULT_PSI_CONVERTOR, PSI_GOTO_RELATED_ITEM_PROVIDER);
+        if (arrays.length > 0) {
+            navigationGutterIconBuilder.setTooltipTitle(getTooltip(arrays[0], element));
+        }
+
+        navigationGutterIconBuilder.setTargets(arrays);
+        RelatedItemLineMarkerInfo<PsiElement> lineMarkerInfo = navigationGutterIconBuilder.createLineMarkerInfo(element);
+        result.add(lineMarkerInfo);
 
     }
 

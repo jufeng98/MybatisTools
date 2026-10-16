@@ -21,22 +21,30 @@ public class MapperXmlPackageProvider extends PackageProvider {
     @Override
     public Set<PsiPackage> getPackages(@NotNull Project project) {
         HashSet<PsiPackage> res = Sets.newHashSet();
+
         Collection<Mapper> mappers = MapperUtils.findMappers(project);
+
         JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
+
         for (Mapper mapper : mappers) {
             String namespace = MapperUtils.getNamespace(mapper);
             PsiClass clazz = javaPsiFacade.findClass(namespace, GlobalSearchScope.allScope(project));
-            if (null != clazz) {
-                PsiFile file = clazz.getContainingFile();
-                if (file instanceof PsiJavaFile) {
-                    String packageName = ((PsiJavaFile) file).getPackageName();
-                    PsiPackage pkg = javaPsiFacade.findPackage(packageName);
-                    if (null != pkg) {
-                        res.add(pkg);
-                    }
+            if (null == clazz) {
+                continue;
+            }
+
+            PsiFile file = clazz.getContainingFile();
+            if (file instanceof PsiJavaFile) {
+                String packageName = ((PsiJavaFile) file).getPackageName();
+                PsiPackage pkg = javaPsiFacade.findPackage(packageName);
+                if (null == pkg) {
+                    continue;
                 }
+
+                res.add(pkg);
             }
         }
+
         return res;
     }
 

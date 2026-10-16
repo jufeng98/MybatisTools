@@ -36,9 +36,6 @@ public abstract class ContextReferenceSetResolver<F extends PsiElement, K extend
      * <p>
      * -- SETTER --
      * Sets project.
-     *
-     * @return the project
-     * @param project the project
      */
     @Setter
     @Getter
@@ -51,9 +48,6 @@ public abstract class ContextReferenceSetResolver<F extends PsiElement, K extend
      * <p>
      * -- SETTER --
      * Sets element.
-     *
-     * @return the element
-     * @param element the element
      */
     @Setter
     @Getter
@@ -96,6 +90,7 @@ public abstract class ContextReferenceSetResolver<F extends PsiElement, K extend
             currentElement = resolved.get();
             ind++;
         }
+
         return Optional.of(currentElement);
     }
 

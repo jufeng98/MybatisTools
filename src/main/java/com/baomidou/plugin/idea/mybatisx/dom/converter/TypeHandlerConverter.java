@@ -23,9 +23,11 @@ public class TypeHandlerConverter extends ConverterAdaptor<PsiClass>
     @Override
     public String getErrorMessage(@Nullable String classStr, @NotNull ConvertContext context) {
         final PsiClass psiClass = psiClassConverter.fromString(classStr, context);
+
         if (psiClass != null && checkIsTypeHandler(psiClass)) {
             return "the class is not a TypeHandler, class: " + classStr + " ";
         }
+
         return super.getErrorMessage(classStr, context);
     }
 
@@ -33,9 +35,11 @@ public class TypeHandlerConverter extends ConverterAdaptor<PsiClass>
     @Override
     public PsiClass fromString(@Nullable String classStr, @NotNull ConvertContext context) {
         final PsiClass psiClass = psiClassConverter.fromString(classStr, context);
+
         if (psiClass != null && checkIsTypeHandler(psiClass)) {
             return null;
         }
+
         return psiClassConverter.fromString(classStr, context);
     }
 
@@ -51,7 +55,9 @@ public class TypeHandlerConverter extends ConverterAdaptor<PsiClass>
         if (typeHandlerClassOptional.isEmpty()) {
             return true;
         }
+
         PsiClass typeHandlerCla = typeHandlerClassOptional.get();
+
         return !psiClass.isInheritor(typeHandlerCla, true);
     }
 

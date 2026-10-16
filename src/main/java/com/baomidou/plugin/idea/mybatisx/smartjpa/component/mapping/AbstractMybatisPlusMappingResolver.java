@@ -45,9 +45,14 @@ public abstract class AbstractMybatisPlusMappingResolver extends JpaMappingResol
 
                     txField.setPrimaryKey(findIsPrimaryKeyFromField(field));
 
-                    txField.setClassName(field.getContainingClass().getQualifiedName());
+                    PsiClass containingClass = field.getContainingClass();
+                    if (containingClass != null) {
+                        txField.setClassName(containingClass.getQualifiedName());
+                    }
+
                     Optional<String> jdbcTypeByJavaType = JdbcTypeUtils.findJdbcTypeByJavaType(field.getType().getCanonicalText());
                     jdbcTypeByJavaType.ifPresent(txField::setJdbcType);
+
                     return txField;
                 }).collect(Collectors.toList());
     }
@@ -68,6 +73,7 @@ public abstract class AbstractMybatisPlusMappingResolver extends JpaMappingResol
     @Override
     public Optional<String> findTableName(PsiClass entityClass) {
         PsiAnnotation annotation = entityClass.getAnnotation(getTableNameAnnotation());
+
         // 获取 mp 的注解
         Optional<String> tableName = Optional.ofNullable(getAttributeValue(annotation, VALUE));
 
@@ -75,6 +81,7 @@ public abstract class AbstractMybatisPlusMappingResolver extends JpaMappingResol
         if (tableName.isEmpty()) {
             tableName = getTableNameByJpa(entityClass);
         }
+
         return tableName;
     }
 
@@ -89,32 +96,47 @@ public abstract class AbstractMybatisPlusMappingResolver extends JpaMappingResol
         if (fieldAnnotation == null) {
             return null;
         }
+
         PsiAnnotationMemberValue attributeValue = fieldAnnotation.findAttributeValue(value);
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(attributeValue.getText())) {
-            PsiLiteralExpression psiLiteralExpression = (PsiLiteralExpression) attributeValue;
-            return psiLiteralExpression.getValue().toString();
+        if (attributeValue == null) {
+            return null;
         }
-        return null;
+
+        if (org.apache.commons.lang3.StringUtils.isBlank(attributeValue.getText())) {
+            return null;
+        }
+
+        PsiLiteralExpression psiLiteralExpression = (PsiLiteralExpression) attributeValue;
+        Object expressionValue = psiLiteralExpression.getValue();
+        if (expressionValue == null) {
+            return null;
+        }
+
+        return expressionValue.toString();
+
     }
 
     @Override
     public Optional<PsiClass> findEntity(PsiClass mapperClass) {
         PsiReferenceList extendsList = mapperClass.getExtendsList();
+        if (extendsList == null) {
+            return Optional.empty();
+        }
+
         PsiJavaCodeReferenceElement[] referenceElements = extendsList.getReferenceElements();
         if (referenceElements.length == 0) {
             return Optional.empty();
         }
-        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(mapperClass.getProject());
-        for (PsiJavaCodeReferenceElement referenceElement : referenceElements) {
 
+        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(mapperClass.getProject());
+
+        for (PsiJavaCodeReferenceElement referenceElement : referenceElements) {
             String qualifiedName = referenceElement.getQualifiedName();
 
             if (getBaseMapperClassName().equals(qualifiedName)) {
-
                 PsiType typeParameter = referenceElement.getTypeParameters()[0];
 
                 PsiClass entityClass = javaPsiFacade.findClass(typeParameter.getCanonicalText(), mapperClass.getResolveScope());
-
                 if (entityClass == null) {
                     continue;
                 }
@@ -123,11 +145,13 @@ public abstract class AbstractMybatisPlusMappingResolver extends JpaMappingResol
             } else {
                 // 递归查找，  通过父类找到entity
                 PsiElement resolve = referenceElement.resolve();
+
                 if (resolve instanceof PsiClass extClass) {
                     return findEntity(extClass);
                 }
             }
         }
+
         return Optional.empty();
     }
 

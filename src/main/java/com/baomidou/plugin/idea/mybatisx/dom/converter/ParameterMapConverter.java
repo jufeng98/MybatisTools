@@ -22,6 +22,7 @@ public class ParameterMapConverter extends IdBasedTagConverter {
         if (mapper == null) {
             return Collections.emptyList();
         }
+
         return mapper.getParameterMaps();
     }
 

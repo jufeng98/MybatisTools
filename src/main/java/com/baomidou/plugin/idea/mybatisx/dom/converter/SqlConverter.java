@@ -22,6 +22,7 @@ public class SqlConverter extends IdBasedTagConverter {
         if (mapper == null) {
             return Collections.emptyList();
         }
+
         return mapper.getSqls();
     }
 

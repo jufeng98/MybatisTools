@@ -14,8 +14,6 @@ import java.util.Optional;
  * 在接口上加入注释, 注释内部加入注解:  @Entity com.xx.xx.User
  */
 public class CommentAnnotationMappingResolver extends JpaMappingResolver implements EntityMappingResolver {
-
-
     /**
      * The constant TABLE_ENTITY.
      */
@@ -31,42 +29,58 @@ public class CommentAnnotationMappingResolver extends JpaMappingResolver impleme
     @Override
     public Optional<PsiClass> findEntity(PsiClass mapperClass) {
         PsiDocComment docComment = mapperClass.getDocComment();
-        if (docComment != null) {
-            PsiDocTag tableEntity = docComment.findTagByName(TABLE_ENTITY);
-            if (tableEntity != null) {
-                PsiDocTagValue valueElement = tableEntity.getValueElement();
-                if (valueElement != null) {
-                    String entityText = valueElement.getText();
-                    if (StringUtils.isNotBlank(entityText)) {
-                        JavaPsiFacade instance = JavaPsiFacade.getInstance(mapperClass.getProject());
-                        PsiClass entityClass = instance.findClass(entityText, mapperClass.getResolveScope());
-                        if (entityClass != null) {
-                            return Optional.of(entityClass);
-                        }
-                    }
-                }
-            }
+        if (docComment == null) {
+            return Optional.empty();
         }
 
-        return Optional.empty();
+        PsiDocTag tableEntity = docComment.findTagByName(TABLE_ENTITY);
+        if (tableEntity == null) {
+            return Optional.empty();
+        }
+
+        PsiDocTagValue valueElement = tableEntity.getValueElement();
+        if (valueElement == null) {
+            return Optional.empty();
+        }
+
+        String entityText = valueElement.getText();
+        if (StringUtils.isBlank(entityText)) {
+            return Optional.empty();
+        }
+
+        JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(mapperClass.getProject());
+        PsiClass entityClass = javaPsiFacade.findClass(entityText, mapperClass.getResolveScope());
+        if (entityClass == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(entityClass);
+
     }
 
     @Override
     public Optional<String> findTableName(PsiClass entityClass) {
         PsiDocComment docComment = entityClass.getDocComment();
-        if (docComment != null) {
-            PsiDocTag tableNameTag = docComment.findTagByName(TABLE_NAME);
-            if (tableNameTag != null) {
-                PsiDocTagValue valueElement = tableNameTag.getValueElement();
-                if (valueElement != null) {
-                    String tableNameText = valueElement.getText();
-                    if (StringUtils.isNotBlank(tableNameText)) {
-                        return Optional.of(tableNameText);
-                    }
-                }
-            }
+        if (docComment == null) {
+            return getTableNameByJpa(entityClass);
         }
-        return getTableNameByJpa(entityClass);
+
+        PsiDocTag tableNameTag = docComment.findTagByName(TABLE_NAME);
+        if (tableNameTag == null) {
+            return getTableNameByJpa(entityClass);
+        }
+
+        PsiDocTagValue valueElement = tableNameTag.getValueElement();
+        if (valueElement == null) {
+            return getTableNameByJpa(entityClass);
+        }
+
+        String tableNameText = valueElement.getText();
+        if (StringUtils.isBlank(tableNameText)) {
+            return getTableNameByJpa(entityClass);
+        }
+
+        return Optional.of(tableNameText);
     }
 
 

@@ -45,9 +45,11 @@ public class KotlinService {
         if (parentClass == null) {
             return;
         }
+
         if (!KtPsiUtil.isTrait(parentClass)) {
             return;
         }
+
         String packageName = KtPsiUtil.getPackageName(parentClass);
         String id = packageName + "." + parentClass.getName() + "." + ktMethod.getName();
         Collection<Mapper> mappers = MapperUtils.findMappers(ktMethod.getProject());

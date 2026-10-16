@@ -36,20 +36,22 @@ public class PsiFieldReferenceSetResolver extends ContextReferenceSetResolver<Xm
     @Override
     public Optional<PsiField> resolve(@NotNull PsiField current, String text) {
         PsiType type = current.getType();
+
         if (type instanceof PsiClassReferenceType && !((PsiClassReferenceType) type).hasParameters()) {
             PsiClass clazz = ((PsiClassReferenceType) type).resolve();
             if (null != clazz) {
                 return JavaUtils.findSettablePsiField(clazz, text);
             }
         }
+
         return Optional.empty();
     }
 
     @NotNull
     @Override
     public Optional<PsiField> getStartElement(@Nullable String firstText) {
-
         PropertySetterFind propertySetterFind = new PropertySetterFind();
+
         return propertySetterFind.getStartElement(firstText, getElement());
     }
 

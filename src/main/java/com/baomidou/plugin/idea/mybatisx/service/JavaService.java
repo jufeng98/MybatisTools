@@ -63,6 +63,7 @@ public class JavaService implements Serializable {
         if (!(field instanceof PsiField)) {
             return Optional.empty();
         }
+
         PsiType type = ((PsiField) field).getType();
         return type instanceof PsiClassReferenceType ? Optional.ofNullable(((PsiClassReferenceType) type).resolve()) :
                 Optional.empty();
@@ -76,7 +77,9 @@ public class JavaService implements Serializable {
      */
     public Optional<DomElement> findStatement(@NotNull PsiMethod method) {
         CommonProcessors.FindFirstProcessor<IdDomElement> processor = new CommonProcessors.FindFirstProcessor<>();
+
         processMethod(method, processor);
+
         return processor.isFound() ? Optional.ofNullable(processor.getFoundValue()) : Optional.empty();
     }
 
@@ -91,6 +94,7 @@ public class JavaService implements Serializable {
         if (null == psiClass) {
             return;
         }
+
         Collection<Mapper> mappers = MapperUtils.findMappers(psiMethod.getProject());
 
         Set<String> ids = new HashSet<>();
@@ -108,7 +112,6 @@ public class JavaService implements Serializable {
                 .flatMap(mapper -> mapper.getDaoElements().stream())
                 .filter(idDom -> ids.contains(MapperUtils.getIdSignature(idDom)))
                 .forEach(processor::process);
-
     }
 
 
@@ -136,7 +139,9 @@ public class JavaService implements Serializable {
      */
     public Optional<Mapper> findWithFindFirstProcessor(@NotNull PsiClass target) {
         CommonProcessors.FindFirstProcessor<Mapper> processor = new CommonProcessors.FindFirstProcessor<>();
+
         processClass(target, processor);
+
         return Optional.ofNullable(processor.getFoundValue());
     }
 
@@ -147,15 +152,19 @@ public class JavaService implements Serializable {
      * @param clazzName the clazz name
      */
     public void importClazz(PsiJavaFile file, String clazzName) {
-        if (!JavaUtils.hasImportClazz(file, clazzName)) {
-            Optional<PsiClass> clazz = JavaUtils.findClazz(project, clazzName);
-            PsiImportList importList = file.getImportList();
-            if (clazz.isPresent() && null != importList) {
-                PsiElementFactory elementFactory = javaPsiFacade.getElementFactory();
-                PsiImportStatement statement = elementFactory.createImportStatement(clazz.get());
-                importList.add(statement);
-                editorService.format(file, statement);
-            }
+        if (JavaUtils.hasImportClazz(file, clazzName)) {
+            return;
         }
+
+        Optional<PsiClass> clazz = JavaUtils.findClazz(project, clazzName);
+        PsiImportList importList = file.getImportList();
+        if (clazz.isEmpty() || null == importList) {
+            return;
+        }
+
+        PsiElementFactory elementFactory = javaPsiFacade.getElementFactory();
+        PsiImportStatement statement = elementFactory.createImportStatement(clazz.get());
+        importList.add(statement);
+        editorService.format(file, statement);
     }
 }

@@ -48,7 +48,8 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
         return matchIdDomElement(selectStrategy(context).getValue(), value, context).orElse(null);
     }
 
-    private Optional<XmlAttributeValue> matchIdDomElement(Collection<? extends IdDomElement> idDomElements, String value, ConvertContext context) {
+    private Optional<XmlAttributeValue> matchIdDomElement(Collection<? extends IdDomElement> idDomElements,
+                                                          String value, ConvertContext context) {
         Mapper contextMapper = MapperUtils.getMapper(context.getInvocationElement());
         for (IdDomElement idDomElement : idDomElements) {
             if (MapperUtils.getIdSignature(idDomElement).equals(value) ||
@@ -56,6 +57,7 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
                 return Optional.ofNullable(idDomElement.getId().getXmlAttributeValue());
             }
         }
+
         return Optional.empty();
     }
 
@@ -76,6 +78,7 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
             Mapper contextMapper = MapperUtils.getMapper(context.getInvocationElement());
             return MapperUtils.getIdSignature((IdDomElement) domElement, contextMapper);
         }
+
         return null;
     }
 
@@ -96,7 +99,10 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
 
     @Override
     public PsiReference @NotNull [] createReferences(GenericDomValue<XmlAttributeValue> value, PsiElement element, ConvertContext context) {
-        return PsiClassConverter.createJavaClassReferenceProvider(value, null, new ValueReferenceProvider(context)).getReferencesByElement(element);
+        ValueReferenceProvider valueReferenceProvider = new ValueReferenceProvider(context);
+
+        return PsiClassConverter.createJavaClassReferenceProvider(value, null, valueReferenceProvider)
+                .getReferencesByElement(element);
     }
 
     private abstract static class TraverseStrategy {
@@ -188,6 +194,7 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
                 refs.remove(refs.size() - 1);
                 refs.add(vr);
             }
+
             return refs.toArray(new PsiReference[0]);
         }
 

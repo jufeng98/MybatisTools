@@ -32,9 +32,6 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
      * <p>
      * -- SETTER --
      * Sets resolver.
-     *
-     * @return the resolver
-     * @param resolver the resolver
      */
     protected ContextReferenceSetResolver<XmlAttributeValue, PsiField> resolver;
 
@@ -46,9 +43,6 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
      * <p>
      * -- SETTER --
      * Sets index.
-     *
-     * @return the index
-     * @param index the index
      */
     protected int index;
 
@@ -69,11 +63,12 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
     @Override
     public PsiElement resolve() {
         Optional<PsiField> resolved = resolver.resolve(index);
-        if (resolved.isEmpty()) {
-            final Optional<PsiClass> targetClazz = getTargetClazz();
-            return targetClazz.orElse(null);
+        if (resolved.isPresent()) {
+            return resolved.get();
         }
-        return resolved.get();
+
+        final Optional<PsiClass> targetClazz = getTargetClazz();
+        return targetClazz.orElse(null);
     }
 
 
@@ -83,8 +78,10 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
         if (clazz.isEmpty()) {
             return PsiReference.EMPTY_ARRAY;
         }
+
         final PsiClass psiClass = clazz.get();
         PropertySetterFind propertySetterFind = new PropertySetterFind();
+
         final List<PsiField> setterFields = propertySetterFind.getSetterFields(psiClass);
         return setterFields.toArray(new Object[0]);
     }
@@ -99,6 +96,7 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
         } else {
             return MapperBacktrackingUtils.getPropertyClazz(myElement);
         }
+
         return Optional.empty();
     }
 

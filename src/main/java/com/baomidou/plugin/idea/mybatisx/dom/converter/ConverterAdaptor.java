@@ -24,7 +24,6 @@ public abstract class ConverterAdaptor<T> extends ResolvingConverter<T> {
     @Nullable
     @Override
     public String toString(@Nullable T t, @NotNull ConvertContext context) {
-//    throw new UnsupportedOperationException();
         return null;
     }
 

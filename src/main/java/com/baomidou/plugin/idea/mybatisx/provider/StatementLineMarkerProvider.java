@@ -44,9 +44,7 @@ public class StatementLineMarkerProvider extends SimpleLineMarkerProvider<XmlTok
         DomElement domElement = DomUtil.getDomElement(from);
         if (null == domElement) {
             return Optional.empty();
-        }
-        // 方法
-        else if (domElement instanceof IdDomElement) {
+        } else if (domElement instanceof IdDomElement) { // 方法
             return JavaUtils.findMethods(from.getProject(),
                     MapperUtils.getNamespace(domElement),
                     MapperUtils.getId((IdDomElement) domElement));
@@ -55,10 +53,12 @@ public class StatementLineMarkerProvider extends SimpleLineMarkerProvider<XmlTok
             if (xmlTag == null) {
                 return Optional.empty();
             }
+
             String namespace = xmlTag.getAttributeValue("namespace");
             if (StringUtils.isEmpty(namespace)) {
                 return Optional.empty();
             }
+
             return JavaUtils.findClasses(from.getProject(), namespace);
         }
     }
@@ -72,6 +72,7 @@ public class StatementLineMarkerProvider extends SimpleLineMarkerProvider<XmlTok
                 targetType = true;
             }
         }
+
         if (targetType == null) {
             if (TARGET_TYPES.contains(token.getText())) {
                 PsiElement parent = token.getParent();
@@ -85,9 +86,11 @@ public class StatementLineMarkerProvider extends SimpleLineMarkerProvider<XmlTok
                 }
             }
         }
+
         if (targetType == null) {
             targetType = false;
         }
+
         return targetType;
 
     }
@@ -116,12 +119,15 @@ public class StatementLineMarkerProvider extends SimpleLineMarkerProvider<XmlTok
                 text = containingClass.getName() + "#" + psiMethod.getName();
             }
         }
+
         if (text == null && element instanceof PsiClass psiClass) {
             text = psiClass.getQualifiedName();
         }
+
         if (text == null) {
             text = target.getContainingFile().getText();
         }
+
         return "Data access object found - " + text;
     }
 

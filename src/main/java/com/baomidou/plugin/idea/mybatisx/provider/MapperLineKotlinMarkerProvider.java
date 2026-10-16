@@ -35,12 +35,15 @@ public class MapperLineKotlinMarkerProvider extends RelatedItemLineMarkerProvide
         if (element instanceof KtClass) {
             filter = new KtClassAbstractElementFilter();
         }
+
         if (filter == null && element instanceof KtNamedFunction) {
             filter = new KtFunctionAbstractElementFilter();
         }
+
         if (filter == null) {
             filter = new EmptyAbstractElementFilter();
         }
+
         return filter;
     }
 

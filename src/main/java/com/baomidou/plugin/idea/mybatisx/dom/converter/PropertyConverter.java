@@ -27,6 +27,7 @@ public class PropertyConverter extends ConverterAdaptor<XmlAttributeValue> imple
         if (fieldName == null) {
             return PsiReference.EMPTY_ARRAY;
         }
+
         return new ResultPropertyReferenceSet(fieldName, element, ElementManipulators.getOffsetInElement(element)).getPsiReferences();
     }
 
@@ -34,6 +35,7 @@ public class PropertyConverter extends ConverterAdaptor<XmlAttributeValue> imple
     @Override
     public XmlAttributeValue fromString(@Nullable @NonNls String firstText, @NotNull ConvertContext context) {
         DomElement ctxElement = context.getInvocationElement();
+
         if (ctxElement instanceof GenericAttributeValue<?> attributeValue) {
             final XmlAttributeValue xmlAttributeValue = attributeValue.getXmlAttributeValue();
             PropertySetterFind propertySetterFind = new PropertySetterFind();
@@ -42,6 +44,7 @@ public class PropertyConverter extends ConverterAdaptor<XmlAttributeValue> imple
                 return xmlAttributeValue;
             }
         }
+
         return null;
     }
 

@@ -21,15 +21,22 @@ public abstract class AbstractElementFilter {
 
     public void collectNavigationMarkers(@NotNull PsiElement element, @NotNull Collection<? super RelatedItemLineMarkerInfo<?>> result) {
         final Collection<? extends DomElement> results = getResults(element);
-        if (!results.isEmpty()) {
-            final List<XmlTag> xmlTags = results.stream().map(DomElement::getXmlTag).collect(Collectors.toList());
-            NavigationGutterIconBuilder<PsiElement> builder =
-                    NavigationGutterIconBuilder.create(IconLoader.getIcon(IMAGES_MAPPER_METHOD_SVG, this.getClass()))
-                            .setAlignment(GutterIconRenderer.Alignment.CENTER)
-                            .setTargets(xmlTags)
-                            .setTooltipTitle("Navigation to target in mapper xml");
-            final PsiElement targetMarkerInfo = Objects.requireNonNull(((PsiNameIdentifierOwner) element).getNameIdentifier());
-            result.add(builder.createLineMarkerInfo(targetMarkerInfo));
+
+        if (results.isEmpty()) {
+            return;
         }
+
+        final List<XmlTag> xmlTags = results.stream()
+                .map(DomElement::getXmlTag)
+                .collect(Collectors.toList());
+
+        NavigationGutterIconBuilder<PsiElement> builder = NavigationGutterIconBuilder.create(IconLoader.getIcon(IMAGES_MAPPER_METHOD_SVG, this.getClass()))
+                        .setAlignment(GutterIconRenderer.Alignment.CENTER)
+                        .setTargets(xmlTags)
+                        .setTooltipTitle("Navigation to Target in Mapper Xml");
+
+        final PsiElement targetMarkerInfo = Objects.requireNonNull(((PsiNameIdentifierOwner) element).getNameIdentifier());
+
+        result.add(builder.createLineMarkerInfo(targetMarkerInfo));
     }
 }

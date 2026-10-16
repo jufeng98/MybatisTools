@@ -21,7 +21,6 @@ public class ResultColumnReferenceSet extends ReferenceSetBase<PsiReference> {
      * @param text        the text
      * @param element     the element
      * @param offset      the offset
-     * @param mapperClass
      */
     public ResultColumnReferenceSet(String text, @NotNull PsiElement element, int offset, PsiClass mapperClass) {
         super(text, element, offset, DOT_SEPARATOR);
@@ -36,10 +35,14 @@ public class ResultColumnReferenceSet extends ReferenceSetBase<PsiReference> {
         if (null == element) {
             return null;
         }
+
         ContextPsiColumnReference contextPsiColumnReference = new ContextPsiColumnReference(element, range, index, mapperClass);
-        if (contextPsiColumnReference.resolve() == null) {
+
+        PsiElement resolved = contextPsiColumnReference.resolve();
+        if (resolved == null) {
             return null;
         }
+
         return contextPsiColumnReference;
     }
 
