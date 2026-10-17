@@ -36,15 +36,7 @@ public class ResultColumnReferenceSet extends ReferenceSetBase<PsiReference> {
             return null;
         }
 
-        ContextPsiColumnReference contextPsiColumnReference = new ContextPsiColumnReference(element, range, index, mapperClass);
-
-        PsiElement resolved = contextPsiColumnReference.resolve();
-        if (resolved == null) {
-            return null;
-        }
-
-        return contextPsiColumnReference;
+        return new ContextPsiColumnReference(element, range, index, mapperClass);
     }
-
 
 }

@@ -1,15 +1,10 @@
 package com.baomidou.plugin.idea.mybatisx.tip.hashmark;
 
-import com.baomidou.plugin.idea.mybatisx.alias.AliasDesc;
 import com.baomidou.plugin.idea.mybatisx.alias.AliasFacade;
 import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper;
-import com.intellij.codeInsight.completion.CompletionParameters;
-import com.intellij.codeInsight.completion.CompletionResultSet;
-import com.intellij.codeInsight.completion.CompletionUtil;
-import com.intellij.codeInsight.completion.JavaClassNameCompletionContributor;
+import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.search.GlobalSearchScope;
 import lombok.val;
@@ -17,7 +12,7 @@ import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
+import java.util.List;
 
 public class JavaTypeHashMark implements HashMarkTip {
     @Override
@@ -29,18 +24,13 @@ public class JavaTypeHashMark implements HashMarkTip {
     public void tipValue(CompletionParameters parameters, CompletionResultSet completionResultSet, Mapper mapper) {
         val newResult = completionResultSet.withPrefixMatcher(CompletionUtil.findReferenceOrAlphanumericPrefix(parameters));
 
-        AliasFacade aliasFacade = AliasFacade.getInstance(parameters.getPosition().getProject());
+        PsiElement position = parameters.getPosition();
 
-        Collection<AliasDesc> aliasDescList = aliasFacade.getAliasDescs(parameters.getPosition());
-        for (AliasDesc aliasDesc : aliasDescList) {
-            PsiClass psiClass = aliasDesc.getClazz();
+        AliasFacade aliasFacade = AliasFacade.getInstance(position.getProject());
 
-            LookupElementBuilder lookupElement = LookupElementBuilder
-                    .create(psiClass, aliasDesc.getAlias())
-                    .withTypeText(psiClass.getQualifiedName());
+        List<LookupElementBuilder> elements = aliasFacade.getAliasElements(position);
 
-            newResult.addElement(lookupElement);
-        }
+        elements.forEach(newResult::addElement);
 
         JavaClassNameCompletionContributor.addAllClasses(
                 parameters,

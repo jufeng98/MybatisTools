@@ -2,6 +2,7 @@ package com.baomidou.plugin.idea.mybatisx.alias;
 
 import com.baomidou.plugin.idea.mybatisx.util.JavaUtils;
 import com.baomidou.plugin.idea.mybatisx.util.StringUtils;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
@@ -54,6 +55,10 @@ public class BeanAliasResolver extends PackageAliasResolver {
             springModelUtils = SpringModelUtils.getInstance();
         } catch (Throwable e) {
             log.warn("获取SpringManager异常, 无法通过bean定义别名", e);
+            return Collections.emptyList();
+        }
+
+        if (ApplicationManager.getApplication().isDispatchThread()) {
             return Collections.emptyList();
         }
 

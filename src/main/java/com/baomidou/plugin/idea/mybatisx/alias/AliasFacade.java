@@ -1,6 +1,7 @@
 package com.baomidou.plugin.idea.mybatisx.alias;
 
 
+import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -107,6 +108,20 @@ public class AliasFacade {
         }
 
         return result;
+    }
+
+    public List<LookupElementBuilder> getAliasElements(@Nullable PsiElement element) {
+        Collection<AliasDesc> aliasDescs = getAliasDescs(element);
+
+        return aliasDescs.stream()
+                .map(it -> {
+                    PsiClass psiClass = it.getClazz();
+
+                    return LookupElementBuilder
+                            .create(psiClass, it.getAlias())
+                            .withTypeText(psiClass.getQualifiedName());
+                })
+                .toList();
     }
 
     /**

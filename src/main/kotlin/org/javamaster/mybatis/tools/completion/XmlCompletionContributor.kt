@@ -8,10 +8,16 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlAttributeValue
-import org.javamaster.mybatis.tools.utils.CompletionUtils
 
+/**
+ * 取代了 AliasClassReference 的补全功能, 即其 getVariants 方法会被忽略
+ *
+ * @see com.baomidou.plugin.idea.mybatisx.alias.AliasClassReference
+ *
+ * @author yudong
+ */
 class XmlCompletionContributor : CompletionContributor() {
-    private val set = setOf("resultType", "parameterType")
+    private val set = setOf("resultType", "parameterType", "javaType", "ofType", "type")
 
     override fun fillCompletionVariants(parameters: CompletionParameters, result: CompletionResultSet) {
         val position = parameters.position
@@ -28,10 +34,6 @@ class XmlCompletionContributor : CompletionContributor() {
                     }
 
                 hashMarkTip.tipValue(parameters, result, null)
-            }
-
-            if (name == "column") {
-                CompletionUtils.fillColumnAttrValueVariants(attribute, result)
             }
         }
     }

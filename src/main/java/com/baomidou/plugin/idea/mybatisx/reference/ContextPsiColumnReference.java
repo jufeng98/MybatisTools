@@ -2,17 +2,22 @@ package com.baomidou.plugin.idea.mybatisx.reference;
 
 import com.baomidou.plugin.idea.mybatisx.smartjpa.component.mapping.EntityMappingHolder;
 import com.baomidou.plugin.idea.mybatisx.smartjpa.component.mapping.EntityMappingResolverFactory;
-import com.baomidou.plugin.idea.mybatisx.util.StringUtils;
+import com.google.common.collect.Lists;
+import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.database.model.*;
 import com.intellij.database.psi.*;
 import com.intellij.database.util.DasUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
+import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
+import com.intellij.sql.psi.SqlExpression;
 import com.intellij.util.containers.JBIterable;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
+import org.javamaster.mybatis.tools.utils.XmlSqlUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,15 +79,31 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
     public PsiElement resolve() {
         Optional<DasTable> resolved = resolver.resolve(index);
         // 找到表则加入字段验证
-        if (resolved.isEmpty()) {
-            return null;
+        if (resolved.isPresent()) {
+            DasTable dasTable = resolved.get();
+
+            Optional<DbElement> columns = resolver.findColumns(dasTable);
+            if (columns.isPresent()) {
+                return columns.get();
+            }
         }
 
-        DasTable dasTable = resolved.get();
-        Optional<DbElement> columns = resolver.findColumns(dasTable);
+        XmlAttributeValue xmlAttrValue = resolver.getElement();
+        PsiElement xmlAttr = xmlAttrValue.getParent();
+        if (xmlAttr instanceof XmlAttribute xmlAttribute) {
+            // 从 SQL 中找
+            String columnName = xmlAttrValue.getValue();
 
-        return columns.orElse(null);
+            Set<SqlExpression> sqlExpressions = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
 
+            Optional<SqlExpression> first = sqlExpressions.stream()
+                    .filter(it -> Objects.equals(it.getName(), columnName))
+                    .findFirst();
+
+            return first.orElse(null);
+        }
+
+        return null;
     }
 
     /**
@@ -91,46 +112,57 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
     @Override
     public Object @NotNull [] getVariants() {
         Project project = getElement().getProject();
+        List<Object> elementList = Lists.newArrayList();
 
         EntityMappingResolverFactory entityMappingResolverFactory = new EntityMappingResolverFactory(project);
 
         EntityMappingHolder entityMappingHolder = entityMappingResolverFactory.searchEntity(mapperClass);
 
         String tableName = entityMappingHolder.getTableName();
-        if (StringUtils.isEmpty(tableName)) {
-            return new Object[0];
+        if (StringUtils.isNotBlank(tableName)) {
+            DbPsiFacade dbPsiFacade = DbPsiFacade.getInstance(project);
+
+            List<Object> dbElements = getDbElements(tableName, dbPsiFacade);
+
+            elementList.addAll(dbElements);
         }
 
-        DbPsiFacade dbPsiFacade = DbPsiFacade.getInstance(project);
+        XmlAttributeValue xmlAttrValue = resolver.getElement();
+        PsiElement xmlAttr = xmlAttrValue.getParent();
+        if (xmlAttr instanceof XmlAttribute xmlAttribute) {
+            Set<SqlExpression> columnNames = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
 
-        List<DbElement> dbElementList = getDbElements(tableName, dbPsiFacade);
+            columnNames.forEach(it -> {
+                LookupElementBuilder elementBuilder = LookupElementBuilder.create(it, StringUtils.defaultString(it.getName()));
 
-        return dbElementList.toArray();
+                elementList.add(elementBuilder);
+            });
+        }
+
+        return elementList.toArray();
     }
 
-    @NotNull
-    private List<DbElement> getDbElements(String tableName, DbPsiFacade dbPsiFacade) {
+    private List<Object> getDbElements(String tableName, DbPsiFacade dbPsiFacade) {
+        List<Object> resultList = Lists.newArrayList();
         for (DbDataSource dataSource : dbPsiFacade.getDataSources()) {
             JBIterable<? extends DasNamespace> schemas = DasUtil.getSchemas(dataSource);
 
             for (DasNamespace schema : schemas) {
                 DasTable dasTable = DasUtil.findChild(schema, DasTable.class, ObjectKind.TABLE, tableName);
-                if (dasTable != null) {
-                    List<DbElement> dbElementList = new LinkedList<>();
-                    JBIterable<? extends DasColumn> columns = DasUtil.getColumns(dasTable);
-                    for (DasColumn column : columns) {
+                if (dasTable == null) {
+                    continue;
+                }
 
-                        if (column instanceof DbElement) {
-                            dbElementList.add((DbElement) column);
-                        }
+                JBIterable<? extends DasColumn> columns = DasUtil.getColumns(dasTable);
+                for (DasColumn column : columns) {
+                    if (column instanceof DbElement dbElement) {
+                        resultList.add(dbElement);
                     }
-                    return dbElementList;
                 }
             }
         }
 
-        return Collections.emptyList();
+        return resultList;
     }
-
 
 }

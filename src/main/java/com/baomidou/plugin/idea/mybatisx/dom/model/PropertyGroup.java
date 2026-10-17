@@ -23,8 +23,6 @@ public interface PropertyGroup extends DomElement {
 
     /**
      * column
-     *
-     * @return
      */
     @Attribute("column")
     @Convert(value = ColumnConverter.class, soft = true)
@@ -32,8 +30,6 @@ public interface PropertyGroup extends DomElement {
 
     /**
      * jdbcType
-     *
-     * @return
      */
     @Attribute("jdbcType")
     @Convert(JdbcTypeConverter.class)
@@ -41,8 +37,6 @@ public interface PropertyGroup extends DomElement {
 
     /**
      * jdbcType
-     *
-     * @return
      */
     @Attribute("typeHandler")
     @Convert(TypeHandlerConverter.class)
