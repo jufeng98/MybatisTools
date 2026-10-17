@@ -44,23 +44,30 @@ object SqlInjector {
     private fun calPrefix(host: PsiLanguageInjectionHost, next: XmlText?): String? {
         val sibling = host.prevSibling.prevSibling
         val hostParent = host.parent
-        if (sibling is XmlToken && hostParent is XmlTag && sibling.text == "where") {
-            val hostText = host.text
-            if (StringUtils.isNotBlank(hostText)) {
-                return "where "
-            }
+        if (sibling is XmlToken && hostParent is XmlTag) {
+            val text = sibling.text
+            if (text == "where") {
+                val hostText = host.text
+                if (StringUtils.isNotBlank(hostText)) {
+                    return "where "
+                }
 
-            val nextText = next?.value
-            if (nextText == null) {
-                return "where "
-            }
+                val nextText = next?.value
+                if (nextText == null) {
+                    return "where "
+                }
 
-            val str = nextText.trimStart().lowercase()
-            if (!str.startsWith("and") && !str.startsWith("or")) {
-                return "where "
-            }
+                val str = nextText.trimStart().lowercase()
+                if (!str.startsWith("and") && !str.startsWith("or")) {
+                    return "where "
+                }
 
-            return "where 1 = 1 "
+                return "where 1 = 1 "
+            } else if (text == "set") {
+                return "set "
+            } else {
+                return null
+            }
         } else {
             return null
         }
