@@ -3,8 +3,13 @@ package com.baomidou.plugin.idea.mybatisx.reference;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
 import com.intellij.psi.util.ReferenceSetBase;
+import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
+import com.intellij.sql.psi.SqlExpression;
+import org.javamaster.mybatis.tools.utils.XmlSqlUtils;
 import org.jetbrains.annotations.*;
+
+import java.util.Set;
 
 /**
  * The type Result property reference set.
@@ -34,6 +39,14 @@ public class ResultColumnReferenceSet extends ReferenceSetBase<PsiReference> {
         XmlAttributeValue element = (XmlAttributeValue) getElement();
         if (null == element) {
             return null;
+        }
+
+        PsiElement xmlAttr = element.getParent();
+        if (xmlAttr instanceof XmlAttribute xmlAttribute) {
+            Set<SqlExpression> sqlExpressions = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
+            if (sqlExpressions == null) {
+                return null;
+            }
         }
 
         return new ContextPsiColumnReference(element, range, index, mapperClass);

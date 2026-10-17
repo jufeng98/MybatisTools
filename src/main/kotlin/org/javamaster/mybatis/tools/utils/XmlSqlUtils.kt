@@ -2,7 +2,6 @@ package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
-import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Pair
@@ -22,40 +21,29 @@ import com.intellij.util.xml.DomUtil
  */
 object XmlSqlUtils {
 
-    fun getRelateColumnElements(attribute: XmlAttribute): Set<SqlExpression> {
+    fun getRelateColumnElements(attribute: XmlAttribute): Set<SqlExpression>? {
+        if (!DatabasePluginUtils.databasePluginAvailable) {
+            return null
+        }
+
         val xmlTag = attribute.parent
         val parentXmlTag = xmlTag.parent
         if (parentXmlTag !is XmlTag) {
-            return emptySet()
+            return null
         }
 
-        val resultList = mutableListOf<LookupElementBuilder>()
+        val domElement = DomUtil.findDomElement(attribute, IdDomElement::class.java) ?: return null
 
-        val propertyValue = xmlTag.getAttributeValue("property")
-
-        if (!propertyValue.isNullOrBlank()) {
-            resultList.add(LookupElementBuilder.create(propertyValue))
-
-            val underlineName = StringUtil.camelToUnderline(propertyValue)
-            resultList.add(LookupElementBuilder.create(underlineName))
-        }
-
-        if (!DatabasePluginUtils.databasePluginAvailable) {
-            return emptySet()
-        }
-
-        val domElement = DomUtil.findDomElement(attribute, IdDomElement::class.java) ?: return emptySet()
-
-        val resultMapId = MapperUtils.getResultMapId(parentXmlTag) ?: return emptySet()
+        val resultMapId = MapperUtils.getResultMapId(parentXmlTag) ?: return null
 
         val mapper = MapperUtils.getMapper(domElement)
 
         val firstSelect = mapper.selects
             .firstOrNull { it.xmlTag?.getAttributeValue("resultMap") == resultMapId }
 
-        val firstSelectXmlTag = firstSelect?.xmlTag
+        val firstSelectXmlTag = firstSelect?.xmlTag ?: return null
 
-        return collectColumnNameElements(firstSelectXmlTag, parentXmlTag.project) ?: return emptySet()
+        return collectColumnNameElements(firstSelectXmlTag, parentXmlTag.project)
     }
 
     fun collectColumnNameElements(selectXmlTag: XmlTag?, project: Project): Set<SqlExpression>? {
