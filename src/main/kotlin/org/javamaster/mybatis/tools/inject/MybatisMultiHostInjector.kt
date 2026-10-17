@@ -1,5 +1,6 @@
 package org.javamaster.mybatis.tools.inject
 
+import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
@@ -11,8 +12,11 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.xml.XmlText
+import org.apache.commons.lang3.StringUtils
 import org.javamaster.mybatis.tools.MybatisParamLanguage
 import org.javamaster.mybatis.tools.utils.DatabasePluginUtils.databasePluginAvailable
+import org.javamaster.mybatis.tools.utils.MapperUtil
+import org.javamaster.mybatis.tools.utils.PsiUtils
 import kotlin.math.min
 
 /**
@@ -36,42 +40,98 @@ class MybatisMultiHostInjector : MultiHostInjector {
             return
         }
 
+        val mapper = MapperUtil.getMapper(xmlTag)
+
+        injectXmlTag(xmlTag, mapper, registrar)
+    }
+
+    private fun injectXmlTag(xmlTag: XmlTag, mapper: Mapper?, registrar: MultiHostRegistrar) {
         val xmlTexts = PsiTreeUtil.findChildrenOfType<XmlText>(xmlTag, XmlText::class.java)
         if (xmlTexts.isEmpty()) {
             return
         }
 
         val allParamRanges = mutableListOf<Pair<List<TextRange>, XmlText>>()
+        val otherParamRanges = mutableListOf<Pair<List<TextRange>, XmlText>>()
 
         if (databasePluginAvailable) {
-            SqlInjector.startInject(registrar)
+            SqlInjector.startInjectSql(registrar)
         }
 
-        xmlTexts.forEachIndexed { index, it ->
-            val text = it.text
-
-            val variablesRanges = collectParamRanges(text)
-
-            if (databasePluginAvailable) {
-                val injectionHost = it as PsiLanguageInjectionHost
-
-                val next = xmlTexts.elementAtOrNull(index + 1)
-
-                SqlInjector.injectSqlLangIntoXmlText(registrar, injectionHost, next, text, variablesRanges)
-            }
-
-            allParamRanges.add(Pair(variablesRanges, it))
-        }
+        injectXmlTexts(xmlTexts, mapper, allParamRanges, otherParamRanges, registrar)
 
         if (databasePluginAvailable) {
             registrar.doneInjecting()
         }
 
         allParamRanges.forEach {
-            val injectionHost = it.second as PsiLanguageInjectionHost
+            val paramRanges = it.first
+            if (paramRanges.isEmpty()) {
+                return@forEach
+            }
 
-            injectLangToParams(it.first, registrar, injectionHost, injectionHost.text)
+            val injectionHost = it.second as PsiLanguageInjectionHost
+            val text = injectionHost.text
+
+            injectLangToParams(paramRanges, registrar, injectionHost, text)
         }
+    }
+
+    private fun injectXmlTexts(
+        xmlTexts: Collection<XmlText>,
+        mapper: Mapper?,
+        allParamRanges: MutableList<Pair<List<TextRange>, XmlText>>,
+        otherParamRanges: MutableList<Pair<List<TextRange>, XmlText>>,
+        registrar: MultiHostRegistrar,
+    ) {
+        xmlTexts.forEachIndexed { index, it ->
+            val text = it.text
+
+            val variablesRanges = collectParamRanges(text)
+
+            allParamRanges.add(Pair(variablesRanges, it))
+
+            if (!databasePluginAvailable) {
+                return@forEachIndexed
+            }
+
+            val next = PsiUtils.getNextNotBlankXmlText(xmlTexts, index + 1)
+
+            SqlInjector.injectSqlLangIntoXmlText(registrar, it as PsiLanguageInjectionHost, next, text, variablesRanges)
+
+            val nextSibling = it.nextSibling
+            if (nextSibling is XmlTag) {
+                if (nextSibling.name == "include") {
+                    injectIncludeRelateSqlTag(nextSibling, mapper, otherParamRanges, registrar)
+                }
+            }
+        }
+    }
+
+    private fun injectIncludeRelateSqlTag(
+        includeXmlTag: XmlTag,
+        mapper: Mapper?,
+        otherParamRanges: MutableList<Pair<List<TextRange>, XmlText>>,
+        registrar: MultiHostRegistrar,
+    ) {
+        mapper ?: return
+
+        val refId = includeXmlTag.getAttributeValue("refid")
+
+        if (StringUtils.isBlank(refId)) return
+
+        val sqlXmlTag = mapper.sqls
+            .mapNotNull { it.xmlTag }
+            .firstOrNull { it.getAttributeValue("id") == refId }
+
+        if (sqlXmlTag == null) return
+
+        val sqlXmlTexts = PsiTreeUtil.findChildrenOfType(sqlXmlTag, XmlText::class.java)
+        if (sqlXmlTexts.isEmpty()) {
+            return
+        }
+
+        injectXmlTexts(sqlXmlTexts, mapper, otherParamRanges, mutableListOf(), registrar)
     }
 
     private fun injectLangToParams(

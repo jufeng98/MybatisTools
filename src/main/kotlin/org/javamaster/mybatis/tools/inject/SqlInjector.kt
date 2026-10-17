@@ -7,38 +7,22 @@ import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.xml.XmlText
 import com.intellij.psi.xml.XmlToken
 import com.intellij.sql.psi.SqlLanguage
-import kotlin.text.trimStart
+import org.apache.commons.lang3.StringUtils
 
 object SqlInjector {
 
-    fun startInject(registrar: MultiHostRegistrar) {
+    fun startInjectSql(registrar: MultiHostRegistrar) {
         registrar.startInjecting(SqlLanguage.INSTANCE)
     }
 
-     fun injectSqlLangIntoXmlText(
-         registrar: MultiHostRegistrar,
-         host: PsiLanguageInjectionHost,
-         next: XmlText?,
-         text: String,
-         variablesRanges: List<TextRange>,
+    fun injectSqlLangIntoXmlText(
+        registrar: MultiHostRegistrar,
+        host: PsiLanguageInjectionHost,
+        next: XmlText?,
+        text: String,
+        variablesRanges: List<TextRange>,
     ): List<TextRange> {
-        val sibling = host.prevSibling.prevSibling
-        val prefix = if (sibling is XmlToken && host.parent is XmlTag && sibling.text == "where") {
-
-            val siblingText = next?.text
-            if (siblingText == null) {
-                "where "
-            } else {
-                val str = siblingText.trimStart().lowercase()
-                if (str.startsWith("and") || str.startsWith("or")) {
-                    "where 1 = 1 "
-                } else {
-                    "where 1 = 1 and "
-                }
-            }
-        } else {
-            null
-        }
+        val prefix = calPrefix(host, next)
 
         var lastVariableRangeEndOffset = 0
 
@@ -55,5 +39,30 @@ object SqlInjector {
         registrar.addPlace(prefix, null, host, range.shiftRight(0))
 
         return variablesRanges
+    }
+
+    private fun calPrefix(host: PsiLanguageInjectionHost, next: XmlText?): String? {
+        val sibling = host.prevSibling.prevSibling
+        val hostParent = host.parent
+        if (sibling is XmlToken && hostParent is XmlTag && sibling.text == "where") {
+            val hostText = host.text
+            if (StringUtils.isNotBlank(hostText)) {
+                return "where "
+            }
+
+            val nextText = next?.value
+            if (nextText == null) {
+                return "where "
+            }
+
+            val str = nextText.trimStart().lowercase()
+            if (!str.startsWith("and") && !str.startsWith("or")) {
+                return "where "
+            }
+
+            return "where 1 = 1 "
+        } else {
+            return null
+        }
     }
 }
