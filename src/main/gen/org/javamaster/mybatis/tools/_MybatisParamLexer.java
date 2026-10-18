@@ -10,7 +10,7 @@ import static com.intellij.psi.TokenType.WHITE_SPACE;
 import static org.javamaster.mybatis.tools.psi.MybatisParamTypes.*;
 
 
-public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
+public class _MybatisParamLexer implements com.intellij.lexer.FlexLexer {
 
   /** This character denotes the end of file */
   public static final int YYEOF = -1;
@@ -265,7 +265,7 @@ public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
   private boolean zzEOFDone;
 
   /* user code: */
-  public _MybatisLexer() {
+  public _MybatisParamLexer() {
     this((java.io.Reader)null);
   }
 
@@ -275,7 +275,7 @@ public class _MybatisLexer implements com.intellij.lexer.FlexLexer {
    *
    * @param   in  the java.io.Reader to read input from.
    */
-  public _MybatisLexer(java.io.Reader in) {
+  public _MybatisParamLexer(java.io.Reader in) {
     this.zzReader = in;
   }
 

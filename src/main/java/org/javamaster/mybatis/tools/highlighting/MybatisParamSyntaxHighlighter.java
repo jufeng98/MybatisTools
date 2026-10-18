@@ -6,7 +6,7 @@ import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
 import com.intellij.psi.tree.IElementType;
-import org.javamaster.mybatis.tools.parser.MybatisAdapter;
+import org.javamaster.mybatis.tools.parser.MybatisParamAdapter;
 import org.javamaster.mybatis.tools.psi.MybatisParamTypes;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,7 +30,7 @@ public class MybatisParamSyntaxHighlighter extends SyntaxHighlighterBase {
     }
 
     public @NotNull Lexer getHighlightingLexer() {
-        return new MybatisAdapter();
+        return new MybatisParamAdapter();
     }
 
     public TextAttributesKey @NotNull [] getTokenHighlights(IElementType tokenType) {

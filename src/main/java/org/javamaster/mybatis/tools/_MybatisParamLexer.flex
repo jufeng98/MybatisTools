@@ -9,13 +9,13 @@ import static org.javamaster.mybatis.tools.psi.MybatisParamTypes.*;
 %%
 
 %{
-  public _MybatisLexer() {
+  public _MybatisParamLexer() {
     this((java.io.Reader)null);
   }
 %}
 
 %public
-%class _MybatisLexer
+%class _MybatisParamLexer
 %implements com.intellij.lexer.FlexLexer
 %function advance
 %type IElementType

@@ -18,7 +18,7 @@ public class MybatisParserDefinition implements ParserDefinition {
 
     @Override
     public @NotNull Lexer createLexer(Project project) {
-        return new MybatisAdapter();
+        return new MybatisParamAdapter();
     }
 
     @Override
@@ -48,6 +48,6 @@ public class MybatisParserDefinition implements ParserDefinition {
 
     @Override
     public @NotNull PsiFile createFile(@NotNull FileViewProvider viewProvider) {
-        return new MybatisFile(viewProvider);
+        return new MybatisParamFile(viewProvider);
     }
 }
