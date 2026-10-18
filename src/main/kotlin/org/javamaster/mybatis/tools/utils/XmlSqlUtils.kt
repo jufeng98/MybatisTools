@@ -21,34 +21,35 @@ import com.intellij.util.xml.DomUtil
  */
 object XmlSqlUtils {
 
-    fun getRelateColumnElements(attribute: XmlAttribute): Set<SqlExpression>? {
+    fun getRelateColumnElements(attribute: XmlAttribute): Set<SqlExpression> {
         if (!DatabasePluginUtils.databasePluginAvailable) {
-            return null
+            return emptySet()
         }
 
         val xmlTag = attribute.parent
         val parentXmlTag = xmlTag.parent
         if (parentXmlTag !is XmlTag) {
-            return null
+            return emptySet()
         }
 
-        val domElement = DomUtil.findDomElement(attribute, IdDomElement::class.java) ?: return null
+        val domElement = DomUtil.findDomElement(attribute, IdDomElement::class.java) ?: return emptySet()
 
-        val resultMapId = MapperUtils.getResultMapId(parentXmlTag) ?: return null
+        val resultMapId = MapperUtils.getResultMapId(parentXmlTag) ?: return emptySet()
 
         val mapper = MapperUtils.getMapper(domElement)
 
-        val firstSelect = mapper.selects
-            .firstOrNull { it.xmlTag?.getAttributeValue("resultMap") == resultMapId }
+        val project = parentXmlTag.project
 
-        val firstSelectXmlTag = firstSelect?.xmlTag ?: return null
-
-        return collectColumnNameElements(firstSelectXmlTag, parentXmlTag.project)
+        return mapper.selects
+            .mapNotNull { it.xmlTag }
+            .filter { it.getAttributeValue("resultMap") == resultMapId }
+            .flatMap { collectColumnNameElements(it, project) }
+            .toSet()
     }
 
-    fun collectColumnNameElements(selectXmlTag: XmlTag?, project: Project): Set<SqlExpression>? {
+    fun collectColumnNameElements(selectXmlTag: XmlTag?, project: Project): Set<SqlExpression> {
         if (selectXmlTag == null) {
-            return null
+            return emptySet()
         }
 
         val xmlTexts = PsiTreeUtil.findChildrenOfType(selectXmlTag, XmlText::class.java)
@@ -68,31 +69,23 @@ object XmlSqlUtils {
             }
         }
 
-        val sqlFile = injectedPsiFiles?.get(0)?.first as? SqlFile ?: return null
+        val sqlFile = injectedPsiFiles?.get(0)?.first as? SqlFile ?: return emptySet()
 
-        val firstSelectClause = PsiTreeUtil.findChildOfType(sqlFile, SqlSelectClause::class.java) ?: return null
+        val firstSelectClause = PsiTreeUtil.findChildOfType(sqlFile, SqlSelectClause::class.java) ?: return emptySet()
 
         val set = firstSelectClause.expressions
             .mapNotNull { it }
             .toSet()
 
         if (set.isEmpty()) {
-            return null
+            return emptySet()
         }
 
         return set
     }
 
-    fun collectColumnNames(selectXmlTag: XmlTag?, project: Project): Set<String>? {
+    fun collectColumnNames(selectXmlTag: XmlTag?, project: Project): Set<String> {
         val sqlExpressions = collectColumnNameElements(selectXmlTag, project)
-
-        if (sqlExpressions == null) {
-            return null
-        }
-
-        if (sqlExpressions.isEmpty()) {
-            return null
-        }
 
         val set = sqlExpressions
             .mapNotNull { it.name }

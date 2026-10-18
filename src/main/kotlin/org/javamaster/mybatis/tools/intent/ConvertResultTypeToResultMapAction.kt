@@ -82,7 +82,7 @@ class ConvertResultTypeToResultMapAction : BaseIntentionAction() {
         val columnNames = if (DatabasePluginUtils.databasePluginAvailable) {
             XmlSqlUtils.collectColumnNames(selectXmlTag, project)
         } else {
-            null
+            emptySet()
         }
 
         val resultMapContents = GenerateUtils.generateResultMapContents(psiClass, columnNames, project)

@@ -11,7 +11,7 @@ import com.intellij.psi.xml.XmlTag
 
 object GenerateUtils {
 
-    fun generateResultMapContents(psiClass: PsiClass, columnNames: Set<String>?, project: Project): List<XmlTag> {
+    fun generateResultMapContents(psiClass: PsiClass, columnNames: Set<String>, project: Project): List<XmlTag> {
         var noId = true
 
         val factory = XmlElementFactory.getInstance(project)
@@ -26,7 +26,7 @@ object GenerateUtils {
 
                 val name = it.name
 
-                val columnName = if (columnNames != null) {
+                val columnName = if (columnNames.isNotEmpty()) {
                     if (columnNames.contains(name)) {
                         name
                     } else {

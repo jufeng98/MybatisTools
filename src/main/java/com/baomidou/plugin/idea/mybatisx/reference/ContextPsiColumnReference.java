@@ -95,9 +95,6 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
             String columnName = xmlAttrValue.getValue();
 
             Set<SqlExpression> sqlExpressions = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
-            if (sqlExpressions == null) {
-                return null;
-            }
 
             Optional<SqlExpression> first = sqlExpressions.stream()
                     .filter(it -> Objects.equals(it.getName(), columnName))
@@ -134,13 +131,12 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
         PsiElement xmlAttr = xmlAttrValue.getParent();
         if (xmlAttr instanceof XmlAttribute xmlAttribute) {
             Set<SqlExpression> columnNames = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
-            if (columnNames != null) {
-                columnNames.forEach(it -> {
-                    LookupElementBuilder elementBuilder = LookupElementBuilder.create(it, StringUtils.defaultString(it.getName()));
 
-                    elementList.add(elementBuilder);
-                });
-            }
+            columnNames.forEach(it -> {
+                LookupElementBuilder elementBuilder = LookupElementBuilder.create(it, StringUtils.defaultString(it.getName()));
+
+                elementList.add(elementBuilder);
+            });
         }
 
         return elementList.toArray();

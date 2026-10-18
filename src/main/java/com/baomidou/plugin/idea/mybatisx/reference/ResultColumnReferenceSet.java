@@ -9,6 +9,7 @@ import com.intellij.sql.psi.SqlExpression;
 import org.javamaster.mybatis.tools.utils.XmlSqlUtils;
 import org.jetbrains.annotations.*;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -44,7 +45,13 @@ public class ResultColumnReferenceSet extends ReferenceSetBase<PsiReference> {
         PsiElement xmlAttr = element.getParent();
         if (xmlAttr instanceof XmlAttribute xmlAttribute) {
             Set<SqlExpression> sqlExpressions = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
-            if (sqlExpressions == null) {
+            if (sqlExpressions.isEmpty()) {
+                return null;
+            }
+
+            boolean match = sqlExpressions.stream()
+                    .anyMatch(it -> Objects.equals("*", it.getName()));
+            if (match) {
                 return null;
             }
         }

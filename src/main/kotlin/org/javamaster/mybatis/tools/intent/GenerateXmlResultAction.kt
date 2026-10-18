@@ -86,10 +86,10 @@ class GenerateXmlResultAction : BaseIntentionAction() {
 
                 XmlSqlUtils.collectColumnNames(firstSelectXmlTag, project)
             } else {
-                null
+                emptySet()
             }
         } else {
-            null
+            emptySet()
         }
 
         val resultMapContents = GenerateUtils.generateResultMapContents(psiClass, columnNames, project)
