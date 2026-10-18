@@ -4,6 +4,7 @@ import com.baomidou.plugin.idea.mybatisx.annotation.Annotation;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.psi.xml.*;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,25 @@ public class CompositeHashMarkTip {
         return collectionAttr.getValueElement();
     }
 
+    public static @Nullable XmlAttributeValue getCollectionAttrIfForeachTagIndexAttrValue(PsiElement injectionHost) {
+        if (!(injectionHost instanceof XmlAttributeValue xmlAttributeValue)) {
+            return null;
+        }
+
+        XmlAttribute xmlAttribute = (XmlAttribute) xmlAttributeValue.getParent();
+        if (!"index".equals(xmlAttribute.getName())) {
+            return null;
+        }
+
+        XmlTag xmlTag = xmlAttribute.getParent();
+        XmlAttribute collectionAttr = xmlTag.getAttribute("collection");
+        if (collectionAttr == null) {
+            return null;
+        }
+
+        return collectionAttr.getValueElement();
+    }
+
     public static @Nullable PsiClass resolveGenericIfForeachTagItemAttrValue(XmlAttributeValue collectionAttrValue) {
         String collectionValue = collectionAttrValue.getValue();
 
@@ -79,16 +99,27 @@ public class CompositeHashMarkTip {
         val paramPsiCls = PsiUtils.INSTANCE.resolvePsiType(psiType);
 
         val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Collection");
-        if (!paramIsCollection) {
-            return null;
+        if (paramIsCollection) {
+            val genericParameters = ((PsiClassReferenceType) psiType).getParameters();
+            if (genericParameters.length == 0) {
+                return null;
+            }
+
+            return PsiUtils.INSTANCE.resolvePsiType(genericParameters[0]);
         }
 
-        val genericParameters = ((PsiClassReferenceType) psiType).getParameters();
-        if (genericParameters.length == 0) {
-            return null;
+        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Map");
+        if (paramIsMap) {
+            val genericParameters = ((PsiClassReferenceType) psiType).getParameters();
+            if (genericParameters.length < 2) {
+                return null;
+            }
+
+            PsiType valueGenericParameter = genericParameters[1];
+            return PsiUtils.INSTANCE.resolvePsiType(valueGenericParameter);
         }
 
-        return PsiUtils.INSTANCE.resolvePsiType(genericParameters[0]);
+        return null;
     }
 
     public static @Nullable PsiElement resolveGenericIfForeachTagItemAttrValue(PsiElement injectionHost) {
@@ -98,6 +129,58 @@ public class CompositeHashMarkTip {
         }
 
         return resolveGenericIfForeachTagItemAttrValue(collectionAttrValue);
+    }
+
+    public static @Nullable PsiElement resolveGenericIfForeachTagIndexAttrValue(PsiElement injectionHost) {
+        XmlAttributeValue collectionAttrValue = getCollectionAttrIfForeachTagIndexAttrValue(injectionHost);
+        if (collectionAttrValue == null) {
+            return null;
+        }
+
+        return resolveGenericIfForeachTagIndexAttrValue(collectionAttrValue);
+    }
+
+    public static @Nullable PsiElement resolveGenericIfForeachTagIndexAttrValue(XmlAttributeValue collectionAttrValue) {
+        String collectionValue = collectionAttrValue.getValue();
+
+        PsiReference[] psiReferences = ReferenceUtils.INSTANCE.convert(collectionValue, collectionAttrValue);
+
+        PsiElement resolve;
+        if (psiReferences.length == 1) {
+            resolve = psiReferences[0].resolve();
+        } else {
+            resolve = psiReferences[psiReferences.length - 1].resolve();
+        }
+
+        PsiType psiType;
+        if (resolve instanceof PsiParameter psiParameter) {
+            psiType = psiParameter.getType();
+        } else if (resolve instanceof PsiField psiField) {
+            psiType = psiField.getType();
+        } else {
+            return null;
+        }
+
+        val paramPsiCls = PsiUtils.INSTANCE.resolvePsiType(psiType);
+
+        val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Collection");
+        if (paramIsCollection) {
+            Project project = collectionAttrValue.getProject();
+            return JavaPsiFacade.getInstance(project).findClass("java.lang.Integer", GlobalSearchScope.allScope(project));
+        }
+
+        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Map");
+        if (paramIsMap) {
+            val genericParameters = ((PsiClassReferenceType) psiType).getParameters();
+            if (genericParameters.length < 1) {
+                return null;
+            }
+
+            PsiType keyGenericParameter = genericParameters[0];
+            return PsiUtils.INSTANCE.resolvePsiType(keyGenericParameter);
+        }
+
+        return null;
     }
 
     public static @Nullable XmlAttributeValue getItemAttrValueIfParamInForeachTag(PsiElement injectionHost) {
@@ -184,14 +267,19 @@ public class CompositeHashMarkTip {
     public static PsiElement resolveTarget(OgnlFieldNameReference ognlFieldNameReference, PsiMethod psiMethod,
                                            PsiElement injectionHost, PsiElement currentPsiElement,
                                            LinkedList<String> nameLevels, Project project) {
-        PsiElement itemPsiElement = resolveGenericIfForeachTagItemAttrValue(injectionHost);
-        if (itemPsiElement != null) {
-            return itemPsiElement;
+        PsiElement psiElement = resolveGenericIfForeachTagItemAttrValue(injectionHost);
+        if (psiElement != null) {
+            return psiElement;
         }
 
-        itemPsiElement = resolveIfParamInForeachTag(ognlFieldNameReference, injectionHost, currentPsiElement);
-        if (itemPsiElement != null) {
-            return itemPsiElement;
+        psiElement = resolveGenericIfForeachTagIndexAttrValue(injectionHost);
+        if (psiElement != null) {
+            return psiElement;
+        }
+
+        psiElement = resolveIfParamInForeachTag(ognlFieldNameReference, injectionHost, currentPsiElement);
+        if (psiElement != null) {
+            return psiElement;
         }
 
         PsiParameterList parameterList = psiMethod.getParameterList();

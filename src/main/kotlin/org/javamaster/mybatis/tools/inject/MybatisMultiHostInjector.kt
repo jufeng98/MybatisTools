@@ -147,6 +147,14 @@ class MybatisMultiHostInjector : MultiHostInjector {
                 return@forEach
             }
 
+            val staticMethodIndex = text.indexOf("@", it.startOffset)
+            if (staticMethodIndex != -1) {
+                registrar.startInjecting(OgnlLanguage.INSTANCE)
+                registrar.addPlace("%{", "}", injectionHost, it)
+                registrar.doneInjecting()
+                return@forEach
+            }
+
             val idx = text.indexOf(",", it.startOffset)
             val splitIndex = if (idx != -1 && idx < it.endOffset) idx else -1
 
