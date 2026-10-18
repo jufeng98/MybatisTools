@@ -9,8 +9,7 @@ import com.intellij.psi.xml.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.javamaster.mybatis.tools.reference.OgnlFieldNameReference;
-import org.javamaster.mybatis.tools.utils.PsiUtils;
-import org.javamaster.mybatis.tools.utils.ReferenceUtils;
+import org.javamaster.mybatis.tools.utils.*;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -123,13 +122,8 @@ public class CompositeHashMarkTip {
     public static PsiElement resolveIfParamInForeachTag(OgnlFieldNameReference ognlFieldNameReference,
                                                         PsiElement injectionHost,
                                                         PsiElement currentPsiElement) {
-        PsiElement parent = injectionHost.getParent();
-        if (!(parent instanceof XmlTag xmlTag)) {
-            return null;
-        }
-
-        String tagName = xmlTag.getName();
-        if (!"foreach".equals(tagName)) {
+        XmlTag foreachTag = XmlSqlUtils.INSTANCE.getForeachTag(injectionHost);
+        if (foreachTag == null) {
             return null;
         }
 
@@ -143,7 +137,7 @@ public class CompositeHashMarkTip {
             return null;
         }
 
-        XmlAttribute itemAttr = xmlTag.getAttribute("item");
+        XmlAttribute itemAttr = foreachTag.getAttribute("item");
         if (itemAttr == null) {
             return null;
         }
@@ -152,7 +146,7 @@ public class CompositeHashMarkTip {
 
         PsiElement itemPsiElement = null;
         if (firstOgnlFieldNameReference.getFrom().substring(text).equals(itemAttr.getValue())) {
-            XmlAttribute collectionAttr = xmlTag.getAttribute("collection");
+            XmlAttribute collectionAttr = foreachTag.getAttribute("collection");
             if (collectionAttr == null) {
                 return null;
             }
