@@ -204,6 +204,11 @@
             <className>org.javamaster.mybatis.tools.intent.AddIfTestTagAction</className>
             <category>MyBatisTools/Generate</category>
         </intentionAction>
+        <intentionAction>
+            <language>XML</language>
+            <className>org.javamaster.mybatis.tools.intent.AddForeachTagAction</className>
+            <category>MyBatisTools/Generate</category>
+        </intentionAction>
         <!--提示动作 end-->
 
         <!-- mybatis的xml和mapper类 文件图标都改成一只鸟-->
