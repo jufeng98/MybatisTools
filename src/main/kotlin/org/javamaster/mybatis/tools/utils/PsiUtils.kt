@@ -1,9 +1,11 @@
 package org.javamaster.mybatis.tools.utils
 
+import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
@@ -33,6 +35,23 @@ object PsiUtils {
         val javaPsiFacade = JavaPsiFacade.getInstance(project)
 
         return javaPsiFacade.findClass(fullClassName, scope)
+    }
+
+    fun oneParamAndNoParamAnno(psiMethod: PsiMethod?): Boolean {
+        psiMethod ?: return false
+
+        val parameterList = psiMethod.parameterList
+        val parametersCount = parameterList.parametersCount
+        if (parametersCount == 0) {
+            return false
+        }
+
+        if (parametersCount > 1) {
+            return false
+        }
+
+        val parameters = parameterList.parameters
+        return parameters[0].getAnnotation(Annotation.PARAM.qualifiedName) == null
     }
 
     fun getNextNotBlankXmlText(xmlTexts: Collection<XmlText>, start: Int): XmlText? {

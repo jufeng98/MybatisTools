@@ -2,7 +2,6 @@ package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
-import com.baomidou.plugin.idea.mybatisx.tip.hashmark.CompositeHashMarkTip
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionUtil
@@ -117,17 +116,17 @@ object CompletionUtils {
         // 按照新的前缀进行匹配提示
         val newCompletionResultSet = resultSet.withPrefixMatcher(prefix)
 
-        val collectionAttrValue = CompositeHashMarkTip.getCollectionAttrIfForeachTagItemAttrValue(injectionHost)
+        val collectionAttrValue = OgnlReferenceUtils.getCollectionAttrIfForeachTagItemAttrValue(injectionHost)
         if (collectionAttrValue != null) {
             // foreach 的 item 属性智能提示
             val value = collectionAttrValue.value
 
-            val tip = if (value.endsWith("es")) {
-                value.substring(0, value.length - 2)
+            val tip = if (value.endsWith("s")) {
+                value.substring(0, value.length - 1)
             } else if (value.endsWith("List")) {
                 value.substring(0, value.length - 4)
             } else {
-                val psiClass = CompositeHashMarkTip.resolveGenericIfForeachTagItemAttrValue(collectionAttrValue)
+                val psiClass = OgnlReferenceUtils.resolveGenericIfForeachTagItemAttrValue(collectionAttrValue)
                 if (psiClass != null && psiClass.name != null) {
                     StringUtil.toCamelCase(psiClass.name)
                 } else {
@@ -140,12 +139,12 @@ object CompletionUtils {
             return
         }
 
-        val idx = currentPsiElementText.indexOf(".")
+        val dotIdx = currentPsiElementText.indexOf(".")
 
-        val itemAttrValue = CompositeHashMarkTip.getItemAttrValueIfParamInForeachTag(injectionHost)
+        val itemAttrValue = OgnlReferenceUtils.getItemAttrValueIfParamInForeachTag(injectionHost)
         if (itemAttrValue != null) {
             // foreach 里面的 param 参数属性智能提示
-            if (idx == -1) {
+            if (dotIdx == -1) {
                 currentPsiElementText = itemAttrValue.value
 
                 val psiReferences = ReferenceUtils.convert(currentPsiElementText, itemAttrValue)
@@ -178,7 +177,7 @@ object CompletionUtils {
             return
         }
 
-        if (idx == -1) {
+        if (dotIdx == -1) {
             val helper = JavaPsiFacade.getInstance(project).constantEvaluationHelper
 
             val parameters = parameterList.parameters
@@ -194,6 +193,11 @@ object CompletionUtils {
 
                     fillParamNames(paramValue, psiParameter, newCompletionResultSet, fullOgnl)
                 } else {
+                    newCompletionResultSet.addElement(
+                        LookupElementBuilder.create(psiParameter, psiParameter.name)
+                            .withTypeText(psiParameter.type.presentableText)
+                    )
+
                     val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: return
 
                     fillFieldAndMethodNames("", psiClass, newCompletionResultSet, fullOgnl)
@@ -208,7 +212,7 @@ object CompletionUtils {
                 psiReferences[psiReferences.size - 2].resolve()
             }
 
-            val fieldPrefix = currentPsiElementText.substring(0, idx + 1)
+            val fieldPrefix = currentPsiElementText.substring(0, dotIdx + 1)
 
             if (resolve is PsiParameter || resolve is PsiField) {
                 val psiClass = PsiUtils.resolvePsiType(resolve.type) ?: return

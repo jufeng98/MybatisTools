@@ -9,6 +9,9 @@ import com.intellij.psi.xml.XmlToken
 import com.intellij.sql.psi.SqlLanguage
 import org.apache.commons.lang3.StringUtils
 
+/**
+ * @author yudong
+ */
 object SqlInjector {
 
     fun startInjectSql(registrar: MultiHostRegistrar) {
@@ -22,26 +25,30 @@ object SqlInjector {
         text: String,
         variablesRanges: List<TextRange>,
     ): List<TextRange> {
-        val prefix = calPrefix(host, next)
+        val variablePrefix = calVariablePrefix(host, next)
 
         var lastVariableRangeEndOffset = 0
 
         for (variableRange in variablesRanges) {
             val range = TextRange.create(lastVariableRangeEndOffset, variableRange.startOffset)
 
-            registrar.addPlace(prefix, variableRange.substring(text), host, range)
+            registrar.addPlace(variablePrefix, variableRange.substring(text), host, range)
 
             lastVariableRangeEndOffset = variableRange.endOffset
         }
 
         val range = TextRange.create(lastVariableRangeEndOffset, text.length)
 
-        registrar.addPlace(prefix, null, host, range.shiftRight(0))
+        val suffix = calSqlSuffix(host)
+
+        val prefix = calSqlPrefix(host)
+
+        registrar.addPlace(prefix ?: variablePrefix, suffix, host, range.shiftRight(0))
 
         return variablesRanges
     }
 
-    private fun calPrefix(host: PsiLanguageInjectionHost, next: XmlText?): String? {
+    private fun calVariablePrefix(host: PsiLanguageInjectionHost, next: XmlText?): String? {
         val sibling = host.prevSibling.prevSibling
         val hostParent = host.parent
         if (sibling is XmlToken && hostParent is XmlTag) {
@@ -68,8 +75,31 @@ object SqlInjector {
             } else {
                 return null
             }
-        } else {
-            return null
         }
+
+        return null
     }
+
+    private fun calSqlSuffix(host: PsiLanguageInjectionHost): String? {
+        val nextSibling = host.nextSibling
+        if (nextSibling is XmlTag) {
+            if (nextSibling.name == "trim") {
+                return nextSibling.getAttributeValue("prefix")
+            }
+        }
+
+        return null
+    }
+
+    private fun calSqlPrefix(host: PsiLanguageInjectionHost): String? {
+        val prevSibling = host.prevSibling
+        if (prevSibling is XmlTag) {
+            if (prevSibling.name == "trim") {
+                return prevSibling.getAttributeValue("suffix")
+            }
+        }
+
+        return null
+    }
+
 }

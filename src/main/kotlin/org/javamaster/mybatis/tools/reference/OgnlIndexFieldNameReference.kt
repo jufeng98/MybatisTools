@@ -1,12 +1,14 @@
 package org.javamaster.mybatis.tools.reference
 
+import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
+import com.baomidou.plugin.idea.mybatisx.dom.model.Sql
+import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.ognl.psi.OgnlIndexedExpression
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiField
-import com.intellij.psi.PsiParameter
-import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.util.xml.DomUtil
+import org.javamaster.mybatis.tools.utils.MapperUtil
 import org.javamaster.mybatis.tools.utils.PsiUtils
 import org.javamaster.mybatis.tools.utils.ReferenceUtils.resolveTarget
 import java.util.*
@@ -40,8 +42,18 @@ class OgnlIndexFieldNameReference(
             null
         } ?: return null
 
+        val injectionHost =
+            InjectedLanguageManager.getInstance(myElement.project).getInjectionHost(myElement) ?: return null
 
-        return resolveTarget(myElement, genericPsiClass, nameLevels)
+        val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return null
+
+        val psiMethod = if (domElement is Sql) {
+            MapperUtil.getSqlPsiMethod(domElement)
+        } else {
+            domElement.id.value as? PsiMethod
+        }
+
+        return resolveTarget(myElement, genericPsiClass, nameLevels, PsiUtils.oneParamAndNoParamAnno(psiMethod))
     }
 
 }

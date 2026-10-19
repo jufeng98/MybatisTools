@@ -23,6 +23,7 @@ object ReferenceUtils {
         currentPsiElement: PsiElement,
         paramPsiCls: PsiClass,
         nameLevels: LinkedList<String>,
+        oneParamAndNoParamAnno: Boolean,
     ): PsiElement? {
         var psiField: PsiField? = null
 
@@ -30,8 +31,24 @@ object ReferenceUtils {
             var fieldTypeCls = paramPsiCls
             var propertyName = nameLevels.pop()
 
+            if (oneParamAndNoParamAnno) {
+                if (InheritanceUtil.isInheritor(paramPsiCls, "java.util.Collection")) {
+
+                }
+            }
+
             while (true) {
                 if (InheritanceUtil.isInheritor(fieldTypeCls, "java.util.Map")) {
+                    psiField = fieldTypeCls.findFieldByName(propertyName, true)
+                    if (psiField == null) {
+                        val psiMethods = fieldTypeCls.findMethodsByName(propertyName, true)
+                        if (psiMethods.isNotEmpty()) {
+                            return psiMethods[0]
+                        }
+
+                        return MapValueFakePsiElement(currentPsiElement, fieldTypeCls)
+                    }
+
                     return MapValueFakePsiElement(currentPsiElement, fieldTypeCls)
                 }
 
