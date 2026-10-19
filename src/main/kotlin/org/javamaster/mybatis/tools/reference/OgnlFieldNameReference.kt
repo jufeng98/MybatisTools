@@ -2,7 +2,6 @@ package org.javamaster.mybatis.tools.reference
 
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.dom.model.Sql
-import com.baomidou.plugin.idea.mybatisx.tip.hashmark.CompositeHashMarkTip
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
@@ -12,6 +11,7 @@ import com.intellij.psi.xml.XmlElement
 import com.intellij.util.xml.DomUtil
 import org.apache.commons.collections.CollectionUtils
 import org.javamaster.mybatis.tools.utils.MapperUtil
+import org.javamaster.mybatis.tools.utils.OgnlReferenceUtils
 import java.util.*
 
 /**
@@ -37,10 +37,10 @@ class OgnlFieldNameReference(
         val psiMethod = if (domElement is Sql) {
             MapperUtil.getSqlPsiMethod(domElement)
         } else {
-            domElement.id.value as? PsiMethod ?: return null
-        }
+            domElement.id.value as? PsiMethod
+        } ?: return null
 
-        return CompositeHashMarkTip.resolveTarget(
+        return OgnlReferenceUtils.resolveTarget(
             this, psiMethod, injectionHost, myElement, LinkedList<String>(nameLevels), project
         )
     }

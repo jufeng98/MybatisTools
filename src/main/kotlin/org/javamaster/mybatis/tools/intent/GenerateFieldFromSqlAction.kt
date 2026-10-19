@@ -2,6 +2,7 @@ package org.javamaster.mybatis.tools.intent
 
 import com.baomidou.plugin.idea.mybatisx.util.DomUtils
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
+import com.intellij.codeInsight.intention.preview.IntentionPreviewUtils
 import com.intellij.codeInspection.util.IntentionName
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.editor.Editor
@@ -42,6 +43,10 @@ class GenerateFieldFromSqlAction : BaseIntentionAction() {
     }
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
+        if (IntentionPreviewUtils.isIntentionPreviewActive()) {
+            return
+        }
+
         val element = getSqlElement(editor, file, project) ?: return
 
         val selectClause = PsiTreeUtil.getParentOfType(element, SqlSelectClause::class.java) ?: return

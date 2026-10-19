@@ -10,6 +10,9 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.xml.XmlText
 import org.apache.commons.lang3.StringUtils
 
+/**
+ * @author yudong
+ */
 object PsiUtils {
 
     fun resolvePsiType(psiType: PsiType?): PsiClass? {

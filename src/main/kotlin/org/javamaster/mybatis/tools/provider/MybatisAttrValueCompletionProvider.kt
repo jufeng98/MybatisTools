@@ -12,6 +12,9 @@ import com.intellij.util.xml.DomUtil
 import org.javamaster.mybatis.tools.psi.MybatisParamAttr
 import org.javamaster.mybatis.tools.psi.MybatisParamAttrValue
 
+/**
+ * @author yudong
+ */
 class MybatisAttrValueCompletionProvider : CompletionProvider<CompletionParameters>() {
 
     override fun addCompletions(

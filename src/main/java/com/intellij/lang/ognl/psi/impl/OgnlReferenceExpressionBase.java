@@ -19,6 +19,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.ide.projectView.PresentationData;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.ognl.OgnlTypes;
+import com.intellij.lang.ognl.psi.OgnlParameterList;
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
@@ -45,6 +46,11 @@ abstract class OgnlReferenceExpressionBase extends OgnlExpressionImpl {
 
     @Override
     public PsiReference @NotNull [] getReferences() {
+        if (this.getParent() instanceof OgnlParameterList) {
+            // 方法参数不做引用和解析
+            return PsiReference.EMPTY_ARRAY;
+        }
+
         String text = this.getText();
 
         return ReferenceUtils.INSTANCE.convert(text, this);

@@ -9,6 +9,9 @@ import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.xml.XmlTag
 
+/**
+ * @author yudong
+ */
 object GenerateUtils {
 
     fun generateResultMapContents(psiClass: PsiClass, columnNames: Set<String>, project: Project): List<XmlTag> {
