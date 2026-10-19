@@ -17,6 +17,7 @@ import com.intellij.util.containers.JBIterable;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.javamaster.mybatis.tools.utils.StringUtil;
 import org.javamaster.mybatis.tools.utils.XmlSqlUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,9 +60,9 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
     /**
      * Instantiates a new Context psi field reference.
      *
-     * @param element     the element
-     * @param range       the range
-     * @param index       the index
+     * @param element the element
+     * @param range   the range
+     * @param index   the index
      */
     public ContextPsiColumnReference(XmlAttributeValue element, TextRange range, int index, PsiClass mapperClass) {
         super(element, range, false);
@@ -92,12 +93,21 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
         PsiElement xmlAttr = xmlAttrValue.getParent();
         if (xmlAttr instanceof XmlAttribute xmlAttribute) {
             // 从 SQL 中找
-            String columnName = xmlAttrValue.getValue();
+            String columnAttrValue = xmlAttrValue.getValue();
+            String columnAttrValueCamelCaseName = StringUtil.toCamelCase(columnAttrValue);
 
             Set<SqlExpression> sqlExpressions = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
 
             Optional<SqlExpression> first = sqlExpressions.stream()
-                    .filter(it -> Objects.equals(it.getName(), columnName))
+                    .filter(it -> {
+                        String name = it.getName();
+                        boolean equals = Objects.equals(name, columnAttrValue);
+                        if (equals) {
+                            return true;
+                        }
+
+                        return Objects.equals(name, columnAttrValueCamelCaseName);
+                    })
                     .findFirst();
 
             return first.orElse(null);
@@ -133,9 +143,10 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
             Set<SqlExpression> columnNames = XmlSqlUtils.INSTANCE.getRelateColumnElements(xmlAttribute);
 
             columnNames.forEach(it -> {
-                LookupElementBuilder elementBuilder = LookupElementBuilder.create(it, StringUtils.defaultString(it.getName()));
+                String name = StringUtils.defaultString(it.getName());
 
-                elementList.add(elementBuilder);
+                elementList.add(LookupElementBuilder.create(it, name));
+                elementList.add(LookupElementBuilder.create(it, StringUtil.toCamelCase(name)));
             });
         }
 
