@@ -72,7 +72,16 @@ object OgnlReferenceUtils {
 
         val paramMap = constructParamMap(parameterList.parameters)
 
-        return ReferenceUtils.resolveTarget(currentPsiElement, paramPsiCls, nameLevels, paramMap)
+        val resolveTarget = ReferenceUtils.resolveTarget(currentPsiElement, paramPsiCls, nameLevels, paramMap)
+        if (resolveTarget != null) {
+            return resolveTarget
+        }
+
+        if (oneParamAndNoParamAnno) {
+            return psiParameter
+        }
+
+        return resolveTarget
     }
 
     fun getCollectionAttrIfForeachTagItemAttrValue(injectionHost: PsiElement?): XmlAttributeValue? {

@@ -147,8 +147,8 @@ class AddForeachTagAction : BaseIntentionAction() {
         } else if (name.endsWith("List")) {
             name.substring(0, name.length - 4)
         } else {
-            if (nameClass != null) {
-                val genericParameters = (nameClass as PsiClassReferenceType).parameters
+            if (nameClass is PsiClassReferenceType) {
+                val genericParameters = nameClass.parameters
                 if (genericParameters.size == 0) {
                     "item"
                 } else {

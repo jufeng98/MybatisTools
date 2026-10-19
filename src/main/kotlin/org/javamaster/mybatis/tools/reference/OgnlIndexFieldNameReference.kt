@@ -66,7 +66,16 @@ class OgnlIndexFieldNameReference(
 
         val paramMap = constructParamMap(psiMethod?.parameterList?.parameters)
 
-        return resolveTarget(myElement, genericPsiClass, nameLevels, paramMap)
+        val resolveTarget = resolveTarget(myElement, genericPsiClass, nameLevels, paramMap)
+        if (resolveTarget != null) {
+            return resolveTarget
+        }
+
+        if (oneParamAndNoParamAnno) {
+            return psiMethod!!.parameterList.parameters[0]
+        }
+
+        return resolveTarget
     }
 
 }
