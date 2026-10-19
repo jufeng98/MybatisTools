@@ -65,7 +65,7 @@ import com.intellij.lang.ognl.OgnlTypes;
   resetInternal();
 %eof}
 
-ALPHA=[:letter:]
+ALPHA=[:jletter:]
 DIGIT=[0-9]
 WHITE_SPACE_CHAR=[\ \n\r\t\f]
 
