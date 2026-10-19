@@ -56,6 +56,14 @@ object OgnlReferenceUtils {
             return psiParameter
         }
 
+        val oneParamAndNoParamAnno = PsiUtils.oneParamAndNoParamAnno(psiMethod)
+        if (oneParamAndNoParamAnno) {
+            val psiType = psiParameter.type
+            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, "java.util.Collection")) {
+                return psiParameter
+            }
+        }
+
         val paramPsiType = psiParameter.type
         val paramPsiCls = resolvePsiType(paramPsiType)
         if (paramPsiCls == null) {
@@ -64,9 +72,7 @@ object OgnlReferenceUtils {
 
         val paramMap = constructParamMap(parameterList.parameters)
 
-        return ReferenceUtils.resolveTarget(
-            currentPsiElement, paramPsiCls, nameLevels, paramMap, PsiUtils.oneParamAndNoParamAnno(psiMethod)
-        )
+        return ReferenceUtils.resolveTarget(currentPsiElement, paramPsiCls, nameLevels, paramMap)
     }
 
     fun getCollectionAttrIfForeachTagItemAttrValue(injectionHost: PsiElement?): XmlAttributeValue? {

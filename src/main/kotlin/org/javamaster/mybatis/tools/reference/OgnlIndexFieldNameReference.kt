@@ -7,6 +7,7 @@ import com.intellij.lang.ognl.psi.OgnlIndexedExpression
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.psi.util.InheritanceUtil
 import com.intellij.util.xml.DomUtil
 import org.javamaster.mybatis.tools.utils.MapperUtil
 import org.javamaster.mybatis.tools.utils.PsiUtils
@@ -54,12 +55,18 @@ class OgnlIndexFieldNameReference(
             domElement.id.value as? PsiMethod
         }
 
+        val oneParamAndNoParamAnno = PsiUtils.oneParamAndNoParamAnno(psiMethod)
+        if (oneParamAndNoParamAnno) {
+            val psiParameter = psiMethod!!.parameterList.parameters[0]
+            val psiType = psiParameter.type
+            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, "java.util.Collection")) {
+                return psiParameter
+            }
+        }
+
         val paramMap = constructParamMap(psiMethod?.parameterList?.parameters)
 
-        return resolveTarget(
-            myElement, genericPsiClass, nameLevels,
-            paramMap, PsiUtils.oneParamAndNoParamAnno(psiMethod)
-        )
+        return resolveTarget(myElement, genericPsiClass, nameLevels, paramMap)
     }
 
 }
