@@ -10,6 +10,7 @@ import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.util.xml.DomUtil
 import org.javamaster.mybatis.tools.utils.MapperUtil
 import org.javamaster.mybatis.tools.utils.PsiUtils
+import org.javamaster.mybatis.tools.utils.PsiUtils.constructParamMap
 import org.javamaster.mybatis.tools.utils.ReferenceUtils.resolveTarget
 import java.util.*
 
@@ -53,7 +54,12 @@ class OgnlIndexFieldNameReference(
             domElement.id.value as? PsiMethod
         }
 
-        return resolveTarget(myElement, genericPsiClass, nameLevels, PsiUtils.oneParamAndNoParamAnno(psiMethod))
+        val paramMap = constructParamMap(psiMethod?.parameterList?.parameters)
+
+        return resolveTarget(
+            myElement, genericPsiClass, nameLevels,
+            paramMap, PsiUtils.oneParamAndNoParamAnno(psiMethod)
+        )
     }
 
 }

@@ -6,9 +6,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.xml.XmlText
 import org.apache.commons.lang3.StringUtils
 
@@ -70,6 +72,26 @@ object PsiUtils {
 
             idx++
         }
+    }
+
+    fun constructParamMap(parameters: Array<PsiParameter>?): Map<String, PsiParameter> {
+        val map = mutableMapOf<String, PsiParameter>()
+
+        var idx = 0
+        parameters?.forEach {
+            val psiType = it.type
+            if (InheritanceUtil.isInheritor(psiType, "org.apache.ibatis.session.RowBounds")
+                || InheritanceUtil.isInheritor(psiType, "org.apache.ibatis.session.ResultHandler")
+            ) {
+                return@forEach
+            }
+
+            val index = idx++
+            map["param$index"] = it
+            map["arg${index}"] = it
+        }
+
+        return map
     }
 
 }

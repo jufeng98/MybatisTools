@@ -12,6 +12,7 @@ import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.psi.xml.XmlTag
 import org.javamaster.mybatis.tools.psi.impl.MapValueFakePsiElement
 import org.javamaster.mybatis.tools.reference.OgnlFieldNameReference
+import org.javamaster.mybatis.tools.utils.PsiUtils.constructParamMap
 import org.javamaster.mybatis.tools.utils.PsiUtils.resolvePsiType
 import org.javamaster.mybatis.tools.utils.XmlSqlUtils.getForeachTag
 import java.util.*
@@ -61,8 +62,10 @@ object OgnlReferenceUtils {
             return null
         }
 
+        val paramMap = constructParamMap(parameterList.parameters)
+
         return ReferenceUtils.resolveTarget(
-            currentPsiElement, paramPsiCls, nameLevels, PsiUtils.oneParamAndNoParamAnno(psiMethod)
+            currentPsiElement, paramPsiCls, nameLevels, paramMap, PsiUtils.oneParamAndNoParamAnno(psiMethod)
         )
     }
 
@@ -353,4 +356,5 @@ object OgnlReferenceUtils {
 
         return null
     }
+
 }
