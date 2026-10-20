@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.javamaster.mybatis.tools"
-version = "1.0.0"
+version = "2.0.0"
 
 repositories {
     maven { url = URI("https://maven.aliyun.com/nexus/content/groups/public/") }
@@ -43,15 +43,15 @@ dependencies {
     implementation("org.freemarker:freemarker:2.3.35")
     implementation("com.itranswarp:compiler:1.0")
     implementation("org.apache.commons:commons-lang3:3.20.0")
-
     implementation("org.jetbrains:annotations:26.1.0")
 
-    testImplementation("junit:junit:4.13.1")
-    testImplementation("commons-io:commons-io:2.22.0")
+
     compileOnly("org.projectlombok:lombok:1.18.48")
+
     annotationProcessor("org.projectlombok:lombok:1.18.48")
 
     testImplementation("junit:junit:4.13.1")
+    testImplementation("commons-io:commons-io:2.22.0")
 }
 
 sourceSets["main"].java.srcDirs("src/main/gen")
@@ -81,10 +81,6 @@ tasks {
 
     runIde {
         autoReload = false
-        jvmArgs = listOf(
-            "-Xms1024m",
-            "-Xmx2048m",
-        )
     }
 
     jar {

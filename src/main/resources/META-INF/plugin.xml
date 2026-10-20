@@ -103,6 +103,10 @@
                         serviceImplementation="com.baomidou.plugin.idea.mybatisx.alias.AliasFacade"/>
         <projectService id="javamaster.MapperLocator"
                         serviceImplementation="com.baomidou.plugin.idea.mybatisx.locator.MapperLocator"/>
+        <projectService serviceImplementation="com.baomidou.plugin.idea.mybatisx.alias.AnnotationAliasResolver"/>
+        <!-- 应用服务, 必须放在主文件,否则 XmlAndMapperIconProvider 会加载不到-->
+        <applicationService id="javamaster.MybatisSetting"
+                            serviceImplementation="com.baomidou.plugin.idea.mybatisx.setting.MybatisXSettings"/>
 
         <!--代码行插件，实现代码导航功能-->
         <!-- java 跳转到 xml  -->
@@ -215,14 +219,12 @@
         <iconProvider id="javamaster.XmlAndMapperIconProvider"
                       implementation="com.baomidou.plugin.idea.mybatisx.provider.XmlAndMapperIconProvider"/>
 
-        <!-- 应用服务, 必须放在主文件,否则 XmlAndMapperIconProvider 会加载不到-->
-        <applicationService id="javamaster.MybatisSetting"
-                            serviceImplementation="com.baomidou.plugin.idea.mybatisx.setting.MybatisXSettings"/>
         <!-- 使用 Alt+Delete 删除方法时, 也删掉对应的标签 -->
         <refactoring.safeDeleteProcessor id="MapperMethodSafeDeleteProcessor"
                                          implementation="com.baomidou.plugin.idea.mybatisx.system.refactoring.MapperMethodSafeDeleteProcessor"/>
 
-        <projectService serviceImplementation="com.baomidou.plugin.idea.mybatisx.alias.AnnotationAliasResolver"/>
+        <psi.treeChangePreprocessor
+                implementation="org.javamaster.mybatis.tools.treeChange.ControllerPsiTreeChangePreprocessor"/>
 
         <notificationGroup displayType="BALLOON" id="MyBatisTools Notification" isLogByDefault="true"/>
     </extensions>
