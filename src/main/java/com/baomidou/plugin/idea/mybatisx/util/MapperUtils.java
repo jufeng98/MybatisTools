@@ -5,6 +5,7 @@ import com.baomidou.plugin.idea.mybatisx.dom.model.Package;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.intellij.ide.fileTemplates.*;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.*;
@@ -42,9 +43,11 @@ public final class MapperUtils {
         if (null == domElement) {
             return Optional.empty();
         }
+
         if (domElement instanceof IdDomElement) {
             return Optional.of((IdDomElement) domElement);
         }
+
         return Optional.ofNullable(DomUtil.getParentOfType(domElement, IdDomElement.class, true));
     }
 
@@ -71,6 +74,7 @@ public final class MapperUtils {
             Messages.showMessageDialog("file " + file.getName() + " already exists", "Generate File", Messages.getWarningIcon());
             return null;
         }
+
         return FileTemplateUtil.createFromTemplate(fileTemplate, fileName, pops, directory);
     }
 
@@ -82,7 +86,8 @@ public final class MapperUtils {
      */
     @NotNull
     public static Collection<PsiDirectory> findMapperDirectories(@NotNull Project project) {
-        return Collections2.transform(findMappers(project), input -> Objects.requireNonNull(input.getXmlElement()).getContainingFile().getContainingDirectory());
+        return Collections2.transform(findMappers(project),
+                input -> Objects.requireNonNull(input.getXmlElement()).getContainingFile().getContainingDirectory());
     }
 
     /**
@@ -108,6 +113,10 @@ public final class MapperUtils {
         return DomUtils.findDomElements(project, Mapper.class);
     }
 
+    public static Collection<Mapper> findMappers(@Nullable Module module, Project project) {
+        return DomUtils.findDomElements(module, project, Mapper.class);
+    }
+
     /**
      * Find mappers collection.
      *
@@ -119,11 +128,16 @@ public final class MapperUtils {
     @NonNls
     public static Collection<Mapper> findMappers(@NotNull Project project, @NotNull String namespace) {
         List<Mapper> result = Lists.newArrayList();
-        for (Mapper mapper : findMappers(project)) {
-            if (getNamespace(mapper).equals(namespace)) {
-                result.add(mapper);
+
+        Collection<Mapper> mappers = findMappers(project);
+        for (Mapper mapper : mappers) {
+            if (!getNamespace(mapper).equals(namespace)) {
+                continue;
             }
+
+            result.add(mapper);
         }
+
         return result;
     }
 
@@ -134,6 +148,7 @@ public final class MapperUtils {
         if (containingClass == null) {
             return Collections.emptyList();
         }
+
         List<XmlElement> result = Lists.newArrayList();
         for (Mapper mapper : findMappers(project)) {
             final GenericAttributeValue<PsiClass> namespace = mapper.getNamespace();
@@ -141,14 +156,16 @@ public final class MapperUtils {
             if (namespaceValue == null) {
                 continue;
             }
-            if (namespaceValue.equals(containingClass) ||
-                    namespaceValue.isInheritor(containingClass, true)) {
+
+            if (namespaceValue.equals(containingClass) || namespaceValue.isInheritor(containingClass, true)) {
                 final Optional<IdDomElement> first = mapper.getDaoElements().stream()
                         .filter(item -> method.getName().equals(item.getId().getStringValue()))
                         .findFirst();
+
                 first.ifPresent(item -> result.add(item.getXmlElement()));
             }
         }
+
         return result;
     }
 
@@ -157,23 +174,32 @@ public final class MapperUtils {
         if (containingClass == null) {
             return null;
         }
-        for (Mapper mapper : findMappers(project)) {
+
+        Collection<Mapper> mappers = findMappers(project);
+        for (Mapper mapper : mappers) {
             final GenericAttributeValue<PsiClass> namespace = mapper.getNamespace();
             final String namespaceStringValue = namespace.getStringValue();
-            if (namespaceStringValue != null &&
-                    namespaceStringValue.equals(containingClass.getQualifiedName())) {
-                return findTagByMapper(mapper, psiMethod.getName());
+            if (namespaceStringValue == null || !namespaceStringValue.equals(containingClass.getQualifiedName())) {
+                continue;
             }
+
+            return findTagByMapper(mapper, psiMethod.getName());
         }
+
         return null;
     }
 
     private static XmlTag findTagByMapper(Mapper mapper, String id) {
-        for (IdDomElement daoElement : mapper.getDaoElements()) {
-            if (id.equals(daoElement.getId().getStringValue())) {
-                return daoElement.getXmlTag();
+        List<IdDomElement> daoElements = mapper.getDaoElements();
+
+        for (IdDomElement daoElement : daoElements) {
+            if (!id.equals(daoElement.getId().getStringValue())) {
+                continue;
             }
+
+            return daoElement.getXmlTag();
         }
+
         return null;
     }
 
@@ -190,26 +216,16 @@ public final class MapperUtils {
         if (project == null || clazz == null) {
             mappers = Collections.emptyList();
         }
+
         if (mappers == null && StringUtils.isNotBlank(clazz.getQualifiedName()) && JavaUtils.isElementWithinInterface(clazz)) {
             mappers = findMappers(project, Objects.requireNonNull(clazz.getQualifiedName()));
         }
+
         if (mappers == null) {
             mappers = Collections.emptyList();
         }
-        return mappers;
-    }
 
-    /**
-     * Find mappers collection.
-     *
-     * @param project the project
-     * @param method  the method
-     * @return the collection
-     */
-    @NotNull
-    public static Collection<Mapper> findMappers(@NotNull Project project, @NotNull PsiMethod method) {
-        PsiClass clazz = method.getContainingClass();
-        return null == clazz ? Collections.emptyList() : findMappers(project, clazz);
+        return mappers;
     }
 
     /**
@@ -239,19 +255,6 @@ public final class MapperUtils {
     }
 
     /**
-     * Find first mapper optional.
-     *
-     * @param project the project
-     * @param method  the method
-     * @return the optional
-     */
-    @NonNls
-    public static Optional<Mapper> findFirstMapper(@NotNull Project project, @NotNull PsiMethod method) {
-        PsiClass containingClass = method.getContainingClass();
-        return null != containingClass ? findFirstMapper(project, containingClass) : Optional.empty();
-    }
-
-    /**
      * Gets mapper.
      *
      * @param element the element
@@ -263,9 +266,9 @@ public final class MapperUtils {
         Optional<Mapper> optional = Optional.ofNullable(DomUtil.getParentOfType(element, Mapper.class, true));
         if (optional.isPresent()) {
             return optional.get();
-        } else {
-            throw new IllegalArgumentException("Unknown element");
         }
+
+        throw new IllegalArgumentException("Unknown element");
     }
 
     /**
@@ -347,6 +350,7 @@ public final class MapperUtils {
         if (id == null) {
             id = "";
         }
+
         String idsignature = getIdSignature(domElement);
         //getIdSignature(domElement)
         return isMapperWithSameNamespace(contextMapper, mapper) ? id : idsignature;
@@ -359,7 +363,9 @@ public final class MapperUtils {
      * @param processor the processor
      */
     public static void processConfiguredTypeAliases(@NotNull Project project, @NotNull Processor<TypeAlias> processor) {
-        for (Configuration conf : getMybatisConfigurations(project)) {
+        Collection<Configuration> mybatisConfigurations = getMybatisConfigurations(project);
+
+        for (Configuration conf : mybatisConfigurations) {
             for (TypeAliases tas : conf.getTypeAliases()) {
                 for (TypeAlias ta : tas.getTypeAlias()) {
                     String stringValue = ta.getAlias().getStringValue();
@@ -407,6 +413,5 @@ public final class MapperUtils {
             }
         }
     }
-
 
 }

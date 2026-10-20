@@ -1,4 +1,4 @@
-package com.baomidou.plugin.idea.mybatisx.alias;
+package com.baomidou.plugin.idea.mybatisx.model;
 
 import com.intellij.psi.PsiClass;
 import lombok.Getter;

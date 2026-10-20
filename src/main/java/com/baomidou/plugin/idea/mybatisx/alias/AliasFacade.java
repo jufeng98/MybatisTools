@@ -1,6 +1,7 @@
 package com.baomidou.plugin.idea.mybatisx.alias;
 
 
+import com.baomidou.plugin.idea.mybatisx.model.AliasDesc;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -122,26 +123,6 @@ public class AliasFacade {
                             .withTypeText(psiClass.getQualifiedName());
                 })
                 .toList();
-    }
-
-    /**
-     * Find alias desc optional.
-     *
-     * @param clazz the clazz
-     * @return the optional
-     */
-    public Optional<AliasDesc> findAliasDesc(@Nullable PsiClass clazz) {
-        if (null == clazz) {
-            return Optional.empty();
-        }
-        for (AliasResolver resolver : resolvers) {
-            for (AliasDesc desc : resolver.getClassAliasDescriptions(clazz)) {
-                if (desc.getClazz().equals(clazz)) {
-                    return Optional.of(desc);
-                }
-            }
-        }
-        return Optional.empty();
     }
 
     /**

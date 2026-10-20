@@ -1,5 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.alias;
 
+import com.baomidou.plugin.idea.mybatisx.model.AliasDesc;
 import com.baomidou.plugin.idea.mybatisx.util.SpringStringUtils;
 import com.baomidou.plugin.idea.mybatisx.util.StringUtils;
 import com.baomidou.plugin.idea.mybatisx.util.spring.AntPathMatcher;

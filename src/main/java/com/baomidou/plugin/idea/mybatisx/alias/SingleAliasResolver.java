@@ -1,5 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.alias;
 
+import com.baomidou.plugin.idea.mybatisx.model.AliasDesc;
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils;
 import com.google.common.collect.Sets;
 import com.intellij.openapi.project.Project;

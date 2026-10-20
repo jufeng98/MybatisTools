@@ -24,7 +24,7 @@ public class TypeHandlerConverter extends ConverterAdaptor<PsiClass>
     public String getErrorMessage(@Nullable String classStr, @NotNull ConvertContext context) {
         final PsiClass psiClass = psiClassConverter.fromString(classStr, context);
 
-        if (psiClass != null && checkIsTypeHandler(psiClass)) {
+        if (psiClass != null && checkIsNotTypeHandler(psiClass)) {
             return "the class is not a TypeHandler, class: " + classStr + " ";
         }
 
@@ -36,7 +36,7 @@ public class TypeHandlerConverter extends ConverterAdaptor<PsiClass>
     public PsiClass fromString(@Nullable String classStr, @NotNull ConvertContext context) {
         final PsiClass psiClass = psiClassConverter.fromString(classStr, context);
 
-        if (psiClass != null && checkIsTypeHandler(psiClass)) {
+        if (psiClass != null && checkIsNotTypeHandler(psiClass)) {
             return null;
         }
 
@@ -49,7 +49,7 @@ public class TypeHandlerConverter extends ConverterAdaptor<PsiClass>
         return psiClassConverter.createReferences(value, element, context);
     }
 
-    private boolean checkIsTypeHandler(PsiClass psiClass) {
+    private boolean checkIsNotTypeHandler(PsiClass psiClass) {
         Optional<PsiClass> typeHandlerClassOptional = JavaUtils.findClazz(psiClass.getProject(),
                 ORG_APACHE_IBATIS_TYPE_TYPE_HANDLER);
         if (typeHandlerClassOptional.isEmpty()) {

@@ -39,7 +39,9 @@ public final class MapperBacktrackingUtils {
         }
 
         List<Class<? extends DomElement>> domList = Arrays.asList(Association.class, Collection.class, ParameterMap.class, ResultMap.class);
+
         DomElement parent = getParent(domElement, domList);
+
         if (parent != null && isWithinSameTag(parent, attributeValue)) {
             parent = getParent(parent, domList);
         }
@@ -61,6 +63,7 @@ public final class MapperBacktrackingUtils {
         if (parent instanceof ResultMap resultMap) {
             return Optional.ofNullable(resultMap.getType().getValue());
         }
+
         return Optional.empty();
     }
 
@@ -152,6 +155,7 @@ public final class MapperBacktrackingUtils {
             if (currentElement == null) {
                 break;
             }
+
             currentElement = currentElement.getParent();
         }
         return currentClass;
@@ -159,17 +163,22 @@ public final class MapperBacktrackingUtils {
 
     private static Optional<String> findGenericClassOfListByField(PsiField psiField) {
         PsiTypeElement typeElement = psiField.getTypeElement();
-        if (typeElement != null) {
-            PsiJavaCodeReferenceElement innermostComponentReferenceElement = typeElement.getInnermostComponentReferenceElement();
-            if (innermostComponentReferenceElement != null) {
-                PsiType[] typeParameters = innermostComponentReferenceElement.getTypeParameters();
-                if (typeParameters.length == 1) {
-                    PsiType typeParameter = typeParameters[0];
-                    return Optional.of(typeParameter.getCanonicalText());
-                }
-            }
+        if (typeElement == null) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        PsiJavaCodeReferenceElement innermostComponentReferenceElement = typeElement.getInnermostComponentReferenceElement();
+        if (innermostComponentReferenceElement == null) {
+            return Optional.empty();
+        }
+
+        PsiType[] typeParameters = innermostComponentReferenceElement.getTypeParameters();
+        if (typeParameters.length != 1) {
+            return Optional.empty();
+        }
+
+        PsiType typeParameter = typeParameters[0];
+        return Optional.of(typeParameter.getCanonicalText());
     }
 
     /**
@@ -189,10 +198,12 @@ public final class MapperBacktrackingUtils {
         if (null == domElement) {
             return Optional.empty();
         }
+
         ResultMap resultMap = DomUtil.getParentOfType(domElement, ResultMap.class, true);
         if (null != resultMap && !isWithinSameTag(resultMap, attributeValue)) {
             return Optional.ofNullable(resultMap.getType().getValue());
         }
+
         return Optional.empty();
     }
 }

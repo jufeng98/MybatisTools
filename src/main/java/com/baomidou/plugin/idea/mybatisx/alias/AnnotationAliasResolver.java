@@ -1,6 +1,7 @@
 package com.baomidou.plugin.idea.mybatisx.alias;
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation;
+import com.baomidou.plugin.idea.mybatisx.model.AliasDesc;
 import com.baomidou.plugin.idea.mybatisx.util.JavaUtils;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;

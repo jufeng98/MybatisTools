@@ -114,12 +114,17 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
 
         try (InputStream inputStream = configurationFile.getInputStream()) {
             properties.load(inputStream);
+
             String typeAliasesPackage = findTypeAliasesPackageByProperties(properties);
-            if (typeAliasesPackage != null) {
-                if (!StringUtils.isEmpty(typeAliasesPackage)) {
-                    pkgSet.add(typeAliasesPackage);
-                }
+            if (typeAliasesPackage == null) {
+                return;
             }
+
+            if (StringUtils.isEmpty(typeAliasesPackage)) {
+                return;
+            }
+
+            pkgSet.add(typeAliasesPackage);
         } catch (IOException e) {
             log.error("read alias exception, fileName: {}", configurationFile.getName(), e);
         }
@@ -150,13 +155,17 @@ public class SpringBootPackageResolver extends PackageAliasResolver {
             for (Object object : objects) {
                 Object config = findConfig(object);
                 Object typeAliasesPackage = findAliasPackage(config);
-                if (typeAliasesPackage != null) {
-                    final String packageName = typeAliasesPackage.toString();
-                    if (!StringUtils.isEmpty(packageName)) {
-                        final String[] split = SpringStringUtils.tokenizeToStringArray(packageName, REGEX);
-                        classSet.addAll(Arrays.asList(split));
-                    }
+                if (typeAliasesPackage == null) {
+                    continue;
                 }
+
+                final String packageName = typeAliasesPackage.toString();
+                if (StringUtils.isEmpty(packageName)) {
+                    continue;
+                }
+
+                final String[] split = SpringStringUtils.tokenizeToStringArray(packageName, REGEX);
+                classSet.addAll(Arrays.asList(split));
             }
         } catch (Exception e) {
             // https://gitee.com/baomidou/MybatisX/issues/I58K0P  yaml.loadAll(content).next 会导致git流程的空指针

@@ -75,12 +75,12 @@ public class BeanAliasResolver extends PackageAliasResolver {
                 String propertyStringValue = SpringPropertyUtils.getPropertyStringValue(springBeanPointer.getSpringBean(),
                         MAPPER_ALIAS_PROPERTY);
 
-                if (!StringUtils.isEmpty(propertyStringValue)) {
-                    packages.add(propertyStringValue);
-                    return true;
+                if (StringUtils.isEmpty(propertyStringValue)) {
+                    return false;
                 }
 
-                return false;
+                packages.add(propertyStringValue);
+                return true;
             });
         }
         return packages;
