@@ -1,7 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.dom.model;
 
-import com.baomidou.plugin.idea.mybatisx.dom.converter.AliasConverter;
-import com.baomidou.plugin.idea.mybatisx.dom.converter.ResultMapConverter;
+import com.baomidou.plugin.idea.mybatisx.dom.converter.*;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.util.xml.*;
@@ -33,5 +32,9 @@ public interface ResultMap extends GroupFour, IdDomElement {
     @Attribute("type")
     @Convert(AliasConverter.class)
     GenericAttributeValue<PsiClass> getType();
+
+    @Attribute("id")
+    @Convert(ResultMapIdConverter.class)
+    GenericAttributeValue<Object> getId();
 
 }
