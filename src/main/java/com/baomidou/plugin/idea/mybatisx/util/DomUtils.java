@@ -1,5 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.util;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -32,9 +33,23 @@ public final class DomUtils {
     @NotNull
     @NonNls
     public static <T extends DomElement> Collection<T> findDomElements(@NotNull Project project, Class<T> clazz) {
-        GlobalSearchScope scope = GlobalSearchScope.allScope(project);
+        GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
         List<DomFileElement<T>> elements = DomService.getInstance().getFileElements(clazz, project, scope);
         return elements.stream().map(DomFileElement::getRootElement).collect(Collectors.toList());
+    }
+
+    public static <T extends DomElement> Collection<T> findDomElements(@Nullable Module module, @NotNull Project project, Class<T> clazz) {
+        if (module == null) {
+            return findDomElements(project, clazz);
+        }
+
+        GlobalSearchScope scope = GlobalSearchScope.moduleWithDependenciesScope(module);
+
+        List<DomFileElement<T>> elements = DomService.getInstance().getFileElements(clazz, project, scope);
+
+        return elements.stream()
+                .map(DomFileElement::getRootElement)
+                .collect(Collectors.toList());
     }
 
     /**

@@ -2,7 +2,7 @@ package com.baomidou.plugin.idea.mybatisx.dom.converter;
 
 import com.baomidou.plugin.idea.mybatisx.dom.model.*;
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils;
-import com.google.common.collect.Collections2;
+import com.google.common.collect.Maps;
 import com.intellij.util.xml.ConvertContext;
 import com.intellij.util.xml.DomElement;
 import org.jetbrains.annotations.NotNull;
@@ -20,25 +20,36 @@ public class ResultMapConverter extends IdBasedTagConverter {
 
     @NotNull
     @Override
-    public Collection<? extends IdDomElement> getComparisons(@Nullable Mapper mapper, ConvertContext context) {
+    public Map<String, Collection<? extends IdDomElement>> getComparisons(@Nullable Mapper mapper) {
         if (mapper == null) {
-            return Collections.emptyList();
+            return Collections.emptyMap();
         }
 
+        Map<String, Collection<? extends IdDomElement>> map = Maps.newHashMap();
+
+        String namespace = MapperUtils.getNamespace(mapper);
+
+        List<ResultMap> resultMaps = mapper.getResultMaps();
+
+        map.put(namespace, resultMaps);
+        return map;
+    }
+
+    @Override
+    public boolean isContextResultMapSelf(IdDomElement domElement, ConvertContext context) {
         DomElement invocationElement = context.getInvocationElement();
-        if (isContextElementOfResultMap(mapper, invocationElement)) {
-            return doFilterResultMapItself(mapper, (ResultMap) invocationElement.getParent());
-        } else {
-            return mapper.getResultMaps();
+        DomElement parent = invocationElement.getParent();
+
+        boolean equals = domElement == parent;
+        if (equals) {
+            return true;
         }
+
+        if (!(parent instanceof ResultMap resultMap)) {
+            return false;
+        }
+
+        return Objects.equals(domElement.getId().getStringValue(), resultMap.getId().getStringValue());
     }
 
-    private boolean isContextElementOfResultMap(Mapper mapper, DomElement invocationElement) {
-        return MapperUtils.isMapperWithSameNamespace(MapperUtils.getMapper(invocationElement), mapper)
-                && invocationElement.getParent() instanceof ResultMap;
-    }
-
-    private Collection<? extends IdDomElement> doFilterResultMapItself(Mapper mapper, final ResultMap resultMap) {
-        return Collections2.filter(mapper.getResultMaps(), input -> !Objects.equals(MapperUtils.getId(input), MapperUtils.getId(resultMap)));
-    }
 }
