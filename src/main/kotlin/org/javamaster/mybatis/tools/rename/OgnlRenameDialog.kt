@@ -1,14 +1,11 @@
 package org.javamaster.mybatis.tools.rename
 
 import com.intellij.lang.ognl.psi.OgnlExpression
-import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.module.ModuleUtilCore
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.refactoring.rename.RenameDialog
+import com.intellij.refactoring.rename.RenameProcessor
 
 /**
  * @author yudong
@@ -16,7 +13,7 @@ import com.intellij.refactoring.rename.RenameDialog
 class OgnlRenameDialog(
     project: Project,
     psiElement: PsiElement,
-    val nameSuggestionContext: OgnlExpression,
+    nameSuggestionContext: OgnlExpression,
     val editor: Editor,
 ) : RenameDialog(project, psiElement, nameSuggestionContext, editor) {
 
@@ -25,28 +22,15 @@ class OgnlRenameDialog(
 
         close(0)
 
-        val module = ModuleUtilCore.findModuleForPsiElement(psiElement) ?: return
-
-        val searchScope = GlobalSearchScope.moduleWithDependenciesScope(module)
-
-        val searchParameters = ReferencesSearch.SearchParameters(psiElement, searchScope, true)
-
-        val query = ReferencesSearch.search(searchParameters)
-
-        WriteCommandAction.runWriteCommandAction(
-            project,
-            "Rename OGNL Expression",
-            null,
-            {
-                query.forEach { it.handleElementRename(newName) }
-            },
-            psiElement.containingFile
-        )
-
-        val renameDialog = RenameDialog(project, psiElement, nameSuggestionContext, editor)
-        renameDialog.performRename(newName)
+        performRename(newName)
     }
 
+    override fun createRenameProcessor(newName: String): RenameProcessor {
+        return OgnlRenameProcessor(
+            this.project, this.psiElement, newName,
+            this.refactoringScope, this.isSearchInComments, this.isSearchInNonJavaFiles
+        )
+    }
 
     override fun hasPreviewButton(): Boolean {
         return false
