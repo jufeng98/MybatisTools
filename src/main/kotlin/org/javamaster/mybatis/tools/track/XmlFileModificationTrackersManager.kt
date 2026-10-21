@@ -11,13 +11,13 @@ import com.jetbrains.rd.util.concurrentMapOf
  */
 @Service(Service.Level.PROJECT)
 class XmlFileModificationTrackersManager {
-    private val modificationTrackerMap = concurrentMapOf<String, ModuleFileModificationTracker>()
+    private val modificationTrackerMap = concurrentMapOf<String, ModuleXmlFileModificationTracker>()
 
-    fun getModificationTracker(holder: UserDataHolder): ModuleFileModificationTracker {
+    fun getModificationTracker(holder: UserDataHolder): ModuleXmlFileModificationTracker {
         val name = getName(holder)
 
         return modificationTrackerMap.computeIfAbsent(name) {
-            ModuleFileModificationTracker()
+            ModuleXmlFileModificationTracker()
         }
     }
 

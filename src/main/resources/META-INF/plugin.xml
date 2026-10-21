@@ -224,7 +224,7 @@
                                          implementation="com.baomidou.plugin.idea.mybatisx.system.refactoring.MapperMethodSafeDeleteProcessor"/>
 
         <psi.treeChangePreprocessor
-                implementation="org.javamaster.mybatis.tools.treeChange.ControllerPsiTreeChangePreprocessor"/>
+                implementation="org.javamaster.mybatis.tools.treeChange.XmlFilePsiTreeChangePreprocessor"/>
 
         <notificationGroup displayType="BALLOON" id="MyBatisTools Notification" isLogByDefault="true"/>
     </extensions>

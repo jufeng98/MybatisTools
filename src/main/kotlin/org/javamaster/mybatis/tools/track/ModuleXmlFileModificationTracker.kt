@@ -5,4 +5,4 @@ import com.intellij.openapi.util.SimpleModificationTracker
 /**
  * @author yudong
  */
-class ModuleFileModificationTracker : SimpleModificationTracker()
+class ModuleXmlFileModificationTracker : SimpleModificationTracker()

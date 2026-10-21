@@ -9,7 +9,7 @@ import org.javamaster.mybatis.tools.track.XmlFileModificationTrackersManager
 /**
  * @author yudong
  */
-class ControllerPsiTreeChangePreprocessor : PsiTreeChangePreprocessor {
+class XmlFilePsiTreeChangePreprocessor : PsiTreeChangePreprocessor {
 
     override fun treeChanged(event: PsiTreeChangeEventImpl) {
         val xmlFile = event.file as? XmlFile ?: return
