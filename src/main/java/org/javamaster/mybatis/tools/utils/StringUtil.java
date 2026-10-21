@@ -1,6 +1,7 @@
 package org.javamaster.mybatis.tools.utils;
 
 import com.google.common.base.CaseFormat;
+import com.intellij.lang.java.beans.PropertyKind;
 import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -756,6 +757,16 @@ public class StringUtil {
         }
 
         return count;
+    }
+
+    public static String getPropertyNameByGetter(String methodName) {
+        if (methodName.startsWith(PropertyKind.GETTER.prefix)) {
+            return com.intellij.openapi.util.text.StringUtil.decapitalize(methodName.substring(3));
+        } else if (methodName.startsWith(PropertyKind.BOOLEAN_GETTER.prefix)) {
+            return com.intellij.openapi.util.text.StringUtil.decapitalize(methodName.substring(2));
+        } else {
+            return methodName;
+        }
     }
 
     public static boolean isNumber(String input) {

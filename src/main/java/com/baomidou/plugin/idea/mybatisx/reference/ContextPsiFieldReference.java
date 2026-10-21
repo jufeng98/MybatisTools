@@ -6,9 +6,14 @@ import com.baomidou.plugin.idea.mybatisx.service.JavaService;
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.*;
+import com.intellij.psi.util.PropertyUtil;
+import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
+import com.intellij.util.IncorrectOperationException;
 import lombok.Getter;
 import lombok.Setter;
+import org.javamaster.mybatis.tools.utils.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,6 +62,51 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
         super(element, range, false);
         this.index = index;
         resolver = ReferenceSetResolverFactory.createPsiFieldResolver(element);
+    }
+
+    @Override
+    public PsiElement handleElementRename(@NotNull String newElementName) throws IncorrectOperationException {
+        final XmlAttributeValue element = getElement();
+
+        newElementName = StringUtil.getPropertyNameByGetter(newElementName);
+
+        final PsiElement parent = element.getParent();
+        if (parent instanceof XmlAttribute xmlAttribute) {
+            xmlAttribute.setValue(newElementName);
+        }
+
+        return element;
+    }
+
+    @Override
+    public boolean isReferenceTo(@NotNull PsiElement element) {
+        PsiElement resolved = resolve();
+
+        if (resolved == element) {
+            return true;
+        }
+
+        if (resolved instanceof PsiField resolvedField) {
+            if (!(element instanceof PsiMethod psiMethod)) {
+                return false;
+            }
+
+            if (!PropertyUtil.isSimpleGetter(psiMethod)) {
+                return false;
+            }
+
+            String propertyName = PropertyUtil.getPropertyName(psiMethod);
+            if (!resolvedField.getName().equals(propertyName)) {
+                return false;
+            }
+
+            PsiClass resolvedClass = PsiTreeUtil.getParentOfType(resolvedField, PsiClass.class);
+            PsiClass targetClass = PsiTreeUtil.getParentOfType(element, PsiClass.class);
+
+            return resolvedClass == targetClass;
+        }
+
+        return false;
     }
 
     @Nullable

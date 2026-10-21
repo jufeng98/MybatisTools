@@ -23,6 +23,12 @@ class OgnlFieldNameReference(
     private val nameLevels: LinkedList<String>,
 ) : PsiReferenceBase<PsiElement>(psiElement, from) {
 
+    override fun isReferenceTo(element: PsiElement): Boolean {
+        val resolve = resolve()
+
+        return resolve == element
+    }
+
     override fun resolve(): PsiElement? {
         val project = myElement.project
 

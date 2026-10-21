@@ -19,6 +19,11 @@
         <lang.elementManipulator forClass="com.intellij.lang.ognl.psi.OgnlFqnTypeExpression"
                                  implementationClass="com.intellij.lang.ognl.psi.manipulators.OgnlFqnTypeExpressionManipulator"/>
 
+        <lang.elementManipulator forClass="com.intellij.lang.ognl.psi.OgnlReferenceExpression"
+                                 implementationClass="com.intellij.lang.ognl.psi.manipulators.OgnlReferenceExpressionManipulator"/>
+
+        <renameHandler implementation="org.javamaster.mybatis.tools.rename.OgnlRenameHandler"/>
+
         <lang.quoteHandler language="OGNL" implementationClass="com.intellij.lang.ognl.highlight.OgnlQuoteHandler"/>
         <typedHandler implementation="com.intellij.lang.ognl.OgnlTypedHandler"/>
         <completion.contributor language="OGNL"

@@ -13,6 +13,7 @@ import com.intellij.psi.*;
 import com.intellij.psi.xml.XmlAttribute;
 import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.sql.psi.SqlExpression;
+import com.intellij.util.IncorrectOperationException;
 import com.intellij.util.containers.JBIterable;
 import lombok.Getter;
 import lombok.Setter;
@@ -69,6 +70,37 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
         this.index = index;
         resolver = new PsiColumnReferenceSetResolver(element);
         this.mapperClass = mapperClass;
+    }
+
+    @Override
+    public PsiElement handleElementRename(@NotNull String newElementName) throws IncorrectOperationException {
+        XmlAttributeValue element = getElement();
+
+        final PsiElement parent = element.getParent();
+        if (parent instanceof XmlAttribute xmlAttribute) {
+            xmlAttribute.setValue(newElementName);
+        }
+
+        return element;
+    }
+
+    @Override
+    public boolean isReferenceTo(@NotNull PsiElement element) {
+        PsiElement resolved = resolve();
+
+        if (resolved instanceof SqlExpression sqlExpression) {
+            if (resolved == element) {
+                return true;
+            }
+
+            if (!(element instanceof SqlExpression psiSqlExpression)) {
+                return false;
+            }
+
+            return Objects.equals(psiSqlExpression.getName(), sqlExpression.getName());
+        }
+
+        return false;
     }
 
     /**
