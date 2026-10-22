@@ -53,6 +53,13 @@
 
 ![ognl-field-reference.gif](images/ognl-field-reference.gif)
 
+### MyBatis #{} if test等区域变量引用支持重命名功能
+
+![rename-param.gif](images/rename-param.gif)
+![rename-param1.gif](images/rename-param1.gif)
+![rename-param2.gif](images/rename-param2.gif)
+![rename-param3.gif](images/rename-param3.gif)
+
 #### 根据 sql 的列名或列别名生成 Java 类字段(旗舰版可用)
 
 ![sql-to-field.gif](images/sql-to-field.gif)
@@ -85,7 +92,7 @@
 
 #### 其他
 
-- 解决 Spring Service 注入 mapper 时 IDEA 出现红色波浪线提示Could not autowire的报错问题(包括TkMapper) 
+- 解决 Spring Service 注入 mapper 时 IDEA 出现红色波浪线提示Could not autowire的报错问题(包括TkMapper)
 
 ## 作者信息
 
