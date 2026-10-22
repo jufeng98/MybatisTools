@@ -2,6 +2,7 @@ package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.lang.ognl.psi.OgnlMethodCallExpression
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -261,7 +262,7 @@ object OgnlReferenceUtils {
     }
 
     fun resolveIfParamInForeachTag(
-        ognlFieldNameReference: OgnlFieldNameReference?,
+        ognlFieldNameReference: OgnlFieldNameReference,
         injectionHost: PsiElement,
         currentPsiElement: PsiElement,
     ): PsiElement? {
@@ -271,7 +272,7 @@ object OgnlReferenceUtils {
         }
 
         val references = currentPsiElement.references
-        if (references.size == 0) {
+        if (references.isEmpty()) {
             return null
         }
 
@@ -314,17 +315,13 @@ object OgnlReferenceUtils {
             return null
         }
 
-        if (references.size == 2 && references[1] == ognlFieldNameReference) {
-            if (collectionPsiElement !is PsiClass) {
-                return null
-            }
+        if (references.size < 2) return null
 
-            val fieldName = ognlFieldNameReference.from.substring(text)
-
-            return collectionPsiElement.findFieldByName(fieldName, true)
+        if (collectionPsiElement !is PsiClass) {
+            return null
         }
 
-        return null
+        return resolveJavaElement(references, ognlFieldNameReference, collectionPsiElement, text)
     }
 
     fun getPsiParameter(
@@ -372,4 +369,67 @@ object OgnlReferenceUtils {
         return null
     }
 
+    private fun resolveJavaElement(
+        references: Array<PsiReference>,
+        ognlFieldNameReference: OgnlFieldNameReference,
+        collectionPsiElement: PsiClass,
+        text: String,
+    ): PsiElement? {
+        var currentPsiClass = collectionPsiElement
+
+        for (index in 1 until references.size) {
+            val psiReference = references[index]
+            if (psiReference !is OgnlFieldNameReference) {
+                return null
+            }
+
+            val fieldName = psiReference.from.substring(text)
+
+            // 命中目标引用：用当前所在类解析字段/方法
+            if (psiReference == ognlFieldNameReference) {
+                return findJavaElement(fieldName, currentPsiClass, psiReference)
+            }
+
+            val psiElement = findJavaElement(fieldName, currentPsiClass, psiReference)
+
+            val resolvedType = when (psiElement) {
+                is PsiField -> psiElement.type
+                is PsiMethod -> psiElement.returnType ?: return null
+                else -> return null
+            }
+
+            currentPsiClass = resolvePsiType(resolvedType) ?: return null
+        }
+
+        return null
+    }
+
+    private fun findJavaElement(
+        fieldName: String,
+        collectionPsiElement: PsiClass,
+        psiReference: OgnlFieldNameReference,
+    ): PsiElement? {
+        val psiField = collectionPsiElement.findFieldByName(fieldName, true)
+        if (psiField != null) {
+            return psiField
+        }
+
+        val psiMethods = collectionPsiElement.findMethodsByName(fieldName, true)
+        if (psiMethods.isEmpty()) {
+            return null
+        }
+
+        val element = psiReference.element
+        val methodCallExpression = element.parent as? OgnlMethodCallExpression
+        val count = methodCallExpression?.parameterList?.parameterCount ?: 0
+
+        // 简单判断方法参数数量
+        for (method in psiMethods) {
+            if (method.parameterList.parametersCount == count) {
+                return method
+            }
+        }
+
+        return psiMethods[0]
+    }
 }

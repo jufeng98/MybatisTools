@@ -84,25 +84,6 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
         return element;
     }
 
-    @Override
-    public boolean isReferenceTo(@NotNull PsiElement element) {
-        PsiElement resolved = resolve();
-
-        if (resolved instanceof SqlExpression sqlExpression) {
-            if (resolved == element) {
-                return true;
-            }
-
-            if (!(element instanceof SqlExpression psiSqlExpression)) {
-                return false;
-            }
-
-            return Objects.equals(psiSqlExpression.getName(), sqlExpression.getName());
-        }
-
-        return false;
-    }
-
     /**
      * 如果能找到正确的列, 线条转到正确的列
      * 无法找到数据库的列, 引用当前节点

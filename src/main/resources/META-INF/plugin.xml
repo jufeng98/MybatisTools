@@ -9,6 +9,7 @@
           <li>Mybatis.xml prompt</li>
           <li>Prompt and reference jumps for if test, when test, and other areas in the mapper.xml file</li>
           <li>Prompt and reference jumps for #{} / ${} areas in the mapper.xml file</li>
+          <li>Support rename region variables such as # {}, if test, and when test in the mapper.xml file</li>
           <li>Extract console mybatis SQL logs as complete executable SQL</li>
           <li>Integrate all functions of the MybatisX plugin(copy from MybatisX)</li>
           <li>Integrate mybatis generator Gui (copy from free mybatis plugin)</li>
@@ -21,6 +22,7 @@
           <li>mybatis.xml 输入智能提示</li>
           <li>mapper.xml 文件的 if test、when test 等区域的输入智能提示及引用跳转</li>
           <li>mapper.xml 文件的 #{} / ${} 区域的输入智能提示及引用跳转</li>
+          <li>mapper.xml 文件的 #{} 、if test、when test等区域变量支持重命名功能</li>
           <li>提取控制台 mybatis SQL 日志为完整的可执行 SQL</li>
           <li>集成 MybatisX 插件所有功能(源码来自 MybatisX)</li>
           <li>集成 mybatis generator Gui (源码来自 free mybatis plugin)</li>

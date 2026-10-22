@@ -4,9 +4,9 @@ import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.dom.model.Sql
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.util.TextRange
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiReferenceBase
+import com.intellij.psi.*
+import com.intellij.psi.util.PropertyUtil
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlElement
 import com.intellij.util.xml.DomUtil
 import org.apache.commons.collections.CollectionUtils
@@ -26,7 +26,26 @@ class OgnlFieldNameReference(
     override fun isReferenceTo(element: PsiElement): Boolean {
         val resolve = resolve()
 
-        return resolve == element
+        val equals = resolve == element
+        if (equals) {
+            return true
+        }
+
+        if (resolve is PsiField && element is PsiMethod) {
+            if (!PropertyUtil.isSimpleGetter(element)) return false
+
+            val propertyName = PropertyUtil.getPropertyName(element)
+            if (resolve.name != propertyName) {
+                return false
+            }
+
+            val resolvedClass = PsiTreeUtil.getParentOfType(resolve, PsiClass::class.java)
+            val targetClass = PsiTreeUtil.getParentOfType(element, PsiClass::class.java)
+
+            return resolvedClass == targetClass
+        }
+
+        return false
     }
 
     override fun resolve(): PsiElement? {

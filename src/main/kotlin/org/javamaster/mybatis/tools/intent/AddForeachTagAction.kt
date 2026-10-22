@@ -65,7 +65,7 @@ class AddForeachTagAction : BaseIntentionAction() {
 
         val ifTagStartText =
             """
-        <foreach item="$itemName" index="index" collection="$name" open="(" separator="," close=")">
+        <foreach collection="$name" item="$itemName" open="(" separator="," close=")">
             #{$itemName}
         </foreach>"""
 

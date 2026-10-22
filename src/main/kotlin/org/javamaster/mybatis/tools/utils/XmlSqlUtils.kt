@@ -94,39 +94,21 @@ object XmlSqlUtils {
         return set
     }
 
-    fun getForeachTag(injectionHost: PsiElement): XmlTag? {
-        val parent = injectionHost.parent
+    fun getForeachTag(psiElement: PsiElement?): XmlTag? {
+        psiElement ?: return null
+
+        val parent = psiElement.parent
+
         if (parent is XmlTag) {
             val tagName = parent.name
             if ("foreach" == tagName) {
-                return parent
-            }
-
-            val setTag = parent.parent
-            if (setTag is XmlTag) {
-                val foreachTag = setTag.parent
-                if (foreachTag is XmlTag) {
-                    if ("foreach" == foreachTag.name) {
-                        return foreachTag
-                    }
-                }
-            }
-        } else if (parent is XmlAttribute) {
-            val ifTag = parent.parent
-            if (ifTag is XmlTag) {
-                val setTag = ifTag.parent
-                if (setTag is XmlTag) {
-                    val foreachTag = setTag.parent
-                    if (foreachTag is XmlTag) {
-                        if ("foreach" == foreachTag.name) {
-                            return foreachTag
-                        }
-                    }
+                if (!parent.attributes.contains(psiElement)) {
+                    return parent
                 }
             }
         }
 
-        return null
+        return getForeachTag(parent)
     }
 
 }

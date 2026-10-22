@@ -32,7 +32,7 @@ class OgnlStaticClassMethodReference(
 
         // 简单判断方法参数数量
         for (method in methods) {
-            if (method.parameterList.parametersCount != params.size) {
+            if (method.parameterList.parametersCount == params.size) {
                 return method
             }
         }
