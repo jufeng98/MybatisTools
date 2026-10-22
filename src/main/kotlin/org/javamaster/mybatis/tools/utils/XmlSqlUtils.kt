@@ -102,7 +102,11 @@ object XmlSqlUtils {
         if (parent is XmlTag) {
             val tagName = parent.name
             if ("foreach" == tagName) {
-                if (!parent.attributes.contains(psiElement)) {
+                if (psiElement is XmlAttribute) {
+                    if (!parent.attributes.contains(psiElement)) {
+                        return parent
+                    }
+                } else {
                     return parent
                 }
             }

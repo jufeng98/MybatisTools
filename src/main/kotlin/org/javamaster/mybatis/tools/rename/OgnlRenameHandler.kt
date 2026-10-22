@@ -13,7 +13,6 @@ import com.intellij.psi.impl.source.tree.injected.InjectedCaret
 import com.intellij.psi.util.PsiUtil
 import com.intellij.refactoring.rename.PsiElementRenameHandler
 import com.intellij.refactoring.rename.RenameHandler
-import org.jetbrains.kotlin.idea.refactoring.project
 
 /**
  * @author yudong
@@ -37,7 +36,7 @@ class OgnlRenameHandler : RenameHandler {
     override fun isAvailableOnDataContext(dataContext: DataContext): Boolean {
         val editor = CommonDataKeys.EDITOR.getData(dataContext) ?: return false
 
-        val project = dataContext.project
+        val project = CommonDataKeys.PROJECT.getData(dataContext) ?: return false
 
         return getOgnlExpression(editor, project) != null
     }

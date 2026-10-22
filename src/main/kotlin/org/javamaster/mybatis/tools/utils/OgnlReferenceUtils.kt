@@ -143,7 +143,7 @@ object OgnlReferenceUtils {
             psiReferences[psiReferences.size - 1].resolve()
         }
 
-        val psiType = if (resolve is PsiParameter) {
+        var psiType = if (resolve is PsiParameter) {
             resolve.type
         } else if (resolve is PsiField) {
             resolve.type
@@ -153,6 +153,10 @@ object OgnlReferenceUtils {
             return resolve.psiClass
         } else {
             return null
+        }
+
+        if (psiType is PsiArrayType) {
+            psiType = psiType.componentType
         }
 
         val paramPsiCls = resolvePsiType(psiType)
@@ -415,21 +419,25 @@ object OgnlReferenceUtils {
         }
 
         val psiMethods = collectionPsiElement.findMethodsByName(fieldName, true)
-        if (psiMethods.isEmpty()) {
-            return null
-        }
+        if (psiMethods.isNotEmpty()) {
+            val element = psiReference.element
+            val methodCallExpression = element.parent as? OgnlMethodCallExpression
+            val count = methodCallExpression?.parameterList?.parameterCount ?: 0
 
-        val element = psiReference.element
-        val methodCallExpression = element.parent as? OgnlMethodCallExpression
-        val count = methodCallExpression?.parameterList?.parameterCount ?: 0
-
-        // 简单判断方法参数数量
-        for (method in psiMethods) {
-            if (method.parameterList.parametersCount == count) {
-                return method
+            // 简单判断方法参数数量
+            for (method in psiMethods) {
+                if (method.parameterList.parametersCount == count) {
+                    return method
+                }
             }
+
+            return psiMethods[0]
         }
 
-        return psiMethods[0]
+        if (InheritanceUtil.isInheritor(collectionPsiElement, "java.util.Map")) {
+            return MapValueFakePsiElement(collectionPsiElement, collectionPsiElement)
+        }
+
+        return null
     }
 }

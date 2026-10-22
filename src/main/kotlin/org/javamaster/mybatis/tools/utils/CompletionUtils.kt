@@ -161,7 +161,7 @@ object CompletionUtils {
                     LookupElementBuilder.create(itemPsiClass, itemAttrValue.value).withTypeText(itemPsiClass.name)
                 )
             } else {
-                val psiReferences = ReferenceUtils.convert(currentPsiElementText, itemAttrValue)
+                val psiReferences = referenceExpression.references
 
                 val itemPsiElement = psiReferences[0].resolve()
                 if (itemPsiElement !is PsiClass) {
@@ -321,6 +321,12 @@ object CompletionUtils {
                     resultSet.addElement(LookupElementBuilder.create(it, "$lookupString != null"))
                 }
             }
+        }
+
+        if (InheritanceUtil.isInheritor(psiClass, "java.util.Map")
+            || InheritanceUtil.isInheritor(psiClass, "java.util.Collection")
+        ) {
+            fillMethodNames(psiClass, resultSet)
         }
 
         if (fullOgnl) {
