@@ -1,5 +1,6 @@
 package org.javamaster.mybatis.tools.utils
 
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
@@ -64,7 +65,7 @@ object GenerateUtils {
 
         val fieldPsiClass = fieldType.resolve() ?: return null
 
-        val isCollection = InheritanceUtil.isInheritor(fieldPsiClass, "java.util.Collection")
+        val isCollection = InheritanceUtil.isInheritor(fieldPsiClass, MybatisConstants.COLLECTION)
         if (isCollection) {
             val typeParameters = fieldType.parameters
             if (typeParameters.isEmpty()) {

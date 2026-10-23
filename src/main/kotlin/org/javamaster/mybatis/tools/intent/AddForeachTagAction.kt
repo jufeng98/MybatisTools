@@ -4,6 +4,7 @@ import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.dom.model.Sql
 import com.baomidou.plugin.idea.mybatisx.util.DomUtils
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionName
 import com.intellij.openapi.editor.Editor
@@ -104,7 +105,7 @@ class AddForeachTagAction : BaseIntentionAction() {
 
         for (psiParameter in parameters) {
             val type = psiParameter.type
-            if (!InheritanceUtil.isInheritor(type, "java.util.Collection")) continue
+            if (!InheritanceUtil.isInheritor(type, MybatisConstants.COLLECTION)) continue
 
             nameClass = PsiUtils.resolvePsiType(type)
 
@@ -123,7 +124,7 @@ class AddForeachTagAction : BaseIntentionAction() {
 
                 for (psiField in psiClass.allFields) {
                     val type = psiField.type
-                    if (!InheritanceUtil.isInheritor(type, "java.util.Collection")) continue
+                    if (!InheritanceUtil.isInheritor(type, MybatisConstants.COLLECTION)) continue
 
                     nameClass = PsiUtils.resolvePsiType(type)
 

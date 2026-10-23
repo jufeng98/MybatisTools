@@ -1,6 +1,7 @@
 package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.ognl.psi.OgnlMethodCallExpression
 import com.intellij.openapi.project.Project
@@ -60,7 +61,7 @@ object OgnlReferenceUtils {
         val oneParamAndNoParamAnno = PsiUtils.oneParamAndNoParamAnno(psiMethod)
         if (oneParamAndNoParamAnno) {
             val psiType = psiParameter.type
-            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, "java.util.Collection")) {
+            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)) {
                 return psiParameter
             }
         }
@@ -161,7 +162,7 @@ object OgnlReferenceUtils {
 
         val paramPsiCls = resolvePsiType(psiType)
 
-        val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Collection")
+        val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.COLLECTION)
         if (paramIsCollection) {
             val genericParameters = (psiType as PsiClassReferenceType).parameters
             if (genericParameters.size == 0) {
@@ -171,7 +172,7 @@ object OgnlReferenceUtils {
             return resolvePsiType(genericParameters[0])
         }
 
-        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Map")
+        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.MAP)
         if (paramIsMap) {
             val genericParameters = (psiType as PsiClassReferenceType).parameters
             if (genericParameters.size < 2) {
@@ -224,15 +225,15 @@ object OgnlReferenceUtils {
 
         val paramPsiCls = resolvePsiType(psiType)
 
-        val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Collection")
+        val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.COLLECTION)
         if (paramIsCollection) {
             val project = collectionAttrValue.project
 
             return JavaPsiFacade.getInstance(project)
-                .findClass("java.lang.Integer", GlobalSearchScope.allScope(project))
+                .findClass(MybatisConstants.INTEGER, GlobalSearchScope.allScope(project))
         }
 
-        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, "java.util.Map")
+        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.MAP)
         if (paramIsMap) {
             val genericParameters = (psiType as PsiClassReferenceType).parameters
             if (genericParameters.size < 1) {
@@ -434,7 +435,7 @@ object OgnlReferenceUtils {
             return psiMethods[0]
         }
 
-        if (InheritanceUtil.isInheritor(collectionPsiElement, "java.util.Map")) {
+        if (InheritanceUtil.isInheritor(collectionPsiElement, MybatisConstants.MAP)) {
             return MapValueFakePsiElement(collectionPsiElement, collectionPsiElement)
         }
 

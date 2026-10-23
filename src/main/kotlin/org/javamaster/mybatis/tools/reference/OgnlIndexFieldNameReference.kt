@@ -2,6 +2,7 @@ package org.javamaster.mybatis.tools.reference
 
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.dom.model.Sql
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.ognl.psi.OgnlIndexedExpression
 import com.intellij.openapi.util.TextRange
@@ -59,7 +60,7 @@ class OgnlIndexFieldNameReference(
         if (oneParamAndNoParamAnno) {
             val psiParameter = psiMethod!!.parameterList.parameters[0]
             val psiType = psiParameter.type
-            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, "java.util.Collection")) {
+            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)) {
                 return psiParameter
             }
         }

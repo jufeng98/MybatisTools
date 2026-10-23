@@ -10,6 +10,7 @@ import com.baomidou.plugin.idea.mybatisx.smartjpa.operate.dialect.CustomStatemen
 import com.baomidou.plugin.idea.mybatisx.smartjpa.operate.dialect.oracle.InsertCustomSuffixAppender;
 import com.baomidou.plugin.idea.mybatisx.smartjpa.operate.manager.StatementBlock;
 import com.baomidou.plugin.idea.mybatisx.smartjpa.util.SyntaxAppenderWrapper;
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import com.baomidou.plugin.idea.mybatisx.util.MybatisXCollectors;
 import com.baomidou.plugin.idea.mybatisx.util.StringUtils;
 import com.intellij.psi.PsiClass;
@@ -155,7 +156,7 @@ public class MysqlInsertBatch implements CustomStatement {
             String variableName = StringUtils.lowerCaseFirstChar(entityClass.getName()) + "Collection";
 
             List<String> importClass = new ArrayList<>();
-            importClass.add("java.util.Collection");
+            importClass.add(MybatisConstants.COLLECTION);
             importClass.add(entityClass.getQualifiedName());
             TxParameter parameter = TxParameter.createByOrigin(variableName, defineName, Collection.class.getName(), true, importClass);
             return Collections.singletonList(parameter);

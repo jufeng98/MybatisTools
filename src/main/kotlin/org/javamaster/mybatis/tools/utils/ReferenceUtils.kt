@@ -1,5 +1,6 @@
 package org.javamaster.mybatis.tools.utils
 
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.lang.ognl.psi.OgnlIndexedExpression
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
@@ -32,7 +33,7 @@ object ReferenceUtils {
             var propertyName = nameLevels.pop()
 
             while (true) {
-                if (InheritanceUtil.isInheritor(fieldTypeCls, "java.util.Map")) {
+                if (InheritanceUtil.isInheritor(fieldTypeCls, MybatisConstants.MAP)) {
                     psiField = fieldTypeCls.findFieldByName(propertyName, true)
                     if (psiField == null) {
                         val psiMethods = fieldTypeCls.findMethodsByName(propertyName, true)

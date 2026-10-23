@@ -1,6 +1,7 @@
 package org.javamaster.mybatis.tools.intent
 
 import com.baomidou.plugin.idea.mybatisx.util.DomUtils
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
 import com.intellij.codeInspection.util.IntentionName
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -54,7 +55,7 @@ class AddIfTestTagAction : BaseIntentionAction() {
                 val qualifiedName = psiClass?.qualifiedName
                 if (qualifiedName == "java.lang.String") {
                     """<if test="$fieldName != null and $fieldName != ''">"""
-                } else if (InheritanceUtil.isInheritor(psiClass, "java.util.Collection")) {
+                } else if (InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)) {
                     """<if test="$fieldName != null and $fieldName.size() > 0">"""
                 } else {
                     """<if test="$fieldName != null">"""

@@ -2,6 +2,7 @@ package com.baomidou.plugin.idea.mybatisx.smartjpa.component;
 
 import com.baomidou.plugin.idea.mybatisx.smartjpa.common.appender.AreaSequence;
 import com.baomidou.plugin.idea.mybatisx.smartjpa.common.appender.JdbcTypeUtils;
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import com.baomidou.plugin.idea.mybatisx.util.StringUtils;
 import com.intellij.psi.*;
 import lombok.Getter;
@@ -129,7 +130,7 @@ public class TxParameter {
     public static TxParameter createCollectionByTxParameter(TxParameter txParameter) {
         return createByOrigin(txParameter.getName() + "List",
                 "Collection<" + txParameter.getTypeText() + ">",
-                "java.util.Collection");
+                MybatisConstants.COLLECTION);
     }
 
     public static TxParameter createByPsiParameter(PsiParameter psiParameter) {

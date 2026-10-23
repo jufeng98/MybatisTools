@@ -2,6 +2,7 @@ package com.baomidou.plugin.idea.mybatisx.alias;
 
 import com.baomidou.plugin.idea.mybatisx.model.AliasDesc;
 import com.baomidou.plugin.idea.mybatisx.util.JavaUtils;
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
@@ -35,15 +36,15 @@ public class InnerAliasResolver extends AliasResolver {
         addAliasDesc(aliasDescs, "java.lang.Byte", "byte");
         addAliasDesc(aliasDescs, "java.lang.Long", "long");
         addAliasDesc(aliasDescs, "java.lang.Short", "short");
-        addAliasDesc(aliasDescs, "java.lang.Integer", "int");
-        addAliasDesc(aliasDescs, "java.lang.Integer", "integer");
+        addAliasDesc(aliasDescs, MybatisConstants.INTEGER, "int");
+        addAliasDesc(aliasDescs, MybatisConstants.INTEGER, "integer");
         addAliasDesc(aliasDescs, "java.lang.Double", "double");
         addAliasDesc(aliasDescs, "java.lang.Float", "float");
         addAliasDesc(aliasDescs, "java.lang.Boolean", "boolean");
         addAliasDesc(aliasDescs, "java.util.Date", "date");
         addAliasDesc(aliasDescs, "java.math.BigDecimal", "decimal");
         addAliasDesc(aliasDescs, "java.lang.Object", "object");
-        addAliasDesc(aliasDescs, "java.util.Map", "map");
+        addAliasDesc(aliasDescs, MybatisConstants.MAP, "map");
         addAliasDesc(aliasDescs, "java.util.HashMap", "hashmap");
         addAliasDesc(aliasDescs, "java.util.List", "list");
         addAliasDesc(aliasDescs, "java.util.ArrayList", "arraylist");

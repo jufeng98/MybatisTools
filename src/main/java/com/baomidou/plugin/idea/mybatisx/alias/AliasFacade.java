@@ -2,6 +2,7 @@ package com.baomidou.plugin.idea.mybatisx.alias;
 
 
 import com.baomidou.plugin.idea.mybatisx.model.AliasDesc;
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
@@ -155,8 +156,8 @@ public class AliasFacade {
             refMap.put("_byte[]", "java.lang.Byte");
             refMap.put("_long[]", "java.lang.Long");
             refMap.put("_short[]", "java.lang.Short");
-            refMap.put("_int[]", "java.lang.Integer");
-            refMap.put("_integer[]", "java.lang.Integer");
+            refMap.put("_int[]", MybatisConstants.INTEGER);
+            refMap.put("_integer[]", MybatisConstants.INTEGER);
             refMap.put("_double[]", "java.lang.Double");
             refMap.put("_float[]", "java.lang.Float");
             refMap.put("_boolean[]", "java.lang.Boolean");
@@ -164,8 +165,8 @@ public class AliasFacade {
             refMap.put("byte[]", "java.lang.Byte");
             refMap.put("long[]", "java.lang.Long");
             refMap.put("short[]", "java.lang.Short");
-            refMap.put("int[]", "java.lang.Integer");
-            refMap.put("integer[]", "java.lang.Integer");
+            refMap.put("int[]", MybatisConstants.INTEGER);
+            refMap.put("integer[]", MybatisConstants.INTEGER);
             refMap.put("double[]", "java.lang.Double");
             refMap.put("float[]", "java.lang.Float");
             refMap.put("boolean[]", "java.lang.Boolean");
@@ -179,8 +180,8 @@ public class AliasFacade {
             refMap.put("_byte", "java.lang.Byte");
             refMap.put("_long", "java.lang.Long");
             refMap.put("_short", "java.lang.Short");
-            refMap.put("_int", "java.lang.Integer");
-            refMap.put("_integer", "java.lang.Integer");
+            refMap.put("_int", MybatisConstants.INTEGER);
+            refMap.put("_integer", MybatisConstants.INTEGER);
             refMap.put("_double", "java.lang.Double");
             refMap.put("_float", "java.lang.Float");
             refMap.put("_boolean", "java.lang.Boolean");
@@ -189,8 +190,8 @@ public class AliasFacade {
             refMap.put("byte", "java.lang.Byte");
             refMap.put("long", "java.lang.Long");
             refMap.put("short", "java.lang.Short");
-            refMap.put("int", "java.lang.Integer");
-            refMap.put("integer", "java.lang.Integer");
+            refMap.put("int", MybatisConstants.INTEGER);
+            refMap.put("integer", MybatisConstants.INTEGER);
             refMap.put("double", "java.lang.Double");
             refMap.put("float", "java.lang.Float");
             refMap.put("boolean", "java.lang.Boolean");
@@ -199,11 +200,11 @@ public class AliasFacade {
             refMap.put("bigdecimal", "java.math.BigDecimal");
             refMap.put("biginteger", "java.math.BigInteger");
             refMap.put("object", "java.lang.Object");
-            refMap.put("map", "java.util.Map");
+            refMap.put("map", MybatisConstants.MAP);
             refMap.put("hashmap", "java.util.HashMap");
             refMap.put("list", "java.util.List");
             refMap.put("arraylist", "java.util.ArrayList");
-            refMap.put("collection", "java.util.Collection");
+            refMap.put("collection", MybatisConstants.COLLECTION);
             refMap.put("iterator", "java.util.Iterator");
             refMap.put("resultset", "java.sql.ResultSet");
             return refMap;

@@ -6,6 +6,7 @@ import com.baomidou.plugin.idea.mybatisx.locator.MapperLocator;
 import com.baomidou.plugin.idea.mybatisx.service.JavaService;
 import com.baomidou.plugin.idea.mybatisx.setting.config.AbstractStatementGenerator;
 import com.baomidou.plugin.idea.mybatisx.util.JavaUtils;
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import com.google.common.collect.Lists;
 import com.intellij.codeInspection.*;
 import com.intellij.psi.*;
@@ -34,7 +35,7 @@ public class MapperMethodInspection extends MapperInspection {
         }
     };
     public static final String MAP_KEY = "org.apache.ibatis.annotations.MapKey";
-    public static final String MAP = "java.util.Map";
+    public static final String MAP = MybatisConstants.MAP;
     private static final Set<String> STATEMENT_PROVIDER_NAMES = new HashSet<>() {
         {
             add("org.apache.ibatis.annotations.SelectProvider");
@@ -170,7 +171,7 @@ public class MapperMethodInspection extends MapperInspection {
                     return true;
                 }
                 // If it's a List/Collection, it's not a Map result type that needs @MapKey
-                if (qName != null && (qName.startsWith("java.util.List") || qName.startsWith("java.util.Collection") || qName.startsWith("java.util.Set"))) {
+                if (qName != null && (qName.startsWith("java.util.List") || qName.startsWith(MybatisConstants.COLLECTION) || qName.startsWith("java.util.Set"))) {
                     return false;
                 }
                 // Check inheritance for Map

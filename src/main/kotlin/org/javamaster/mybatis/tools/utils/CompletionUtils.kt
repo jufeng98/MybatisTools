@@ -2,6 +2,7 @@ package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionUtil
@@ -280,7 +281,7 @@ object CompletionUtils {
                 completionResultSet.addElement(
                     LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue != ''")
                 )
-            } else if (InheritanceUtil.isInheritor(psiClass, "java.util.Collection")) {
+            } else if (InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)) {
                 completionResultSet.addElement(
                     LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue.size() > 0")
                 )
@@ -310,7 +311,7 @@ object CompletionUtils {
                     resultSet.addElement(
                         LookupElementBuilder.create(it, "$lookupString != null and ${fieldPrefix + lookupString} != ''")
                     )
-                } else if (InheritanceUtil.isInheritor(psiClazz, "java.util.Collection")) {
+                } else if (InheritanceUtil.isInheritor(psiClazz, MybatisConstants.COLLECTION)) {
                     resultSet.addElement(
                         LookupElementBuilder.create(
                             it,
@@ -323,8 +324,8 @@ object CompletionUtils {
             }
         }
 
-        if (InheritanceUtil.isInheritor(psiClass, "java.util.Map")
-            || InheritanceUtil.isInheritor(psiClass, "java.util.Collection")
+        if (InheritanceUtil.isInheritor(psiClass, MybatisConstants.MAP)
+            || InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)
         ) {
             fillMethodNames(psiClass, resultSet)
         }

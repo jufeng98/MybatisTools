@@ -1,5 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.smartjpa.common.appender;
 
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,7 +22,7 @@ public class JdbcTypeUtils {
     static {
         fieldJdbcType.put("java.lang.Byte", "NUMERIC");
         fieldJdbcType.put("java.lang.Short", "NUMERIC");
-        fieldJdbcType.put("java.lang.Integer", "NUMERIC");
+        fieldJdbcType.put(MybatisConstants.INTEGER, "NUMERIC");
         fieldJdbcType.put("java.lang.Long", "NUMERIC");
         fieldJdbcType.put("java.lang.Float", "DECIMAL");
         fieldJdbcType.put("java.lang.Double", "DECIMAL");
