@@ -123,6 +123,8 @@
         <applicationService id="javamaster.MybatisSetting"
                             serviceImplementation="com.baomidou.plugin.idea.mybatisx.setting.MybatisXSettings"/>
 
+        <highlightErrorFilter implementation="org.javamaster.mybatis.tools.suppress.MyBatisXmlSqlHighlightErrorFilter"/>
+
         <!--代码行插件，实现代码导航功能-->
         <!-- java 跳转到 xml  -->
         <codeInsight.lineMarkerProvider id="javamaster.MapperLineMarkerProvider" language="JAVA"
