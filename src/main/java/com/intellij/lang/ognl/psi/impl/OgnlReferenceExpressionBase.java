@@ -23,10 +23,14 @@ import com.intellij.lang.ognl.psi.OgnlExpression;
 import com.intellij.lang.ognl.psi.OgnlMethodCallExpression;
 import com.intellij.lang.ognl.psi.OgnlParameterList;
 import com.intellij.navigation.ItemPresentation;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiReference;
+import org.javamaster.mybatis.tools.reference.OgnlMethodFieldNameReference;
 import org.javamaster.mybatis.tools.utils.ReferenceUtils;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.LinkedList;
 
 /**
  * @author Yann C&eacute;bron
@@ -61,7 +65,17 @@ abstract class OgnlReferenceExpressionBase extends OgnlExpressionImpl {
             if (prevSibling instanceof OgnlMethodCallExpression methodCallExpression) {
                 OgnlExpression expression = methodCallExpression.getMethod();
                 if (expression != null) {
-                    return ReferenceUtils.INSTANCE.convert(expression.getText() + "." + text, this);
+                    String expressionText = expression.getText();
+                    PsiReference[] parent = ReferenceUtils.INSTANCE.convert(expressionText, expression);
+
+                    LinkedList<String> nameLevels = new LinkedList<>();
+                    nameLevels.add(text);
+
+                    TextRange textRange = this.getTextRange();
+                    textRange = textRange.shiftLeft(textRange.getStartOffset());
+                    return new PsiReference[]{
+                            new OgnlMethodFieldNameReference(this, textRange, parent, nameLevels)
+                    };
                 }
             }
         }
