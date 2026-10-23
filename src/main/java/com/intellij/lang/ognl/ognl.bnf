@@ -218,6 +218,8 @@ indexedExpression ::= (referenceExpression | variableExpression) '[' expression 
     expression=""
     referenceQualifier="expression[0]"
     indexExpression="expression[1]"
+    getReferences
+    getReference
   ]
   pin=2
 }
@@ -239,6 +241,7 @@ private shiftOperations ::= "<<" | ">>" | ">>>" |
                             "shl" | "shr" | "ushr"
 private instanceOfOperation ::= "instanceof"
 private setOperations ::= "not in" | "in"
+private dotOperations ::= "."
 private binaryOperations ::=
                            plusMinusOperations |
                            divideMultiplyOperations |
@@ -248,7 +251,8 @@ private binaryOperations ::=
                            booleanOperations |
                            equalityOperations |
                            relationalOperations |
-                           setOperations
+                           setOperations |
+                           dotOperations
                            { name="operator" }
 binaryExpression ::= expression binaryOperations expression {
   methods=[

@@ -1,29 +1,15 @@
-/*
- * Copyright 2018 The authors
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
-// Generated from ognl.bnf, do not modify
+// apache2.txt
 package com.intellij.lang.ognl.parser;
 
-import com.intellij.lang.*;
+import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiBuilder.Marker;
-import com.intellij.psi.tree.IElementType;
-import com.intellij.psi.tree.TokenSet;
-
 import static com.intellij.lang.ognl.OgnlTypes.*;
 import static com.intellij.lang.parser.GeneratedParserUtilBase.*;
+import com.intellij.psi.tree.IElementType;
+import com.intellij.lang.ASTNode;
+import com.intellij.psi.tree.TokenSet;
+import com.intellij.lang.PsiParser;
+import com.intellij.lang.LightPsiParser;
 
 @SuppressWarnings({"SimplifiableIfStatement", "UnusedAssignment"})
 public class OgnlParser implements PsiParser, LightPsiParser {
@@ -96,7 +82,8 @@ public class OgnlParser implements PsiParser, LightPsiParser {
   //                            booleanOperations |
   //                            equalityOperations |
   //                            relationalOperations |
-  //                            setOperations
+  //                            setOperations |
+  //                            dotOperations
   static boolean binaryOperations(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "binaryOperations")) return false;
     boolean r;
@@ -110,6 +97,7 @@ public class OgnlParser implements PsiParser, LightPsiParser {
     if (!r) r = equalityOperations(b, l + 1);
     if (!r) r = relationalOperations(b, l + 1);
     if (!r) r = setOperations(b, l + 1);
+    if (!r) r = dotOperations(b, l + 1);
     exit_section_(b, l, m, r, false, null);
     return r;
   }
@@ -203,6 +191,12 @@ public class OgnlParser implements PsiParser, LightPsiParser {
     if (!r) r = consumeToken(b, DIVISION);
     if (!r) r = consumeToken(b, MODULO);
     return r;
+  }
+
+  /* ********************************************************** */
+  // "."
+  static boolean dotOperations(PsiBuilder b, int l) {
+    return consumeToken(b, DOT);
   }
 
   /* ********************************************************** */
@@ -487,7 +481,7 @@ public class OgnlParser implements PsiParser, LightPsiParser {
     boolean r;
     Marker m = enter_section_(b, l, _NONE_);
     r = expression(b, l + 1, -1);
-    exit_section_(b, l, m, r, false, rootRecover_parser_);
+    exit_section_(b, l, m, r, false, OgnlParser::rootRecover);
     return r;
   }
 
@@ -996,9 +990,4 @@ public class OgnlParser implements PsiParser, LightPsiParser {
     return r;
   }
 
-  static final Parser rootRecover_parser_ = new Parser() {
-    public boolean parse(PsiBuilder b, int l) {
-      return rootRecover(b, l + 1);
-    }
-  };
 }
