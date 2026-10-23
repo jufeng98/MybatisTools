@@ -19,6 +19,8 @@ import com.intellij.icons.AllIcons;
 import com.intellij.ide.projectView.PresentationData;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.ognl.OgnlTypes;
+import com.intellij.lang.ognl.psi.OgnlExpression;
+import com.intellij.lang.ognl.psi.OgnlMethodCallExpression;
 import com.intellij.lang.ognl.psi.OgnlParameterList;
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.psi.PsiElement;
@@ -52,6 +54,17 @@ abstract class OgnlReferenceExpressionBase extends OgnlExpressionImpl {
         }
 
         String text = this.getText();
+
+        PsiElement prevSibling = this.getPrevSibling();
+        if (prevSibling != null) {
+            prevSibling = prevSibling.getPrevSibling();
+            if (prevSibling instanceof OgnlMethodCallExpression methodCallExpression) {
+                OgnlExpression expression = methodCallExpression.getMethod();
+                if (expression != null) {
+                    return ReferenceUtils.INSTANCE.convert(expression.getText() + "." + text, this);
+                }
+            }
+        }
 
         return ReferenceUtils.INSTANCE.convert(text, this);
     }
