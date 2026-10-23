@@ -18,16 +18,19 @@ package com.intellij.lang.ognl.psi.impl;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.ognl.OgnlTypes;
 import com.intellij.lang.ognl.psi.*;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceProvider;
 import com.intellij.psi.tree.IElementType;
+import org.javamaster.mybatis.tools.utils.ReferenceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Yann C&eacute;bron
@@ -178,6 +181,36 @@ final class OgnlPsiUtil {
             referenceProvider.setOption(JavaClassReferenceProvider.INSTANTIATABLE, Boolean.TRUE);
             referenceProvider.setOption(JavaClassReferenceProvider.SUPER_CLASSES,
                     Collections.singletonList(CommonClassNames.JAVA_UTIL_MAP));
+        }
+    }
+
+    @NotNull
+    static PsiReference[] getReferences(OgnlIndexedExpression expression) {
+        String text = expression.getText();
+        int idx = text.indexOf("].");
+        if (idx == -1) {
+            return new PsiReference[0];
+        }
+
+        int realIdx = idx + 2;
+        String fieldName = text.substring(realIdx);
+
+        List<TextRange> textRanges = ReferenceUtils.INSTANCE.convertFieldName(fieldName);
+
+        textRanges = textRanges.stream()
+                .map(it -> it.shiftRight(realIdx))
+                .toList();
+
+        return ReferenceUtils.INSTANCE.createIndexReferences(expression, textRanges, text);
+    }
+
+    @Nullable
+    static PsiReference getReference(OgnlIndexedExpression expression) {
+        PsiReference[] references = expression.getReferences();
+        if (references.length == 1) {
+            return references[0];
+        } else {
+            return null;
         }
     }
 }
