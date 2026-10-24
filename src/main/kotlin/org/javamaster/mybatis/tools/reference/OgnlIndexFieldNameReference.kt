@@ -45,8 +45,9 @@ class OgnlIndexFieldNameReference(
             null
         } ?: return null
 
+        val project = myElement.project
         val injectionHost =
-            InjectedLanguageManager.getInstance(myElement.project).getInjectionHost(myElement) ?: return null
+            InjectedLanguageManager.getInstance(project).getInjectionHost(myElement) ?: return null
 
         val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return null
 
@@ -56,24 +57,26 @@ class OgnlIndexFieldNameReference(
             domElement.id.value as? PsiMethod
         }
 
-        val oneParamAndNoParamAnno = PsiUtils.oneParamAndNoParamAnno(psiMethod)
-        if (oneParamAndNoParamAnno) {
-            val psiParameter = psiMethod!!.parameterList.parameters[0]
-            val psiType = psiParameter.type
-            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)) {
-                return psiParameter
+        val onlyParameterWithNoParamAnno = PsiUtils.getIfOneParamAndNoParamAnno(psiMethod)
+        if (onlyParameterWithNoParamAnno != null) {
+            val psiType = onlyParameterWithNoParamAnno.type
+            if (psiType is PsiArrayType
+                || InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)
+                || InheritanceUtil.isInheritor(psiType, MybatisConstants.MAP)
+            ) {
+                return onlyParameterWithNoParamAnno
             }
         }
 
-        val paramMap = constructParamMap(psiMethod?.parameterList?.parameters)
+        val paramMap = constructParamMap(psiMethod?.parameterList?.parameters, project)
 
         val resolveTarget = resolveTarget(myElement, genericPsiClass, nameLevels, paramMap)
         if (resolveTarget != null) {
             return resolveTarget
         }
 
-        if (oneParamAndNoParamAnno) {
-            return psiMethod!!.parameterList.parameters[0]
+        if (onlyParameterWithNoParamAnno != null) {
+            return onlyParameterWithNoParamAnno
         }
 
         return resolveTarget

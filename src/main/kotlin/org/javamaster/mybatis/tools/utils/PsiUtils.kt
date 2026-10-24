@@ -39,21 +39,26 @@ object PsiUtils {
         return javaPsiFacade.findClass(fullClassName, scope)
     }
 
-    fun oneParamAndNoParamAnno(psiMethod: PsiMethod?): Boolean {
-        psiMethod ?: return false
+    fun getIfOneParamAndNoParamAnno(psiMethod: PsiMethod?): PsiParameter? {
+        psiMethod ?: return null
 
         val parameterList = psiMethod.parameterList
         val parametersCount = parameterList.parametersCount
         if (parametersCount == 0) {
-            return false
+            return null
         }
 
         if (parametersCount > 1) {
-            return false
+            return null
         }
 
         val parameters = parameterList.parameters
-        return parameters[0].getAnnotation(Annotation.PARAM.qualifiedName) == null
+        val parameter = parameters[0]
+        if (parameter.getAnnotation(Annotation.PARAM.qualifiedName) != null) {
+            return null
+        }
+
+        return parameter
     }
 
     fun getNextNotBlankXmlText(xmlTexts: Collection<XmlText>, start: Int): XmlText? {
@@ -74,8 +79,10 @@ object PsiUtils {
         }
     }
 
-    fun constructParamMap(parameters: Array<PsiParameter>?): Map<String, PsiParameter> {
+    fun constructParamMap(parameters: Array<PsiParameter>?, project: Project): Map<String, PsiParameter> {
         val map = mutableMapOf<String, PsiParameter>()
+
+        val helper = JavaPsiFacade.getInstance(project).constantEvaluationHelper
 
         var idx = 0
         parameters?.forEach {
@@ -84,6 +91,18 @@ object PsiUtils {
                 || InheritanceUtil.isInheritor(psiType, "org.apache.ibatis.session.ResultHandler")
             ) {
                 return@forEach
+            }
+
+            val annotation = it.getAnnotation(Annotation.PARAM.qualifiedName)
+            if (annotation != null) {
+                val paramAnnotationValue = annotation.findAttributeValue("value")
+                val paramValue = helper.computeConstantExpression(paramAnnotationValue) as String?
+                if (StringUtils.isNotBlank(paramValue)) {
+                    map[paramValue!!] = it
+                }
+
+            } else {
+                map[it.name] = it
             }
 
             val index = idx++

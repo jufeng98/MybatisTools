@@ -1,6 +1,5 @@
 package org.javamaster.mybatis.tools.utils
 
-import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.ognl.psi.OgnlMethodCallExpression
@@ -15,6 +14,7 @@ import com.intellij.psi.xml.XmlTag
 import org.javamaster.mybatis.tools.psi.impl.MapValueFakePsiElement
 import org.javamaster.mybatis.tools.reference.OgnlFieldNameReference
 import org.javamaster.mybatis.tools.utils.PsiUtils.constructParamMap
+import org.javamaster.mybatis.tools.utils.PsiUtils.getIfOneParamAndNoParamAnno
 import org.javamaster.mybatis.tools.utils.PsiUtils.resolvePsiType
 import org.javamaster.mybatis.tools.utils.XmlSqlUtils.getForeachTag
 import java.util.*
@@ -45,42 +45,66 @@ object OgnlReferenceUtils {
         }
 
         val parameterList = psiMethod.parameterList
+        val parametersCount = parameterList.parametersCount
         if (parameterList.isEmpty) {
             return null
         }
 
-        val psiParameter = getPsiParameter(parameterList, nameLevels, project)
-        if (psiParameter == null) {
+        if (nameLevels.isEmpty()) {
             return null
         }
 
-        if (nameLevels.isEmpty()) {
-            return psiParameter
-        }
-
-        val oneParamAndNoParamAnno = PsiUtils.oneParamAndNoParamAnno(psiMethod)
-        if (oneParamAndNoParamAnno) {
-            val psiType = psiParameter.type
-            if (psiType is PsiArrayType || InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)) {
-                return psiParameter
+        val onlyParameterWithNoParamAnno = getIfOneParamAndNoParamAnno(psiMethod)
+        if (onlyParameterWithNoParamAnno != null) {
+            val psiType = onlyParameterWithNoParamAnno.type
+            if (psiType is PsiArrayType
+                || InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)
+                || InheritanceUtil.isInheritor(psiType, MybatisConstants.MAP)
+            ) {
+                return onlyParameterWithNoParamAnno
             }
         }
 
-        val paramPsiType = psiParameter.type
-        val paramPsiCls = resolvePsiType(paramPsiType)
-        if (paramPsiCls == null) {
-            return null
+        val paramMap = constructParamMap(parameterList.parameters, project)
+
+        val firstName = nameLevels.pop()
+        if (onlyParameterWithNoParamAnno != null) {
+            nameLevels.push(firstName)
         }
 
-        val paramMap = constructParamMap(parameterList.parameters)
+        val psiParameter = paramMap[firstName]
+        val paramPsiCls = if (psiParameter != null) {
+            val paramPsiType = psiParameter.type
+            resolvePsiType(paramPsiType)
+        } else {
+            if (onlyParameterWithNoParamAnno != null) {
+                val paramPsiType = onlyParameterWithNoParamAnno.type
+                resolvePsiType(paramPsiType)
+            } else if (firstName == "_parameter") {
+                JavaPsiFacade.getInstance(project).findClass(MybatisConstants.MAP, GlobalSearchScope.allScope(project))
+            } else if (parametersCount == 1) {
+                val paramPsiType = parameterList.parameters[0].type
+                resolvePsiType(paramPsiType)
+            } else {
+                null
+            }
+        }
+
+        if (nameLevels.isEmpty()) {
+            return psiParameter ?: paramPsiCls
+        }
+
+        if (paramPsiCls == null) {
+            return onlyParameterWithNoParamAnno ?: psiParameter
+        }
 
         val resolveTarget = ReferenceUtils.resolveTarget(currentPsiElement, paramPsiCls, nameLevels, paramMap)
         if (resolveTarget != null) {
             return resolveTarget
         }
 
-        if (oneParamAndNoParamAnno) {
-            return psiParameter
+        if (onlyParameterWithNoParamAnno != null) {
+            return onlyParameterWithNoParamAnno
         }
 
         return resolveTarget
@@ -329,51 +353,6 @@ object OgnlReferenceUtils {
         return resolveJavaElement(references, ognlFieldNameReference, collectionPsiElement, text)
     }
 
-    fun getPsiParameter(
-        parameterList: PsiParameterList,
-        nameLevel: LinkedList<String>,
-        project: Project,
-    ): PsiParameter? {
-        if (nameLevel.isEmpty()) {
-            return null
-        }
-
-        val helper = JavaPsiFacade.getInstance(project).constantEvaluationHelper
-
-        val name = nameLevel.pop()
-        val parametersCount = parameterList.parametersCount
-        val parameters = parameterList.parameters
-
-        for (psiParameter in parameters) {
-            val annotation = psiParameter.getAnnotation(Annotation.PARAM.qualifiedName)
-            if (annotation != null) {
-                val paramAnnotationValue = annotation.findAttributeValue("value")
-                val paramValue = helper.computeConstantExpression(paramAnnotationValue) as String?
-                // 设置了 @Param 但是内容是空, 这种情况不予处理
-                if (paramValue == null || paramValue.isBlank()) {
-                    continue
-                }
-
-                if (paramValue == name) {
-                    return psiParameter
-                }
-            } else {
-                // @Param 注解一定为空的情况下的跳转处理
-                // 兼容java8开启 -parameters 参数的方式，这种方式不需要 @Param 参数
-                if (psiParameter.name == name) {
-                    return psiParameter
-                }
-
-                if (parametersCount == 1) {
-                    nameLevel.push(name)
-                    return psiParameter
-                }
-            }
-        }
-
-        return null
-    }
-
     private fun resolveJavaElement(
         references: Array<PsiReference>,
         ognlFieldNameReference: OgnlFieldNameReference,
@@ -419,7 +398,12 @@ object OgnlReferenceUtils {
             return psiField
         }
 
-        val psiMethods = collectionPsiElement.findMethodsByName(fieldName, true)
+        var psiMethods = collectionPsiElement.findMethodsByName(fieldName, true)
+        if (psiMethods.isEmpty()) {
+            val boolName = "is" + StringUtil.capitalizeFirstWord2(fieldName)
+            psiMethods = collectionPsiElement.findMethodsByName(boolName, true)
+        }
+
         if (psiMethods.isNotEmpty()) {
             val element = psiReference.element
             val methodCallExpression = element.parent as? OgnlMethodCallExpression

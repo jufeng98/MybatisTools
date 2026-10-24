@@ -49,7 +49,10 @@ object SqlInjector {
     }
 
     private fun calVariablePrefix(host: PsiLanguageInjectionHost, next: XmlText?): String? {
-        val sibling = host.prevSibling.prevSibling
+        val sibling1 = host.prevSibling?.prevSibling
+        val sibling2 = sibling1?.prevSibling
+        val sibling = sibling1 as? XmlToken ?: sibling2
+
         val hostParent = host.parent
         if (sibling is XmlToken && hostParent is XmlTag) {
             val text = sibling.text

@@ -314,6 +314,9 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
 
             String contextNs = MapperUtils.getNamespace(contextMapper);
             val contextElements = domMap.remove(contextNs);
+            if (contextElements == null) {
+                return Collections.emptyList();
+            }
 
             List<? extends IdDomElement> elements = contextElements.stream()
                     .filter(it -> !isContextResultMapSelf(it, context))
