@@ -1,8 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.util;
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation;
-import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement;
-import com.google.common.collect.Lists;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -10,6 +8,7 @@ import com.intellij.psi.util.PropertyUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.javamaster.mybatis.tools.utils.ReferenceUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,27 +42,18 @@ public final class JavaUtils {
      * @param propertyName the property name
      * @return the optional
      */
-    public static Optional<PsiField> findSettablePsiField(@NotNull PsiClass clazz, @Nullable String propertyName) {
-        return Optional.ofNullable(PropertyUtil.findPropertyField(clazz, propertyName, false));
-    }
-
-    /**
-     * Find settable psi fields psi field [ ].
-     *
-     * @param clazz the clazz
-     * @return the psi field [ ]
-     */
-    @NotNull
-    public static PsiField[] findSettablePsiFields(@NotNull PsiClass clazz) {
-        PsiMethod[] methods = clazz.getAllMethods();
-        List<PsiField> fields = Lists.newArrayList();
-        for (PsiMethod method : methods) {
-            if (PropertyUtil.isSimplePropertySetter(method)) {
-                Optional<PsiField> psiField = findSettablePsiField(clazz, PropertyUtil.getPropertyName(method));
-                psiField.ifPresent(fields::add);
-            }
+    public static Optional<PsiMember> findPsiMember(@NotNull PsiClass clazz, @Nullable String propertyName) {
+        if (propertyName == null) {
+            return Optional.empty();
         }
-        return fields.toArray(new PsiField[0]);
+
+        PsiField psiField = PropertyUtil.findPropertyField(clazz, propertyName, false);
+        if (psiField != null) {
+            return Optional.of(psiField);
+        }
+
+        PsiMethod psiMethod = ReferenceUtils.INSTANCE.findFieldPossibleMethod(clazz, propertyName);
+        return Optional.ofNullable(psiMethod);
     }
 
     /**
@@ -152,18 +142,6 @@ public final class JavaUtils {
 
         }
         return Optional.empty();
-    }
-
-
-    /**
-     * Find method optional.
-     *
-     * @param project the project
-     * @param element the element
-     * @return the optional
-     */
-    public static Optional<PsiMethod> findMethod(@NotNull Project project, @NotNull IdDomElement element) {
-        return findMethod(project, MapperUtils.getNamespace(element), MapperUtils.getId(element));
     }
 
     /**

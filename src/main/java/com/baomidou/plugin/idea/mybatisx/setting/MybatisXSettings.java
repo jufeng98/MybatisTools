@@ -61,7 +61,7 @@ public class MybatisXSettings implements PersistentStateComponent<MybatisXSettin
             service.mapperIcon = MapperIcon.BIRD.name();
         }
         if (service.forceFindField == null) {
-            service.forceFindField = Boolean.TRUE;
+            service.forceFindField = Boolean.FALSE;
         }
         return service;
     }

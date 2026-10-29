@@ -38,7 +38,7 @@ public final class MapperBacktrackingUtils {
             return Optional.empty();
         }
 
-        List<Class<? extends DomElement>> domList = Arrays.asList(Association.class, Collection.class, ParameterMap.class, ResultMap.class);
+        List<Class<? extends DomElement>> domList = Arrays.asList(ResultMap.class, Collection.class, Association.class, ParameterMap.class);
 
         DomElement parent = getParent(domElement, domList);
 
@@ -56,12 +56,12 @@ public final class MapperBacktrackingUtils {
             return Optional.ofNullable(associationClass);
         }
 
-        if (parent instanceof ParameterMap parameterMap) {
-            return Optional.ofNullable(parameterMap.getType().getValue());
-        }
-
         if (parent instanceof ResultMap resultMap) {
             return Optional.ofNullable(resultMap.getType().getValue());
+        }
+
+        if (parent instanceof ParameterMap parameterMap) {
+            return Optional.ofNullable(parameterMap.getType().getValue());
         }
 
         return Optional.empty();
@@ -93,20 +93,23 @@ public final class MapperBacktrackingUtils {
                     currentClass = javaType;
                     foundClass = true;
                 }
+
                 if (currentClass == null) {
                     XmlAttributeValue value = association.getProperty().getValue();
                     if (value != null) {
                         String propertyName = value.getValue();
                         PsiClass leastParentType = findLeastParentType(currentElement.getParent(), project);
                         if (leastParentType != null) {
-                            Optional<PsiField> settablePsiField = JavaUtils.findSettablePsiField(leastParentType, propertyName);
-                            if (settablePsiField.isPresent()) {
-                                PsiField psiField = settablePsiField.get();
-                                String fieldTypeClassName = psiField.getType().getCanonicalText();
-                                Optional<PsiClass> fieldClassOptional = JavaUtils.findClazz(project, fieldTypeClassName);
-                                if (fieldClassOptional.isPresent()) {
-                                    currentClass = fieldClassOptional.get();
-                                    foundClass = true;
+                            Optional<PsiMember> optional = JavaUtils.findPsiMember(leastParentType, propertyName);
+                            if (optional.isPresent()) {
+                                PsiMember psiMember = optional.get();
+                                if (psiMember instanceof PsiField psiField) {
+                                    String fieldTypeClassName = psiField.getType().getCanonicalText();
+                                    Optional<PsiClass> fieldClassOptional = JavaUtils.findClazz(project, fieldTypeClassName);
+                                    if (fieldClassOptional.isPresent()) {
+                                        currentClass = fieldClassOptional.get();
+                                        foundClass = true;
+                                    }
                                 }
                             }
                         }
@@ -122,28 +125,32 @@ public final class MapperBacktrackingUtils {
                     currentClass = type.getValue();
                     foundClass = true;
                 }
+
                 if (currentClass == null) {
                     XmlAttributeValue value = collection.getProperty().getValue();
                     if (value != null) {
                         String propertyName = value.getValue();
                         PsiClass leastParentType = findLeastParentType(currentElement.getParent(), project);
                         if (leastParentType != null) {
-                            Optional<PsiField> settablePsiField = JavaUtils.findSettablePsiField(leastParentType, propertyName);
-                            if (settablePsiField.isPresent()) {
-                                PsiField psiField = settablePsiField.get();
-                                Optional<String> genericClassOfListByField = findGenericClassOfListByField(psiField);
-                                if (genericClassOfListByField.isPresent()) {
-                                    String fieldTypeClassName = genericClassOfListByField.get();
-                                    Optional<PsiClass> fieldClassOptional = JavaUtils.findClazz(project, fieldTypeClassName);
-                                    if (fieldClassOptional.isPresent()) {
-                                        currentClass = fieldClassOptional.get();
-                                        foundClass = true;
+                            Optional<PsiMember> optional = JavaUtils.findPsiMember(leastParentType, propertyName);
+                            if (optional.isPresent()) {
+                                PsiMember psiMember = optional.get();
+                                if (psiMember instanceof PsiField psiField) {
+                                    Optional<String> genericClassOfListByField = findGenericClassOfListByField(psiField);
+                                    if (genericClassOfListByField.isPresent()) {
+                                        String fieldTypeClassName = genericClassOfListByField.get();
+                                        Optional<PsiClass> fieldClassOptional = JavaUtils.findClazz(project, fieldTypeClassName);
+                                        if (fieldClassOptional.isPresent()) {
+                                            currentClass = fieldClassOptional.get();
+                                            foundClass = true;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+
                 if (foundClass) {
                     break;
                 }

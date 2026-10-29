@@ -16,6 +16,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.xml.DomUtil
 import org.javamaster.mybatis.tools.utils.*
+import org.javamaster.mybatis.tools.utils.XmlSqlUtils.tryGetType
 
 /**
  * @author yudong
@@ -40,12 +41,9 @@ class GenerateXmlResultAction : BaseIntentionAction() {
 
         val xmlTag = PsiTreeUtil.getParentOfType(element, XmlTag::class.java) ?: return false
 
-        val tagName = xmlTag.name
-        if (tagName != "resultMap" && tagName != "collection" && tagName != "association") {
-            return false
-        }
+        val domElement = DomUtil.getDomElement(xmlTag)
 
-        val type = tryGetType(xmlTag)
+        val type = tryGetType(domElement)
 
         return type != null
     }
@@ -55,13 +53,15 @@ class GenerateXmlResultAction : BaseIntentionAction() {
 
         val xmlTag = PsiTreeUtil.getParentOfType(element, XmlTag::class.java) ?: return
 
-        val type = tryGetType(xmlTag) ?: return
+        val domElement = DomUtil.getDomElement(xmlTag)
+
+        val type = tryGetType(domElement) ?: return
 
         val resultMapId = getResultMapId(xmlTag)
 
-        val domElement = DomUtil.findDomElement(element, IdDomElement::class.java)
+        val idDomElement = DomUtil.findDomElement(element, IdDomElement::class.java)
 
-        val psiMethod = domElement?.id?.value as? PsiMethod?
+        val psiMethod = idDomElement?.id?.value as? PsiMethod?
 
         val module = if (psiMethod != null) {
             ModuleUtil.findModuleForPsiElement(psiMethod)
@@ -76,8 +76,8 @@ class GenerateXmlResultAction : BaseIntentionAction() {
         }
 
         val columnNames = if (DatabasePluginUtils.databasePluginAvailable) {
-            if (domElement != null) {
-                val mapper = MapperUtils.getMapper(domElement)
+            if (idDomElement != null) {
+                val mapper = MapperUtils.getMapper(idDomElement)
 
                 val firstSelect = mapper.selects
                     .firstOrNull { it.xmlTag?.getAttributeValue("resultMap") == resultMapId }
@@ -103,25 +103,6 @@ class GenerateXmlResultAction : BaseIntentionAction() {
         val caretModel = editor.caretModel
         val position = caretModel.offset
         return file.findElementAt(position)
-    }
-
-    private fun tryGetType(xmlTag: XmlTag): String? {
-        var type = xmlTag.getAttributeValue("type")
-        if (!type.isNullOrBlank()) {
-            return type
-        }
-
-        type = xmlTag.getAttributeValue("ofType")
-        if (!type.isNullOrBlank()) {
-            return type
-        }
-
-        type = xmlTag.getAttributeValue("javaType")
-        if (!type.isNullOrBlank()) {
-            return type
-        }
-
-        return null
     }
 
     override fun startInWriteAction(): Boolean {
