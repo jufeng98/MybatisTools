@@ -1,6 +1,7 @@
 package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
+import com.intellij.lang.java.beans.PropertyKind
 import com.intellij.lang.ognl.psi.OgnlIndexedExpression
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.*
@@ -45,28 +46,16 @@ object ReferenceUtils {
                     return MapValueFakePsiElement(currentPsiElement, fieldTypeCls)
                 }
 
-                val parameter = paramMap[propertyName]
-                if (parameter != null) {
-                        return parameter
-                }
-
                 psiField = fieldTypeCls.findFieldByName(propertyName, true)
                 if (psiField == null) {
-                    val psiMethods = fieldTypeCls.findMethodsByName(propertyName, true)
-                    if (psiMethods.isNotEmpty()) {
-                        return psiMethods[0]
-                    }
+                    val psiMethod = findFieldPossibleMethod(fieldTypeCls, propertyName)
 
-                    return null
+                    return psiMethod ?: paramMap[propertyName]
                 }
 
-                if (psiField.type !is PsiClassType) {
-                    return psiField
-                }
+                val psiType = psiField.type
 
-                val psiType = psiField.type as PsiClassType
-
-                fieldTypeCls = resolvePsiType(psiType) ?: return null
+                fieldTypeCls = resolvePsiType(psiType) ?: return psiField
 
                 propertyName = nameLevels.pop()
             }
@@ -77,7 +66,7 @@ object ReferenceUtils {
     }
 
     fun convert(text: String, psiElement: PsiElement): Array<PsiReference> {
-        val isStaticMethod = text.startsWith("@")
+        val isStaticMethod = text.startsWith(MybatisConstants.AT_SEPARATOR)
 
         if (isStaticMethod) {
             val psiReferences = convertStaticMethod(text, psiElement)
@@ -146,13 +135,13 @@ object ReferenceUtils {
     fun convertStaticMethod(text: String, psiElement: PsiElement): MutableList<PsiReference> {
         val psiReferences = mutableListOf<PsiReference>()
 
-        if (text == "@") {
+        if (text == MybatisConstants.AT_SEPARATOR) {
             return psiReferences
         }
 
         val referenceProvider = JavaClassReferenceProvider()
 
-        val idx = text.indexOf("@", 1)
+        val idx = text.indexOf(MybatisConstants.AT_SEPARATOR, 1)
         if (idx == -1) {
             val from = TextRange(1, text.length)
             val fullClassName = from.substring(text)
@@ -187,6 +176,44 @@ object ReferenceUtils {
         }
 
         return psiReferences
+    }
+
+    fun findPossibleMethods(psiClass: PsiClass, name: String): Array<PsiMethod> {
+        var psiMethods = psiClass.findMethodsByName(name, true)
+        if (psiMethods.isNotEmpty()) {
+            return psiMethods
+        }
+
+        val upperCaseFirstChar = StringUtil.capitalizeFirstWord2(name)
+
+        val getName = PropertyKind.GETTER.prefix + upperCaseFirstChar
+        psiMethods = psiClass.findMethodsByName(getName, true)
+        if (psiMethods.isNotEmpty()) {
+            return psiMethods
+        }
+
+        val setName = PropertyKind.SETTER.prefix + upperCaseFirstChar
+        psiMethods = psiClass.findMethodsByName(setName, true)
+        if (psiMethods.isNotEmpty()) {
+            return psiMethods
+        }
+
+        val boolName = PropertyKind.BOOLEAN_GETTER.prefix + upperCaseFirstChar
+        psiMethods = psiClass.findMethodsByName(boolName, true)
+        if (psiMethods.isNotEmpty()) {
+            return psiMethods
+        }
+
+        return emptyArray()
+    }
+
+    fun findFieldPossibleMethod(psiClass: PsiClass, fieldName: String): PsiMethod? {
+        var psiMethods = findPossibleMethods(psiClass, fieldName)
+        if (psiMethods.isNotEmpty()) {
+            return psiMethods[0]
+        }
+
+        return null
     }
 
 }

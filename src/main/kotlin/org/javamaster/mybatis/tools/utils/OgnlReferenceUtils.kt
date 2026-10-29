@@ -1,16 +1,21 @@
 package org.javamaster.mybatis.tools.utils
 
+import com.baomidou.plugin.idea.mybatisx.dom.model.Bind
+import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.lang.injection.InjectedLanguageManager
+import com.intellij.lang.ognl.psi.OgnlIndexedExpression
 import com.intellij.lang.ognl.psi.OgnlMethodCallExpression
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.InheritanceUtil
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlAttributeValue
 import com.intellij.psi.xml.XmlTag
+import com.intellij.util.xml.DomUtil
 import org.javamaster.mybatis.tools.psi.impl.MapValueFakePsiElement
 import org.javamaster.mybatis.tools.reference.OgnlFieldNameReference
 import org.javamaster.mybatis.tools.utils.PsiUtils.constructParamMap
@@ -40,6 +45,11 @@ object OgnlReferenceUtils {
         }
 
         psiElement = resolveIfParamInForeachTag(ognlFieldNameReference, injectionHost, currentPsiElement)
+        if (psiElement != null) {
+            return psiElement
+        }
+
+        psiElement = resolveIfMatchBindName(ognlFieldNameReference, injectionHost, currentPsiElement)
         if (psiElement != null) {
             return psiElement
         }
@@ -153,7 +163,10 @@ object OgnlReferenceUtils {
         val textRange = collectionAttrValue.textRange
 
         val injectedLanguageManager = InjectedLanguageManager.getInstance(collectionAttrValue.project)
-        val ognlPsiElement = injectedLanguageManager.findInjectedElementAt(containingFile, textRange.startOffset + 1)
+        val ognlPsiElement = injectedLanguageManager.findInjectedElementAt(
+            containingFile,
+            (textRange.startOffset + 1).coerceAtLeast(textRange.endOffset - 2)
+        )
         if (ognlPsiElement == null) {
             return null
         }
@@ -162,52 +175,13 @@ object OgnlReferenceUtils {
 
         val psiReferences = parent.references
 
-        val resolve = if (psiReferences.size == 1) {
-            psiReferences[0].resolve()
-        } else {
-            psiReferences[psiReferences.size - 1].resolve()
-        }
+        val resolve = psiReferences.lastOrNull()?.resolve()
 
-        var psiType = if (resolve is PsiParameter) {
-            resolve.type
-        } else if (resolve is PsiField) {
-            resolve.type
-        } else if (resolve is PsiMethod) {
-            resolve.returnType
-        } else if (resolve is MapValueFakePsiElement) {
-            return resolve.psiClass
-        } else {
-            return null
-        }
+        val pair = PsiUtils.resolveActualType(resolve, true)
 
-        if (psiType is PsiArrayType) {
-            psiType = psiType.componentType
-        }
+        val psiClass = pair?.second ?: pair?.first ?: return null
 
-        val paramPsiCls = resolvePsiType(psiType)
-
-        val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.COLLECTION)
-        if (paramIsCollection) {
-            val genericParameters = (psiType as PsiClassReferenceType).parameters
-            if (genericParameters.size == 0) {
-                return null
-            }
-
-            return resolvePsiType(genericParameters[0])
-        }
-
-        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.MAP)
-        if (paramIsMap) {
-            val genericParameters = (psiType as PsiClassReferenceType).parameters
-            if (genericParameters.size < 2) {
-                return null
-            }
-
-            val valueGenericParameter = genericParameters[1]
-            return resolvePsiType(valueGenericParameter)
-        }
-
-        return paramPsiCls
+        return psiClass
     }
 
     fun resolveGenericIfForeachTagItemAttrValue(injectionHost: PsiElement?): PsiElement? {
@@ -229,27 +203,30 @@ object OgnlReferenceUtils {
     }
 
     fun resolveGenericIfForeachTagIndexAttrValue(collectionAttrValue: XmlAttributeValue): PsiElement? {
-        val collectionValue = collectionAttrValue.value
+        val containingFile = collectionAttrValue.containingFile
+        val textRange = collectionAttrValue.textRange
 
-        val psiReferences = ReferenceUtils.convert(collectionValue, collectionAttrValue)
-
-        val resolve = if (psiReferences.size == 1) {
-            psiReferences[0].resolve()
-        } else {
-            psiReferences[psiReferences.size - 1].resolve()
-        }
-
-        val psiType = if (resolve is PsiParameter) {
-            resolve.type
-        } else if (resolve is PsiField) {
-            resolve.type
-        } else {
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(collectionAttrValue.project)
+        val ognlPsiElement = injectedLanguageManager.findInjectedElementAt(
+            containingFile,
+            (textRange.startOffset + 1).coerceAtLeast(textRange.endOffset - 2)
+        )
+        if (ognlPsiElement == null) {
             return null
         }
 
-        val paramPsiCls = resolvePsiType(psiType)
+        val parent = ognlPsiElement.parent
 
-        val paramIsCollection = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.COLLECTION)
+        val psiReferences = parent.references
+
+        val resolve = psiReferences.lastOrNull()?.resolve()
+
+        val pair = PsiUtils.resolveActualType(resolve) ?: return null
+
+        val psiClass = pair.first
+        val psiType = pair.second
+
+        val paramIsCollection = InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)
         if (paramIsCollection) {
             val project = collectionAttrValue.project
 
@@ -257,10 +234,10 @@ object OgnlReferenceUtils {
                 .findClass(MybatisConstants.INTEGER, GlobalSearchScope.allScope(project))
         }
 
-        val paramIsMap = InheritanceUtil.isInheritor(paramPsiCls, MybatisConstants.MAP)
+        val paramIsMap = InheritanceUtil.isInheritor(psiClass, MybatisConstants.MAP)
         if (paramIsMap) {
             val genericParameters = (psiType as PsiClassReferenceType).parameters
-            if (genericParameters.size < 1) {
+            if (genericParameters.size < 2) {
                 return null
             }
 
@@ -268,7 +245,7 @@ object OgnlReferenceUtils {
             return resolvePsiType(keyGenericParameter)
         }
 
-        return paramPsiCls
+        return psiClass
     }
 
     fun getItemAttrValueIfParamInForeachTag(injectionHost: PsiElement): XmlAttributeValue? {
@@ -295,10 +272,7 @@ object OgnlReferenceUtils {
         injectionHost: PsiElement,
         currentPsiElement: PsiElement,
     ): PsiElement? {
-        val foreachTag = getForeachTag(injectionHost)
-        if (foreachTag == null) {
-            return null
-        }
+        val foreachTag = getForeachTag(injectionHost) ?: return null
 
         val references = currentPsiElement.references
         if (references.isEmpty()) {
@@ -310,15 +284,9 @@ object OgnlReferenceUtils {
             return null
         }
 
-        val collectionAttr = foreachTag.getAttribute("collection")
-        if (collectionAttr == null) {
-            return null
-        }
+        val collectionAttr = foreachTag.getAttribute("collection") ?: return null
 
-        val collectionAttrValue = collectionAttr.valueElement
-        if (collectionAttrValue == null) {
-            return null
-        }
+        val collectionAttrValue = collectionAttr.valueElement ?: return null
 
         val itemAttr = foreachTag.getAttribute("item")
 
@@ -340,10 +308,6 @@ object OgnlReferenceUtils {
             return collectionPsiElement
         }
 
-        if (collectionPsiElement == null) {
-            return null
-        }
-
         if (references.size < 2) return null
 
         if (collectionPsiElement !is PsiClass) {
@@ -351,6 +315,53 @@ object OgnlReferenceUtils {
         }
 
         return resolveJavaElement(references, ognlFieldNameReference, collectionPsiElement, text)
+    }
+
+    private fun resolveIfMatchBindName(
+        ognlFieldNameReference: OgnlFieldNameReference,
+        injectionHost: PsiElement,
+        currentPsiElement: PsiElement,
+    ): PsiElement? {
+        val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return null
+
+        val xmlTags = PsiTreeUtil.findChildrenOfType(domElement.xmlElement, XmlTag::class.java)
+        if (xmlTags.isEmpty()) {
+            return null
+        }
+
+        val bind = DomUtil.getDomElement(injectionHost.parent?.parent) as? Bind
+        if (bind != null) {
+            // 排除 bind 标签自身
+            return null
+        }
+
+        val references = currentPsiElement.references
+        if (references.isEmpty()) {
+            return null
+        }
+
+        val nameLevels = LinkedList<String>(ognlFieldNameReference.nameLevels)
+        val firstName = nameLevels.pop()
+
+        val bindXmlTag = xmlTags.firstOrNull {
+            it.name == "bind" && it.getAttributeValue("name") == firstName
+        } ?: return null
+
+        val bindDomElement = DomUtil.getDomElement(bindXmlTag) as? Bind ?: return null
+
+        val bindValuePsiElement = bindDomElement.name.value ?: return null
+
+        val firstReference = references[0]
+
+        if (ognlFieldNameReference == firstReference) {
+            return bindValuePsiElement
+        }
+
+        val pair = PsiUtils.resolveActualType(bindValuePsiElement, true)
+
+        val psiClass = pair?.first ?: return bindValuePsiElement
+
+        return ReferenceUtils.resolveTarget(currentPsiElement, psiClass, nameLevels, emptyMap())
     }
 
     private fun resolveJavaElement(
@@ -376,13 +387,9 @@ object OgnlReferenceUtils {
 
             val psiElement = findJavaElement(fieldName, currentPsiClass, psiReference)
 
-            val resolvedType = when (psiElement) {
-                is PsiField -> psiElement.type
-                is PsiMethod -> psiElement.returnType ?: return null
-                else -> return null
-            }
+            val pair = PsiUtils.resolveActualType(psiElement, true)
 
-            currentPsiClass = resolvePsiType(resolvedType) ?: return null
+            currentPsiClass = pair?.first ?: return psiElement
         }
 
         return null
@@ -390,20 +397,15 @@ object OgnlReferenceUtils {
 
     private fun findJavaElement(
         fieldName: String,
-        collectionPsiElement: PsiClass,
+        currentPsiClass: PsiClass,
         psiReference: OgnlFieldNameReference,
     ): PsiElement? {
-        val psiField = collectionPsiElement.findFieldByName(fieldName, true)
+        val psiField = currentPsiClass.findFieldByName(fieldName, true)
         if (psiField != null) {
             return psiField
         }
 
-        var psiMethods = collectionPsiElement.findMethodsByName(fieldName, true)
-        if (psiMethods.isEmpty()) {
-            val boolName = "is" + StringUtil.capitalizeFirstWord2(fieldName)
-            psiMethods = collectionPsiElement.findMethodsByName(boolName, true)
-        }
-
+        var psiMethods = ReferenceUtils.findPossibleMethods(currentPsiClass, fieldName)
         if (psiMethods.isNotEmpty()) {
             val element = psiReference.element
             val methodCallExpression = element.parent as? OgnlMethodCallExpression
@@ -419,10 +421,44 @@ object OgnlReferenceUtils {
             return psiMethods[0]
         }
 
-        if (InheritanceUtil.isInheritor(collectionPsiElement, MybatisConstants.MAP)) {
-            return MapValueFakePsiElement(collectionPsiElement, collectionPsiElement)
+        if (InheritanceUtil.isInheritor(currentPsiClass, MybatisConstants.MAP)) {
+            return MapValueFakePsiElement(currentPsiClass, currentPsiClass)
         }
 
         return null
     }
+
+    fun resolveBindValueAttr(valueAttributeValue: XmlAttributeValue): PsiElement? {
+        val containingFile = valueAttributeValue.containingFile
+        val textRange = valueAttributeValue.textRange
+        val project = valueAttributeValue.project
+
+        val offset = (textRange.startOffset + 1).coerceAtLeast(textRange.endOffset - 2)
+
+        val injectedLanguageManager = InjectedLanguageManager.getInstance(project)
+
+        val ognlPsiElement = injectedLanguageManager.findInjectedElementAt(containingFile, offset) ?: return null
+
+        var isIndexAccess = false
+
+        val parent = ognlPsiElement.parent
+        var psiReferences = parent.references
+        if (psiReferences.isEmpty()) {
+            if (parent is OgnlIndexedExpression) {
+                psiReferences = parent.referenceQualifier.references
+                isIndexAccess = true
+            }
+        }
+
+        val resolve = psiReferences.lastOrNull()?.resolve()
+
+        if (isIndexAccess) {
+            val pair = PsiUtils.resolveActualType(resolve, true)
+
+            return pair?.second ?: pair?.first ?: resolve
+        }
+
+        return resolve
+    }
+
 }

@@ -23,7 +23,6 @@ public class StringUtils {
         }
     }
 
-
     /**
      * Lower case first char string.
      *
@@ -78,16 +77,13 @@ public class StringUtils {
 
     /**
      * 驼峰转下划线
-     *
-     * @param camelStr
-     * @return
      */
     public static String camelToSlash(String camelStr) {
-        String[] strings = splitByCharacterType(camelStr, true);
+        String[] strings = splitByCharacterType(camelStr);
         return Arrays.stream(strings).map(StringUtils::lowerCaseFirstChar).collect(Collectors.joining("_"));
     }
 
-    private static String[] splitByCharacterType(String str, boolean camelCase) {
+    private static String[] splitByCharacterType(String str) {
         if (str == null) {
             return null;
         } else if (str.isEmpty()) {
@@ -101,7 +97,7 @@ public class StringUtils {
             for (int pos = tokenStart + 1; pos < c.length; ++pos) {
                 int type = Character.getType(c[pos]);
                 if (type != currentType) {
-                    if (camelCase && type == 2 && currentType == 1) {
+                    if (type == 2 && currentType == 1) {
                         int newTokenStart = pos - 1;
                         if (newTokenStart != tokenStart) {
                             list.add(new String(c, tokenStart, newTokenStart - tokenStart));

@@ -1,6 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.reference;
 
-import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiMember;
 import com.intellij.psi.xml.XmlAttributeValue;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,7 +22,7 @@ public final class ReferenceSetResolverFactory {
      * @param target the target
      * @return the context reference set resolver
      */
-    public static <F extends XmlAttributeValue> ContextReferenceSetResolver<XmlAttributeValue, PsiField> createPsiFieldResolver(@NotNull F target) {
+    public static <F extends XmlAttributeValue> ContextReferenceSetResolver<XmlAttributeValue, PsiMember> createPsiFieldResolver(@NotNull F target) {
         return new PsiFieldReferenceSetResolver(target);
     }
 

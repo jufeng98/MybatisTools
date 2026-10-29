@@ -20,7 +20,7 @@ import java.util.*
 class OgnlFieldNameReference(
     psiElement: PsiElement,
     val from: TextRange,
-    private val nameLevels: LinkedList<String>,
+    val nameLevels: LinkedList<String>,
 ) : PsiReferenceBase<PsiElement>(psiElement, from) {
 
     override fun isReferenceTo(element: PsiElement): Boolean {

@@ -1,18 +1,16 @@
 package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.psi.JavaPsiFacade
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiParameter
-import com.intellij.psi.PsiType
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.xml.XmlText
 import org.apache.commons.lang3.StringUtils
+import org.javamaster.mybatis.tools.psi.impl.MapValueFakePsiElement
 
 /**
  * @author yudong
@@ -20,11 +18,16 @@ import org.apache.commons.lang3.StringUtils
 object PsiUtils {
 
     fun resolvePsiType(psiType: PsiType?): PsiClass? {
-        if (psiType !is PsiClassReferenceType) {
-            return null
+        var type = psiType
+        if (type is PsiArrayType) {
+            type = type.componentType
         }
 
-        return psiType.resolve()
+        if (type is PsiClassReferenceType) {
+            return type.resolve()
+        }
+
+        return null
     }
 
     fun resolvePsiClass(fullClassName: String, module: Module?, project: Project): PsiClass? {
@@ -111,6 +114,71 @@ object PsiUtils {
         }
 
         return map
+    }
+
+    fun resolveActualType(psiElement: PsiElement?): Pair<PsiClass?, PsiType?>? {
+        val psiType = if (psiElement is PsiParameter) {
+            psiElement.type
+        } else if (psiElement is PsiField) {
+            psiElement.type
+        } else if (psiElement is PsiMethod) {
+            psiElement.returnType
+        } else if (psiElement is PsiClass) {
+            return Pair(psiElement, null)
+        } else {
+            return null
+        }
+
+        val psiClass = resolvePsiType(psiType)
+
+        return Pair(psiClass, psiType)
+    }
+
+    /**
+     * 解析 psiElement 的类型
+     * @param valueType 只对 Map 类型起作用,决定取 key 还是 value 的泛型类型
+     * @return first 为 psiElement 的类型, second 为其泛型(对于 Collection 和 Map)
+     */
+    fun resolveActualType(psiElement: PsiElement?, valueType: Boolean): Pair<PsiClass?, PsiClass?>? {
+        if (psiElement is MapValueFakePsiElement) {
+            val clazz = psiElement.psiClass
+            val typeParameter = if (valueType) {
+                clazz.typeParameters.lastOrNull()
+            } else {
+                clazz.typeParameters.firstOrNull()
+            }
+
+            return Pair(clazz, typeParameter)
+        }
+
+        val pair = resolveActualType(psiElement) ?: return null
+
+        val psiClass = pair.first
+        val psiType = pair.second
+
+        val paramIsCollection = InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)
+        if (paramIsCollection) {
+            val genericParameters = (psiType as PsiClassReferenceType).parameters
+            if (genericParameters.size == 0) {
+                return null
+            }
+
+            return Pair(psiClass, resolvePsiType(genericParameters[0]))
+        }
+
+        val paramIsMap = InheritanceUtil.isInheritor(psiClass, MybatisConstants.MAP)
+        if (paramIsMap) {
+            val genericParameters = (psiType as PsiClassReferenceType).parameters
+            if (genericParameters.size < 2) {
+                return null
+            }
+
+            val idx = if (valueType) 1 else 0
+            val genericParameter = genericParameters[idx]
+            return Pair(psiClass, resolvePsiType(genericParameter))
+        }
+
+        return Pair(psiClass, null)
     }
 
 }
