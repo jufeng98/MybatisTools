@@ -24,9 +24,11 @@ class IdDomElementService(val project: Project) {
         module: Module?,
         idBasedTagConverter: IdBasedTagConverter,
     ): Map<String, MutableCollection<out IdDomElement>> {
+        val trackersManager = project.getService(XmlFileModificationTrackersManager::class.java)
+
         val holder = module ?: project
 
-        val key = idBasedTagConverter.javaClass.simpleName
+        val key = trackersManager.getName(holder) + "." + idBasedTagConverter.javaClass.simpleName
 
         val cachedValueKey = domElementKeyMap.computeIfAbsent(key) {
             Key.create("mybatisTools.domElementKeyMap.$it")
@@ -42,8 +44,10 @@ class IdDomElementService(val project: Project) {
         module: Module?,
         idBasedTagConverter: IdBasedTagConverter,
     ): CachedValueProvider.Result<Map<String, MutableCollection<out IdDomElement>>> {
+        val holder = module ?: project
+
         val trackersManager = project.getService(XmlFileModificationTrackersManager::class.java)
-        val modificationTracker = trackersManager.getModificationTracker()
+        val modificationTracker = trackersManager.getModificationTracker(holder)
 
         val map: MutableMap<String, MutableCollection<out IdDomElement>> = mutableMapOf()
 

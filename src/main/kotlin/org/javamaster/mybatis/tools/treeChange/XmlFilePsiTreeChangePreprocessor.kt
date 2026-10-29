@@ -1,5 +1,7 @@
 package org.javamaster.mybatis.tools.treeChange
 
+import com.intellij.openapi.module.ModuleUtilCore
+import com.intellij.openapi.project.DumbService
 import com.intellij.psi.impl.PsiTreeChangeEventImpl
 import com.intellij.psi.impl.PsiTreeChangePreprocessor
 import com.intellij.psi.xml.XmlFile
@@ -18,9 +20,15 @@ class XmlFilePsiTreeChangePreprocessor : PsiTreeChangePreprocessor {
 
         val project = xmlFile.project
 
+        if (DumbService.isDumb(project)) return
+
+        val module = ModuleUtilCore.findModuleForFile(xmlFile)
+
+        val holder = module ?: project
+
         val trackersManager = project.getService(XmlFileModificationTrackersManager::class.java)
 
-        val modificationTracker = trackersManager.getModificationTracker()
+        val modificationTracker = trackersManager.getModificationTracker(holder)
 
         modificationTracker.incModificationCount()
     }
