@@ -243,6 +243,8 @@
         <psi.treeChangePreprocessor
                 implementation="org.javamaster.mybatis.tools.treeChange.XmlFilePsiTreeChangePreprocessor"/>
 
+        <errorHandler implementation="com.intellij.diagnostic.JetBrainsMarketplaceErrorReportSubmitter"/>
+
         <notificationGroup displayType="BALLOON" id="MyBatisTools Notification" isLogByDefault="true"/>
     </extensions>
 </idea-plugin>
