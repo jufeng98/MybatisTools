@@ -1,6 +1,9 @@
 package org.javamaster.mybatis.tools.utils
 
+import com.baomidou.plugin.idea.mybatisx.dom.model.Association
+import com.baomidou.plugin.idea.mybatisx.dom.model.Collection
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
+import com.baomidou.plugin.idea.mybatisx.dom.model.ResultMap
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.project.Project
@@ -14,6 +17,7 @@ import com.intellij.psi.xml.XmlText
 import com.intellij.sql.psi.SqlExpression
 import com.intellij.sql.psi.SqlFile
 import com.intellij.sql.psi.SqlSelectClause
+import com.intellij.util.xml.DomElement
 import com.intellij.util.xml.DomUtil
 
 /**
@@ -113,6 +117,22 @@ object XmlSqlUtils {
         }
 
         return getForeachTag(parent)
+    }
+
+    fun tryGetType(domElement: DomElement?): String? {
+        if (domElement is ResultMap) {
+            return domElement.xmlTag?.getAttributeValue("type")
+        }
+
+        if (domElement is Collection) {
+            return domElement.xmlTag?.getAttributeValue("ofType")
+        }
+
+        if (domElement is Association) {
+            return domElement.xmlTag?.getAttributeValue("javaType")
+        }
+
+        return null
     }
 
 }

@@ -1,6 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.reference;
 
-import com.baomidou.plugin.idea.mybatisx.dom.converter.PropertySetterFind;
+import com.baomidou.plugin.idea.mybatisx.dom.converter.PropertyFind;
 import com.baomidou.plugin.idea.mybatisx.util.JavaUtils;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
@@ -15,7 +15,7 @@ import java.util.Optional;
  *
  * @author yanglin
  */
-public class PsiFieldReferenceSetResolver extends ContextReferenceSetResolver<XmlAttributeValue, PsiField> {
+public class PsiFieldReferenceSetResolver extends ContextReferenceSetResolver<XmlAttributeValue, PsiMember> {
 
     /**
      * Instantiates a new Psi field reference set resolver.
@@ -34,25 +34,27 @@ public class PsiFieldReferenceSetResolver extends ContextReferenceSetResolver<Xm
 
     @NotNull
     @Override
-    public Optional<PsiField> resolve(@NotNull PsiField current, String text) {
-        PsiType type = current.getType();
+    public Optional<PsiMember> resolve(@NotNull PsiMember current, String text) {
+        if (current instanceof PsiField psiField) {
+            PsiType type = psiField.getType();
 
-        if (type instanceof PsiClassReferenceType && !((PsiClassReferenceType) type).hasParameters()) {
-            PsiClass clazz = ((PsiClassReferenceType) type).resolve();
-            if (null != clazz) {
-                return JavaUtils.findSettablePsiField(clazz, text);
+            if (type instanceof PsiClassReferenceType && !((PsiClassReferenceType) type).hasParameters()) {
+                PsiClass clazz = ((PsiClassReferenceType) type).resolve();
+                if (clazz != null) {
+                    return JavaUtils.findPsiMember(clazz, text);
+                }
             }
+
+            return Optional.empty();
         }
 
-        return Optional.empty();
+        return Optional.of(current);
     }
 
     @NotNull
     @Override
-    public Optional<PsiField> getStartElement(@Nullable String firstText) {
-        PropertySetterFind propertySetterFind = new PropertySetterFind();
-
-        return propertySetterFind.getStartElement(firstText, getElement());
+    public Optional<PsiMember> getStartElement(@Nullable String firstText) {
+        return PropertyFind.getStartElement(firstText, getElement());
     }
 
 }
