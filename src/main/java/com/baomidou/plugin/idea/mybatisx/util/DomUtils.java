@@ -1,5 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.util;
 
+import com.google.common.collect.Sets;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
@@ -11,12 +12,14 @@ import org.jetbrains.annotations.*;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * The type Dom utils.
  */
 public final class DomUtils {
+    private static final Set<String> MAPPER_SET = Sets.newHashSet("mapper");
 
     private DomUtils() {
         throw new UnsupportedOperationException();
@@ -61,30 +64,20 @@ public final class DomUtils {
      * @return boolean
      */
     public static boolean isMybatisFile(@Nullable PsiFile file) {
-        Boolean mybatisFile = null;
         if (file == null) {
-            mybatisFile = false;
+            return false;
         }
-        if (mybatisFile == null) {
-            if (!isXmlFile(file)) {
-                mybatisFile = false;
-            }
+
+        if (isNotXmlFile(file)) {
+            return false;
         }
-        if (mybatisFile == null) {
-            XmlTag rootTag = ((XmlFile) file).getRootTag();
-            if (rootTag == null) {
-                mybatisFile = false;
-            }
-            if (mybatisFile == null) {
-                if (!"mapper".equals(rootTag.getName())) {
-                    mybatisFile = false;
-                }
-            }
+
+        XmlTag rootTag = ((XmlFile) file).getRootTag();
+        if (rootTag == null) {
+            return false;
         }
-        if (mybatisFile == null) {
-            mybatisFile = true;
-        }
-        return mybatisFile;
+
+        return MAPPER_SET.contains(rootTag.getName());
     }
 
     /**
@@ -94,7 +87,7 @@ public final class DomUtils {
      * @return the boolean
      */
     public static boolean isMybatisConfigurationFile(@NotNull PsiFile file) {
-        if (!isXmlFile(file)) {
+        if (isNotXmlFile(file)) {
             return false;
         }
         XmlTag rootTag = ((XmlFile) file).getRootTag();
@@ -108,7 +101,7 @@ public final class DomUtils {
      * @return the boolean
      */
     public static boolean isBeansFile(@NotNull PsiFile file) {
-        if (!isXmlFile(file)) {
+        if (isNotXmlFile(file)) {
             return false;
         }
         XmlTag rootTag = ((XmlFile) file).getRootTag();
@@ -121,8 +114,8 @@ public final class DomUtils {
      * @param file the file
      * @return the boolean
      */
-    static boolean isXmlFile(@NotNull PsiFile file) {
-        return file instanceof XmlFile;
+    static boolean isNotXmlFile(@NotNull PsiFile file) {
+        return !(file instanceof XmlFile);
     }
 
 }
