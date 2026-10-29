@@ -69,12 +69,10 @@ class ColumnNameAnnotator : Annotator {
         val resultMap = selectDomElement.resultMap.value
 
         val existResultMap = resultMap != null && resultMap.isWritable
-        val columnResolveList = if (existResultMap) {
+        val columnNames = if (existResultMap) {
             val xmlTags = PsiTreeUtil.findChildrenOfType(resultMap, XmlTag::class.java)
 
-            xmlTags.mapNotNull {
-                it.getAttribute("column")?.valueElement?.references?.lastOrNull()?.resolve()
-            }
+            xmlTags.mapNotNull { it.getAttributeValue("column") }.toSet()
         } else {
             null
         }
@@ -107,7 +105,7 @@ class ColumnNameAnnotator : Annotator {
 
             when {
                 existResultMap -> {
-                    handleResultMap(resultMap, columnResolveList!!, columnName, it, nameElement, holder, project)
+                    handleResultMap(resultMap, columnNames!!, columnName, nameElement, holder, project)
                 }
 
                 existResultType -> {
@@ -140,7 +138,8 @@ class ColumnNameAnnotator : Annotator {
             nameElement, nameElement, "在 resultType 中新增字段", ProblemHighlightType.WARNING, false
         )
 
-        val typeName = runCatching { expression.dasType.toDataType().typeName }.getOrNull() ?: "String"
+        // val typeName = runCatching { expression.dasType.toDataType().typeName }.getOrNull() ?: "String"
+        val typeName = "String"
 
         holder.newAnnotation(HighlightSeverity.WARNING, "在 resultType 中无法找到列 $columnName 对应的字段")
             .range(nameElement.textRange)
@@ -154,18 +153,16 @@ class ColumnNameAnnotator : Annotator {
 
     private fun handleResultMap(
         resultMap: XmlTag,
-        columnResolveList: List<PsiElement>,
+        columnNames: Set<String>,
         columnName: String,
-        expression: SqlExpression,
         nameElement: SqlIdentifier,
         holder: AnnotationHolder,
         project: Project,
     ) {
-        val resultXmlTag = columnResolveList.firstOrNull {
-            it == expression
-        }
+        val camelCaseName = StringUtil.toCamelCase(columnName)
 
-        if (resultXmlTag != null) {
+        val matchesField = matchesField(columnNames, camelCaseName, columnName)
+        if (matchesField) {
             return
         }
 
@@ -177,8 +174,6 @@ class ColumnNameAnnotator : Annotator {
         )
 
         val pointer = SmartPointerManager.getInstance(project).createSmartPsiElementPointer(resultMap)
-
-        val camelCaseName = StringUtil.toCamelCase(columnName)
 
         holder.newAnnotation(HighlightSeverity.WARNING, "在 resultMap 标签中无法找到列 $columnName 对应的 xml 标签")
             .range(nameElement.textRange)
