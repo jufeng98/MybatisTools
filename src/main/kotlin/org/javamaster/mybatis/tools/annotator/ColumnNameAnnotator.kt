@@ -4,7 +4,6 @@ import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.dom.model.Select
 import com.intellij.codeInspection.InspectionManager
 import com.intellij.codeInspection.ProblemHighlightType
-import com.intellij.database.psi.DbColumn
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.Annotator
 import com.intellij.lang.annotation.HighlightSeverity
@@ -15,9 +14,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPointerManager
-import com.intellij.psi.util.CachedValueProvider
-import com.intellij.psi.util.CachedValuesManager
-import com.intellij.psi.util.PsiModificationTracker
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.sql.psi.*
@@ -61,7 +57,7 @@ class ColumnNameAnnotator : Annotator {
 
         val existResultType = resultType != null && resultType.isWritable
         val fieldNames = if (existResultType) {
-            cachedFieldNames(resultType)
+            resultType.allFields.mapNotNull { it.name }.toSet()
         } else {
             null
         }
@@ -94,22 +90,13 @@ class ColumnNameAnnotator : Annotator {
                 return@forEach
             }
 
-            val references = it.references
-
-            if (it !is SqlAsExpression) {
-                val resolve = references.lastOrNull()?.resolve()
-                if (resolve != it && resolve !is DbColumn) {
-                    return@forEach
-                }
-            }
-
             when {
                 existResultMap -> {
                     handleResultMap(resultMap, columnNames!!, columnName, nameElement, holder, project)
                 }
 
                 existResultType -> {
-                    handleResultType(resultType, fieldNames!!, columnName, it, nameElement, holder, project)
+                    handleResultType(resultType, fieldNames!!, columnName, nameElement, holder, project)
                 }
             }
         }
@@ -119,7 +106,6 @@ class ColumnNameAnnotator : Annotator {
         resultType: PsiClass,
         fieldNames: Set<String>,
         columnName: String,
-        expression: SqlExpression,
         nameElement: SqlIdentifier,
         holder: AnnotationHolder,
         project: Project,
@@ -186,15 +172,6 @@ class ColumnNameAnnotator : Annotator {
         return fieldNames.contains(camel)
                 || fieldNames.contains(raw)
                 || fieldNames.contains(PropertyKind.BOOLEAN_GETTER.prefix + StringUtil.capitalizeFirstWord2(camel))
-    }
-
-    private fun cachedFieldNames(psiClass: PsiClass): Set<String> {
-        return CachedValuesManager.getCachedValue(psiClass) {
-            CachedValueProvider.Result.create(
-                psiClass.allFields.mapNotNull { it.name }.toSet(),
-                PsiModificationTracker.MODIFICATION_COUNT,
-            )
-        }
     }
 
 }

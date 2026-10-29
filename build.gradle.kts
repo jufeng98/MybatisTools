@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.javamaster.mybatis.tools"
-version = "3.0.0"
+version = "2.5.0"
 
 repositories {
     maven { url = URI("https://maven.aliyun.com/nexus/content/groups/public/") }
