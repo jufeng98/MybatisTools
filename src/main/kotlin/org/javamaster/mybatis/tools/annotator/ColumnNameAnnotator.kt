@@ -24,6 +24,8 @@ import org.javamaster.mybatis.tools.utils.PsiUtils
 import org.javamaster.mybatis.tools.utils.StringUtil
 
 /**
+ * 对于 sql 的列名或别名,如果在 resultType 或 resultMap 中不存在,则标黄
+ *
  * @author yudong
  */
 class ColumnNameAnnotator : Annotator {
@@ -39,21 +41,20 @@ class ColumnNameAnnotator : Annotator {
             return
         }
 
-        val injectionHost = InjectedLanguageManager.getInstance(project).getInjectionHost(element)
-        if (injectionHost !is PsiElement) {
-            return
-        }
+        val injectionHost = InjectedLanguageManager.getInstance(project).getInjectionHost(element) ?: return
 
         val xmlTag = tryGetSelectTag(element, injectionHost) ?: return
 
         val resultType = xmlTag.getAttributeValue("resultType")
         if (resultType != null) {
             handleResultType(resultType, element, holder, project)
+            return
         }
 
         val resultMap = xmlTag.getAttributeValue("resultMap")
         if (resultMap != null) {
             handleResultMap(resultMap, element, injectionHost, holder, project)
+            return
         }
     }
 
@@ -104,6 +105,11 @@ class ColumnNameAnnotator : Annotator {
         val psiClass = PsiUtils.resolvePsiClass(resultTypeStr, module, project) ?: return
 
         if (!psiClass.isWritable) {
+            return
+        }
+
+        val parent = element.parent
+        if (parent is SqlFromClause || parent is SqlBinaryExpression) {
             return
         }
 
@@ -158,13 +164,17 @@ class ColumnNameAnnotator : Annotator {
 
         val xmlResultMap = resultMap.xmlTag ?: return
 
-        val xmlTags = PsiTreeUtil.findChildrenOfType(xmlResultMap, XmlTag::class.java)
+        val parent = element.parent
+        if (parent is SqlFromClause || parent is SqlBinaryExpression) {
+            return
+        }
 
         val columnName = element.name ?: return
 
+        val xmlTags = PsiTreeUtil.findChildrenOfType(xmlResultMap, XmlTag::class.java)
+
         val resultXmlTag = xmlTags.firstOrNull {
-            val attributeValue = it.getAttributeValue("column")
-            attributeValue == columnName
+            it.getAttribute("column")?.valueElement?.references?.lastOrNull()?.resolve() == element
         }
 
         if (resultXmlTag != null) {

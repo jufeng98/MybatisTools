@@ -2,6 +2,7 @@ package org.javamaster.mybatis.tools.inject
 
 import com.baomidou.plugin.idea.mybatisx.dom.model.Mapper
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
+import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.lang.injection.MultiHostInjector
 import com.intellij.lang.injection.MultiHostRegistrar
 import com.intellij.lang.ognl.OgnlLanguage
@@ -147,7 +148,7 @@ class MybatisMultiHostInjector : MultiHostInjector {
                 return@forEach
             }
 
-            val staticMethodIndex = text.indexOf("@", it.startOffset)
+            val staticMethodIndex = text.indexOf(MybatisConstants.AT_SEPARATOR, it.startOffset)
             if (staticMethodIndex != -1) {
                 registrar.startInjecting(OgnlLanguage.INSTANCE)
                 registrar.addPlace("%{", "}", injectionHost, it)
