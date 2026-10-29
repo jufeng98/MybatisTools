@@ -13,7 +13,6 @@ import com.intellij.psi.PsiLanguageInjectionHost
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.xml.XmlTag
 import com.intellij.psi.xml.XmlText
-import org.apache.commons.lang3.StringUtils
 import org.javamaster.mybatis.tools.MybatisParamLanguage
 import org.javamaster.mybatis.tools.utils.DatabasePluginUtils.databasePluginAvailable
 import org.javamaster.mybatis.tools.utils.MapperUtil
@@ -52,37 +51,41 @@ class MybatisMultiHostInjector : MultiHostInjector {
             return
         }
 
-        val allParamRanges = mutableListOf<Pair<List<TextRange>, XmlText>>()
-        val otherParamRanges = mutableListOf<Pair<List<TextRange>, XmlText>>()
+        val allMyBatisParams = mutableListOf<Pair<List<MyBatisParam>, XmlText>>()
+        val otherMyBatisParams = mutableListOf<Pair<List<MyBatisParam>, XmlText>>()
 
-        if (databasePluginAvailable) {
-            SqlInjector.startInjectSql(registrar)
+        try {
+            if (databasePluginAvailable) {
+                SqlInjector.startInjectSql(registrar)
+            }
+
+            val visited = mutableSetOf<String>()
+
+            injectXmlTexts(xmlTexts, mapper, allMyBatisParams, otherMyBatisParams, visited, registrar)
+        } finally {
+            if (databasePluginAvailable) {
+                registrar.doneInjecting()
+            }
         }
 
-        injectXmlTexts(xmlTexts, mapper, allParamRanges, otherParamRanges, registrar)
-
-        if (databasePluginAvailable) {
-            registrar.doneInjecting()
-        }
-
-        allParamRanges.forEach {
+        allMyBatisParams.forEach {
             val paramRanges = it.first
             if (paramRanges.isEmpty()) {
                 return@forEach
             }
 
             val injectionHost = it.second as PsiLanguageInjectionHost
-            val text = injectionHost.text
 
-            injectLangToParams(paramRanges, registrar, injectionHost, text)
+            injectLangToParams(paramRanges, registrar, injectionHost)
         }
     }
 
     private fun injectXmlTexts(
         xmlTexts: Collection<XmlText>,
         mapper: Mapper?,
-        allParamRanges: MutableList<Pair<List<TextRange>, XmlText>>,
-        otherParamRanges: MutableList<Pair<List<TextRange>, XmlText>>,
+        allMyBatisParams: MutableList<Pair<List<MyBatisParam>, XmlText>>,
+        otherMyBatisParams: MutableList<Pair<List<MyBatisParam>, XmlText>>,
+        visited: MutableSet<String>,
         registrar: MultiHostRegistrar,
     ) {
         xmlTexts.forEachIndexed { index, it ->
@@ -90,7 +93,7 @@ class MybatisMultiHostInjector : MultiHostInjector {
 
             val variablesRanges = collectParamRanges(text)
 
-            allParamRanges.add(Pair(variablesRanges, it))
+            allMyBatisParams.add(Pair(variablesRanges, it))
 
             if (!databasePluginAvailable) {
                 return@forEachIndexed
@@ -103,7 +106,7 @@ class MybatisMultiHostInjector : MultiHostInjector {
             val nextSibling = it.nextSibling
             if (nextSibling is XmlTag) {
                 if (nextSibling.name == "include") {
-                    injectIncludeRelateSqlTag(nextSibling, mapper, otherParamRanges, registrar)
+                    injectIncludeRelateSqlTag(nextSibling, mapper, otherMyBatisParams, visited, registrar)
                 }
             }
         }
@@ -112,14 +115,17 @@ class MybatisMultiHostInjector : MultiHostInjector {
     private fun injectIncludeRelateSqlTag(
         includeXmlTag: XmlTag,
         mapper: Mapper?,
-        otherParamRanges: MutableList<Pair<List<TextRange>, XmlText>>,
+        otherMyBatisParams: MutableList<Pair<List<MyBatisParam>, XmlText>>,
+        visited: MutableSet<String>,
         registrar: MultiHostRegistrar,
     ) {
         mapper ?: return
 
         val refId = includeXmlTag.getAttributeValue("refid")
 
-        if (StringUtils.isBlank(refId)) return
+        if (refId.isNullOrBlank()) return
+
+        if (!visited.add(refId)) return   // 已访问过，跳过
 
         val sqlXmlTag = mapper.sqls
             .mapNotNull { it.xmlTag }
@@ -132,53 +138,37 @@ class MybatisMultiHostInjector : MultiHostInjector {
             return
         }
 
-        injectXmlTexts(sqlXmlTexts, mapper, otherParamRanges, mutableListOf(), registrar)
+        injectXmlTexts(sqlXmlTexts, mapper, otherMyBatisParams, mutableListOf(), visited, registrar)
     }
 
     private fun injectLangToParams(
-        paramRanges: List<TextRange>,
+        myBatisParams: List<MyBatisParam>,
         registrar: MultiHostRegistrar,
         injectionHost: PsiLanguageInjectionHost,
-        text: String,
     ) {
         val length = injectionHost.textLength
 
-        paramRanges.forEach {
-            if (it.endOffset > length) {
-                return@forEach
-            }
+        myBatisParams.forEach { param ->
+            if (param.nameRange.endOffset > length) return@forEach
 
-            val staticMethodIndex = text.indexOf(MybatisConstants.AT_SEPARATOR, it.startOffset)
-            if (staticMethodIndex != -1) {
-                registrar.startInjecting(OgnlLanguage.INSTANCE)
-                registrar.addPlace("%{", "}", injectionHost, it)
-                registrar.doneInjecting()
-                return@forEach
-            }
+            // 参数名部分：注入 OGNL
+            registrar.startInjecting(OgnlLanguage.INSTANCE)
+            registrar.addPlace("%{", "}", injectionHost, param.nameRange)
+            registrar.doneInjecting()
 
-            val idx = text.indexOf(",", it.startOffset)
-            val splitIndex = if (idx != -1 && idx < it.endOffset) idx else -1
+            // 逗号之后的部分：注入 MybatisParamLanguage
+            val suffix = param.suffixRange ?: return@forEach
+            if (suffix.endOffset > length) return@forEach
 
-            if (splitIndex == -1) {
-                registrar.startInjecting(OgnlLanguage.INSTANCE)
-                registrar.addPlace("%{", "}", injectionHost, it)
-                registrar.doneInjecting()
-            } else {
-                registrar.startInjecting(OgnlLanguage.INSTANCE)
-                registrar.addPlace("%{", "}", injectionHost, TextRange(it.startOffset, splitIndex))
-                registrar.doneInjecting()
-
-                registrar.startInjecting(MybatisParamLanguage.INSTANCE)
-                registrar.addPlace(null, null, injectionHost, TextRange(splitIndex, it.endOffset))
-                registrar.doneInjecting()
-            }
+            registrar.startInjecting(MybatisParamLanguage.INSTANCE)
+            registrar.addPlace(null, null, injectionHost, suffix)
+            registrar.doneInjecting()
         }
     }
 
-    private fun collectParamRanges(text: String): List<TextRange> {
+    private fun collectParamRanges(text: String): List<MyBatisParam> {
+        val myBatisParams = mutableListOf<MyBatisParam>()
         var index = 0
-
-        val textRanges = mutableListOf<TextRange>()
 
         while (index < text.length) {
             val sharpBraceIndex = text.indexOf(sharpPrefixStr, index)
@@ -190,33 +180,59 @@ class MybatisMultiHostInjector : MultiHostInjector {
                 else -> min(sharpBraceIndex, dollarBraceIndex)
             }
 
-            if (openBraceIndex < 0) {
-                break
-            }
+            if (openBraceIndex < 0) break
 
-            val actualStartIndex = openBraceIndex + 2
-            val closeBraceIndex = text.indexOf("}", actualStartIndex)
-            if (closeBraceIndex < 0) {
-                break
-            }
+            val contentStart = openBraceIndex + 2
+            val closeBraceIndex = text.indexOf("}", contentStart)
+            if (closeBraceIndex < 0) break
 
-            if (actualStartIndex >= closeBraceIndex) {
+            // #{} / ${} 空内容
+            if (contentStart >= closeBraceIndex) {
                 index = closeBraceIndex + 1
                 continue
             }
 
-            val paramStr = text.substring(actualStartIndex, closeBraceIndex)
-            if (StringUtil.isEmptyOrSpaces(paramStr)) {
+            val content = text.substring(contentStart, closeBraceIndex)
+            if (StringUtil.isEmptyOrSpaces(content)) {
                 index = closeBraceIndex + 1
                 continue
             }
 
-            textRanges.add(TextRange.create(actualStartIndex, closeBraceIndex))
+            // 关键：只在当前参数的 content 范围内找 @ 和 ,
+            // 原实现从 startOffset 一直往后 indexOf，会把下一个参数里的 @ 误判进来
+            val atIndex = text.indexOf(MybatisConstants.AT_SEPARATOR, contentStart)
+                .takeIf { it in contentStart until closeBraceIndex } ?: -1
+            val commaIndex = text.indexOf(",", contentStart)
+                .takeIf { it in contentStart until closeBraceIndex } ?: -1
 
+            val param = when {
+                // @ 出现在第一个逗号之前（或没有逗号）→ 整个 content 是静态方法调用
+                atIndex != -1 && (commaIndex == -1 || atIndex < commaIndex) ->
+                    MyBatisParam(
+                        nameRange = TextRange.create(contentStart, closeBraceIndex),
+                        suffixRange = null,
+                    )
+
+                // 有逗号 → 逗号前是 OGNL，逗号后（含逗号）是 jdbcType/typeHandler 等
+                commaIndex != -1 ->
+                    MyBatisParam(
+                        nameRange = TextRange.create(contentStart, commaIndex),
+                        suffixRange = TextRange.create(commaIndex, closeBraceIndex),
+                    )
+
+                // 纯参数名
+                else ->
+                    MyBatisParam(
+                        nameRange = TextRange.create(contentStart, closeBraceIndex),
+                        suffixRange = null,
+                    )
+            }
+
+            myBatisParams.add(param)
             index = closeBraceIndex + 1
         }
 
-        return textRanges
+        return myBatisParams
     }
 
     override fun elementsToInjectIn(): List<Class<out PsiElement>> {
@@ -224,3 +240,10 @@ class MybatisMultiHostInjector : MultiHostInjector {
     }
 
 }
+
+data class MyBatisParam(
+    /** 参数名部分，注入 OGNL；也是 addPlace 的 place 范围 */
+    val nameRange: TextRange,
+    /** 逗号之后的 jdbcType/typeHandler 等部分，注入 MybatisParamLanguage；没有则为 null */
+    val suffixRange: TextRange?,
+)

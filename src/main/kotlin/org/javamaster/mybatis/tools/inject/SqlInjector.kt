@@ -23,18 +23,19 @@ object SqlInjector {
         host: PsiLanguageInjectionHost,
         next: XmlText?,
         text: String,
-        variablesRanges: List<TextRange>,
-    ): List<TextRange> {
+        myBatisParams: List<MyBatisParam>,
+    ) {
         val variablePrefix = calVariablePrefix(host, next)
 
         var lastVariableRangeEndOffset = 0
 
-        for (variableRange in variablesRanges) {
-            val range = TextRange.create(lastVariableRangeEndOffset, variableRange.startOffset)
+        for (myBatisParam in myBatisParams) {
+            val nameRange = myBatisParam.nameRange
+            val range = TextRange.create(lastVariableRangeEndOffset, nameRange.startOffset)
 
-            registrar.addPlace(variablePrefix, variableRange.substring(text), host, range)
+            registrar.addPlace(variablePrefix, nameRange.substring(text), host, range)
 
-            lastVariableRangeEndOffset = variableRange.endOffset
+            lastVariableRangeEndOffset = nameRange.endOffset
         }
 
         val range = TextRange.create(lastVariableRangeEndOffset, text.length)
@@ -43,9 +44,9 @@ object SqlInjector {
 
         val prefix = calSqlPrefix(host)
 
-        registrar.addPlace(prefix ?: variablePrefix, suffix, host, range.shiftRight(0))
-
-        return variablesRanges
+        if (range.length > 0) {
+            registrar.addPlace(prefix ?: variablePrefix, suffix, host, range)
+        }
     }
 
     private fun calVariablePrefix(host: PsiLanguageInjectionHost, next: XmlText?): String? {
