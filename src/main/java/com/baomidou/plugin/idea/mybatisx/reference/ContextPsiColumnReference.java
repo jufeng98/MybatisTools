@@ -3,6 +3,7 @@ package com.baomidou.plugin.idea.mybatisx.reference;
 import com.baomidou.plugin.idea.mybatisx.smartjpa.component.mapping.EntityMappingHolder;
 import com.baomidou.plugin.idea.mybatisx.smartjpa.component.mapping.EntityMappingResolverFactory;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.database.model.*;
 import com.intellij.database.psi.*;
@@ -135,7 +136,7 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
     @Override
     public Object @NotNull [] getVariants() {
         Project project = getElement().getProject();
-        List<Object> elementList = Lists.newArrayList();
+        Set<Object> elementList = Sets.newHashSet();
 
         EntityMappingResolverFactory entityMappingResolverFactory = new EntityMappingResolverFactory(project);
 
@@ -159,7 +160,9 @@ public class ContextPsiColumnReference extends PsiReferenceBase<XmlAttributeValu
                 String name = StringUtils.defaultString(it.getName());
 
                 elementList.add(LookupElementBuilder.create(it, name));
-                elementList.add(LookupElementBuilder.create(it, StringUtil.toCamelCase(name)));
+
+                String camelCaseName = StringUtil.toCamelCase(name);
+                elementList.add(LookupElementBuilder.create(it, camelCaseName));
             });
         }
 

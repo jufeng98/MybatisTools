@@ -78,17 +78,17 @@ object CompletionUtils {
         var currentPsiElementText = referenceExpression.text
         val project = psiMethod.project
 
-        if (currentPsiElementText.startsWith("@")) {
+        if (currentPsiElementText.startsWith(MybatisConstants.AT_SEPARATOR)) {
             // 静态方法智能提示
-            val idx = prefix.indexOf("@")
+            val idx = prefix.indexOf(MybatisConstants.AT_SEPARATOR)
             val validPrefix = if (idx == -1) {
                 prefix
             } else {
                 prefix.substring(idx + 1)
             }
 
-            val firstIdx = currentPsiElementText.indexOf("@")
-            val lastIdx = currentPsiElementText.lastIndexOf("@")
+            val firstIdx = currentPsiElementText.indexOf(MybatisConstants.AT_SEPARATOR)
+            val lastIdx = currentPsiElementText.lastIndexOf(MybatisConstants.AT_SEPARATOR)
             if (firstIdx == lastIdx) {
                 val newCompletionResultSet = resultSet.withPrefixMatcher(validPrefix)
 
@@ -118,7 +118,7 @@ object CompletionUtils {
         val newCompletionResultSet = resultSet.withPrefixMatcher(prefix)
 
         val collectionAttrValue = OgnlReferenceUtils.getCollectionAttrIfForeachTagItemAttrValue(injectionHost)
-        if (collectionAttrValue != null) {
+        if (collectionAttrValue != null && referenceExpression.references.size == 1) {
             // foreach 的 item 属性智能提示
             val value = collectionAttrValue.value
 
@@ -205,12 +205,12 @@ object CompletionUtils {
                 }
             }
         } else {
-            val psiReferences = ReferenceUtils.convert(currentPsiElementText, referenceExpression)
+            val psiReferences = referenceExpression.references
 
             val resolve = if (psiReferences.size == 1) {
                 psiReferences[0].resolve()
             } else {
-                psiReferences[psiReferences.size - 2].resolve()
+                psiReferences[psiReferences.lastIndex - 1].resolve()
             }
 
             val fieldPrefix = currentPsiElementText.substring(0, dotIdx + 1)
@@ -219,6 +219,8 @@ object CompletionUtils {
                 val psiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
 
                 fillFieldAndMethodNames(fieldPrefix, psiClass, newCompletionResultSet, fullOgnl)
+            } else if (resolve is PsiClass) {
+                fillFieldAndMethodNames(fieldPrefix, resolve, newCompletionResultSet, fullOgnl)
             }
         }
     }
@@ -260,6 +262,8 @@ object CompletionUtils {
 
                 fillFieldAndMethodNames("", fieldPsiClass, newCompletionResultSet, fullOgnl)
             }
+        } else if (resolve is PsiClass) {
+            fillFieldAndMethodNames("", resolve, newCompletionResultSet, fullOgnl)
         }
     }
 

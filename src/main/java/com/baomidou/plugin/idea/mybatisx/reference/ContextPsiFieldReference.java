@@ -1,7 +1,6 @@
 package com.baomidou.plugin.idea.mybatisx.reference;
 
 import com.baomidou.plugin.idea.mybatisx.dom.MapperBacktrackingUtils;
-import com.baomidou.plugin.idea.mybatisx.dom.converter.PropertySetterFind;
 import com.baomidou.plugin.idea.mybatisx.service.JavaService;
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants;
 import com.intellij.openapi.util.TextRange;
@@ -17,8 +16,7 @@ import org.javamaster.mybatis.tools.utils.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * The type Context psi field reference.
@@ -38,7 +36,7 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
      * -- SETTER --
      * Sets resolver.
      */
-    protected ContextReferenceSetResolver<XmlAttributeValue, PsiField> resolver;
+    protected ContextReferenceSetResolver<XmlAttributeValue, PsiMember> resolver;
 
     /**
      * The Index.
@@ -112,7 +110,7 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
     @Nullable
     @Override
     public PsiElement resolve() {
-        Optional<PsiField> resolved = resolver.resolve(index);
+        Optional<PsiMember> resolved = resolver.resolve(index);
         if (resolved.isPresent()) {
             return resolved.get();
         }
@@ -130,16 +128,18 @@ public class ContextPsiFieldReference extends PsiReferenceBase<XmlAttributeValue
         }
 
         final PsiClass psiClass = clazz.get();
-        PropertySetterFind propertySetterFind = new PropertySetterFind();
 
-        final List<PsiField> setterFields = propertySetterFind.getSetterFields(psiClass);
-        return setterFields.toArray(new Object[0]);
+        final List<PsiField> fields = Arrays.stream(psiClass.getAllFields())
+                .filter(it -> !it.hasModifierProperty("static"))
+                .toList();
+
+        return fields.toArray(new Object[0]);
     }
 
     private Optional<PsiClass> getTargetClazz() {
         if (getElement().getValue().contains(MybatisConstants.DOT_SEPARATOR)) {
             int ind = 0 == index ? 0 : index - 1;
-            Optional<PsiField> resolved = resolver.resolve(ind);
+            Optional<PsiMember> resolved = resolver.resolve(ind);
             if (resolved.isPresent()) {
                 return JavaService.getInstance(myElement.getProject()).getReferenceClazzOfPsiField(resolved.get());
             }
