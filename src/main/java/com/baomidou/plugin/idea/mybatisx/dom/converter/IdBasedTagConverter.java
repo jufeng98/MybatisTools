@@ -12,15 +12,20 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.*;
+import com.intellij.psi.ElementManipulators;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiReference;
+import com.intellij.psi.PsiReferenceBase;
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.JavaClassReferenceProvider;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.psi.xml.XmlElement;
+import com.intellij.psi.xml.XmlTag;
 import com.intellij.util.xml.*;
 import lombok.val;
 import org.javamaster.mybatis.tools.service.IdDomElementService;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -29,7 +34,7 @@ import java.util.*;
  *
  * @author yanglin
  */
-public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeValue> implements CustomReferenceConverter<XmlAttributeValue> {
+public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlTag> implements CustomReferenceConverter<XmlTag> {
 
     private final boolean crossMapperSupported;
 
@@ -51,16 +56,16 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
 
     @Nullable
     @Override
-    public XmlAttributeValue fromString(@Nullable @NonNls String value, @NotNull ConvertContext context) {
+    public XmlTag fromString(@Nullable @NonNls String value, @NotNull ConvertContext context) {
         TraverseStrategy traverseStrategy = selectStrategy(context);
 
         val domMap = traverseStrategy.getValue();
 
-        return matchIdDomElement(domMap, value, context).orElse(null);
+        return findMatchIdDomElement(domMap, value, context).orElse(null);
     }
 
-    private Optional<XmlAttributeValue> matchIdDomElement(Map<String, Collection<? extends IdDomElement>> domMap,
-                                                          String value, ConvertContext context) {
+    private Optional<XmlTag> findMatchIdDomElement(Map<String, Collection<? extends IdDomElement>> domMap,
+                                                   String value, ConvertContext context) {
         if (value == null) {
             return Optional.empty();
         }
@@ -87,17 +92,17 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
                 })
                 .findFirst();
 
-        return optional.map(idDomElement -> idDomElement.getId().getXmlAttributeValue());
+        return optional.map(DomElement::getXmlTag);
     }
 
     @Nullable
     @Override
-    public String toString(@Nullable XmlAttributeValue xmlAttribute, @NotNull ConvertContext context) {
-        if (xmlAttribute == null) {
+    public String toString(@Nullable XmlTag xmlTag, @NotNull ConvertContext context) {
+        if (xmlTag == null) {
             return null;
         }
 
-        PsiElement fatherElement = xmlAttribute.getParent();
+        PsiElement fatherElement = xmlTag.getParent();
         if (fatherElement == null) {
             return null;
         }
@@ -130,7 +135,7 @@ public abstract class IdBasedTagConverter extends ConverterAdaptor<XmlAttributeV
     }
 
     @Override
-    public PsiReference @NotNull [] createReferences(GenericDomValue<XmlAttributeValue> value,
+    public PsiReference @NotNull [] createReferences(GenericDomValue<XmlTag> value,
                                                      PsiElement element,
                                                      ConvertContext context) {
         ValueReferenceProvider valueReferenceProvider = new ValueReferenceProvider(context);
