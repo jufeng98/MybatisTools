@@ -171,7 +171,7 @@ object OgnlReferenceUtils {
             return null
         }
 
-        val parent = ognlPsiElement.parent
+        val parent = ognlPsiElement.parent ?: return null
 
         val psiReferences = parent.references
 
@@ -215,7 +215,7 @@ object OgnlReferenceUtils {
             return null
         }
 
-        val parent = ognlPsiElement.parent
+        val parent = ognlPsiElement.parent ?: return null
 
         val psiReferences = parent.references
 

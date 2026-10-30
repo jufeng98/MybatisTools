@@ -29,16 +29,16 @@ class MybatisAttrValueCompletionProvider : CompletionProvider<CompletionParamete
         val mybatisAttr = mybatisAttrValue.parent as MybatisParamAttr
 
         val injectionHost = InjectedLanguageManager.getInstance(mybatisAttr.project).getInjectionHost(mybatisAttrValue)
+
         val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return
+
         val mapper = MapperUtils.getMapper(domElement)
 
-        CompositeHashMarkTip.hashMarkTips
-            .filter {
-                it.name == mybatisAttr.attrName.name
-            }
-            .forEach {
-                it.tipValue(completionParameters, completionResultSet, mapper)
-            }
+        CompositeHashMarkTip.hashMarkTips[mybatisAttr.attrName.name]?.tipValue(
+            completionParameters,
+            completionResultSet,
+            mapper
+        )
     }
 
 }

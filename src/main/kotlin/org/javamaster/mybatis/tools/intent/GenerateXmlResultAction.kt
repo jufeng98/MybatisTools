@@ -1,6 +1,7 @@
 package org.javamaster.mybatis.tools.intent
 
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
+import com.baomidou.plugin.idea.mybatisx.util.DomUtils
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils.getResultMapId
 import com.intellij.codeInsight.intention.impl.BaseIntentionAction
@@ -33,7 +34,7 @@ class GenerateXmlResultAction : BaseIntentionAction() {
     }
 
     override fun isAvailable(project: Project, editor: Editor, psiFile: PsiFile): Boolean {
-        if (!MapperUtils.isElementWithinMybatisFile(psiFile)) {
+        if (!DomUtils.isMybatisFile(psiFile)) {
             return false
         }
 

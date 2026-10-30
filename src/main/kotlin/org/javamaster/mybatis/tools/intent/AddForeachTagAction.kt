@@ -122,7 +122,9 @@ class AddForeachTagAction : BaseIntentionAction() {
             for (psiParameter in parameters) {
                 val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: continue
 
-                for (psiField in psiClass.allFields) {
+                val allFields = PsiUtils.getCachedFields(psiClass).second
+
+                for (psiField in allFields) {
                     val type = psiField.type
                     if (!InheritanceUtil.isInheritor(type, MybatisConstants.COLLECTION)) continue
 

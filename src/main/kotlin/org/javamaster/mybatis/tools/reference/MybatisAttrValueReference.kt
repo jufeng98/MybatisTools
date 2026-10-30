@@ -24,16 +24,13 @@ class MybatisAttrValueReference(
         val attr = attrValue.parent as MybatisParamAttr
         val attrName = attr.attrName.name
 
-        val hashMarkTip = CompositeHashMarkTip.hashMarkTips
-            .firstOrNull {
-                it.name == attrName
-            } ?: return null
-
         val injectionHost = InjectedLanguageManager.getInstance(attr.project).getInjectionHost(attr)
+
         val domElement = DomUtil.findDomElement(injectionHost, IdDomElement::class.java) ?: return null
+
         val mapper = MapperUtils.getMapper(domElement)
 
-        return hashMarkTip.resolveValue(attrValue, mapper)
+        return CompositeHashMarkTip.hashMarkTips[attrName]?.resolveValue(attrValue, mapper)
     }
 
 }

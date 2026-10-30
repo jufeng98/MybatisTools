@@ -163,16 +163,17 @@ object CompletionUtils {
                 )
             } else {
                 val psiReferences = referenceExpression.references
+                if (psiReferences.isNotEmpty()) {
+                    val itemPsiElement = psiReferences[0].resolve()
+                    if (itemPsiElement !is PsiClass) {
+                        return
+                    }
 
-                val itemPsiElement = psiReferences[0].resolve()
-                if (itemPsiElement !is PsiClass) {
-                    return
+                    @Suppress("USELESS_CAST")
+                    val itemPsiClass = itemPsiElement as PsiClass
+
+                    fillFieldAndMethodNames("", itemPsiClass, newCompletionResultSet, fullOgnl)
                 }
-
-                @Suppress("USELESS_CAST")
-                val itemPsiClass = itemPsiElement as PsiClass
-
-                fillFieldAndMethodNames("", itemPsiClass, newCompletionResultSet, fullOgnl)
             }
 
             return
@@ -206,21 +207,22 @@ object CompletionUtils {
             }
         } else {
             val psiReferences = referenceExpression.references
+            if (psiReferences.isNotEmpty()) {
+                val resolve = if (psiReferences.size == 1) {
+                    psiReferences[0].resolve()
+                } else {
+                    psiReferences[psiReferences.lastIndex - 1].resolve()
+                }
 
-            val resolve = if (psiReferences.size == 1) {
-                psiReferences[0].resolve()
-            } else {
-                psiReferences[psiReferences.lastIndex - 1].resolve()
-            }
+                val fieldPrefix = currentPsiElementText.substring(0, dotIdx + 1)
 
-            val fieldPrefix = currentPsiElementText.substring(0, dotIdx + 1)
+                if (resolve is PsiParameter || resolve is PsiField) {
+                    val psiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
 
-            if (resolve is PsiParameter || resolve is PsiField) {
-                val psiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
-
-                fillFieldAndMethodNames(fieldPrefix, psiClass, newCompletionResultSet, fullOgnl)
-            } else if (resolve is PsiClass) {
-                fillFieldAndMethodNames(fieldPrefix, resolve, newCompletionResultSet, fullOgnl)
+                    fillFieldAndMethodNames(fieldPrefix, psiClass, newCompletionResultSet, fullOgnl)
+                } else if (resolve is PsiClass) {
+                    fillFieldAndMethodNames(fieldPrefix, resolve, newCompletionResultSet, fullOgnl)
+                }
             }
         }
     }
@@ -252,15 +254,18 @@ object CompletionUtils {
         val newCompletionResultSet = resultSet.withPrefixMatcher(prefix)
 
         if (resolve is PsiParameter || resolve is PsiField) {
-            val genericParameters = (resolve.type as PsiClassReferenceType).parameters
-            if (genericParameters.isNotEmpty()) {
-                val genericPsiClass = PsiUtils.resolvePsiType(genericParameters[0]) ?: return
+            val referenceType = resolve.type as? PsiClassReferenceType
+            if (referenceType != null) {
+                val genericParameters = referenceType.parameters
+                if (genericParameters.isNotEmpty()) {
+                    val genericPsiClass = PsiUtils.resolvePsiType(genericParameters[0]) ?: return
 
-                fillFieldAndMethodNames("", genericPsiClass, newCompletionResultSet, fullOgnl)
-            } else {
-                val fieldPsiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
+                    fillFieldAndMethodNames("", genericPsiClass, newCompletionResultSet, fullOgnl)
+                } else {
+                    val fieldPsiClass = PsiUtils.resolvePsiType(resolve.type) ?: return
 
-                fillFieldAndMethodNames("", fieldPsiClass, newCompletionResultSet, fullOgnl)
+                    fillFieldAndMethodNames("", fieldPsiClass, newCompletionResultSet, fullOgnl)
+                }
             }
         } else if (resolve is PsiClass) {
             fillFieldAndMethodNames("", resolve, newCompletionResultSet, fullOgnl)
@@ -273,19 +278,20 @@ object CompletionUtils {
         completionResultSet: CompletionResultSet,
         fullOgnl: Boolean,
     ) {
+        val psiType = psiParameter.type
+
         completionResultSet.addElement(
-            LookupElementBuilder.create(psiParameter, paramValue).withTypeText(psiParameter.type.presentableText)
+            LookupElementBuilder.create(psiParameter, paramValue).withTypeText(psiType.presentableText)
         )
 
-        if (fullOgnl) {
-            val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: return
-            var qualifiedName = psiClass.qualifiedName
+        if (fullOgnl && psiType is PsiClassReferenceType) {
+            var qualifiedName = psiType.name
 
-            if (qualifiedName == "java.lang.String") {
+            if (qualifiedName == String::class.java.name) {
                 completionResultSet.addElement(
                     LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue != ''")
                 )
-            } else if (InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)) {
+            } else if (InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)) {
                 completionResultSet.addElement(
                     LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue.size() > 0")
                 )
@@ -301,25 +307,23 @@ object CompletionUtils {
         resultSet: CompletionResultSet,
         fullOgnl: Boolean,
     ) {
-        val psiFields = psiClass.allFields
+        val psiFields = PsiUtils.getCachedFields(psiClass).second
         psiFields.forEach {
             var lookupString = it.name
             resultSet.addElement(LookupElementBuilder.create(it, lookupString).withTypeText(it.type.presentableText))
 
-            if (fullOgnl) {
-                val psiClazz = PsiUtils.resolvePsiType(it.type)
-                val qualifiedName = psiClazz?.qualifiedName
+            if (fullOgnl && it is PsiClassReferenceType) {
+                val qualifiedName = it.name
                 lookupString = it.name
 
-                if (qualifiedName == "java.lang.String") {
+                if (qualifiedName == String::class.java.name) {
                     resultSet.addElement(
                         LookupElementBuilder.create(it, "$lookupString != null and ${fieldPrefix + lookupString} != ''")
                     )
-                } else if (InheritanceUtil.isInheritor(psiClazz, MybatisConstants.COLLECTION)) {
+                } else if (InheritanceUtil.isInheritor(it, MybatisConstants.COLLECTION)) {
                     resultSet.addElement(
                         LookupElementBuilder.create(
-                            it,
-                            "$lookupString != null and ${fieldPrefix + lookupString}.size() > 0"
+                            it, "$lookupString != null and ${fieldPrefix + lookupString}.size() > 0"
                         )
                     )
                 } else {
@@ -344,7 +348,7 @@ object CompletionUtils {
     private fun fillMethodNames(psiClass: PsiClass, resultSet: CompletionResultSet) {
         val set = mutableSetOf<String>()
 
-        val allMethods = psiClass.allMethods
+        val allMethods = PsiUtils.getCachedMethods(psiClass).second
         allMethods.forEach {
             val lookupString = it.name + it.parameterList.text
             if (set.contains(lookupString)) {

@@ -4,10 +4,11 @@ import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.psi.*
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.util.InheritanceUtil
+import com.intellij.psi.util.*
 import com.intellij.psi.xml.XmlText
 import org.apache.commons.lang3.StringUtils
 import org.javamaster.mybatis.tools.psi.impl.MapValueFakePsiElement
@@ -181,4 +182,33 @@ object PsiUtils {
         return Pair(psiClass, null)
     }
 
+    fun getCachedFields(psiClass: PsiClass): Pair<Set<String>, List<PsiField>> {
+        return CachedValuesManager.getCachedValue(psiClass, fieldsKey) {
+
+            val set = psiClass.allFields.map { it.name }.toSet()
+
+            CachedValueProvider.Result.create(
+                Pair(set, psiClass.allFields.toList()),
+                PsiModificationTracker.MODIFICATION_COUNT,
+            )
+        }
+    }
+
+    fun getCachedMethods(psiClass: PsiClass): Pair<Set<String>, List<PsiMethod>> {
+        return CachedValuesManager.getCachedValue(psiClass, methodsKey) {
+
+            val set = psiClass.allMethods.map { it.name }.toSet()
+
+            CachedValueProvider.Result.create(
+                Pair(set, psiClass.allMethods.toList()),
+                PsiModificationTracker.MODIFICATION_COUNT,
+            )
+        }
+    }
+
+    private val fieldsKey =
+        Key.create<CachedValue<Pair<Set<String>, List<PsiField>>>>("org.javamaster.class.fields")
+
+    private val methodsKey =
+        Key.create<CachedValue<Pair<Set<String>, List<PsiMethod>>>>("org.javamaster.class.methods")
 }
