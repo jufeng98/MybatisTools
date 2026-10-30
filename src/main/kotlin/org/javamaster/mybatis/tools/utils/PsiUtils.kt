@@ -158,24 +158,31 @@ object PsiUtils {
 
         val paramIsCollection = InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)
         if (paramIsCollection) {
-            val genericParameters = (psiType as PsiClassReferenceType).parameters
-            if (genericParameters.size == 0) {
-                return null
-            }
+            val referenceType = psiType as? PsiClassReferenceType
+            if (referenceType != null) {
+                val genericParameters = referenceType.parameters
+                if (genericParameters.size == 0) {
+                    return null
+                }
 
-            return Pair(psiClass, resolvePsiType(genericParameters[0]))
+                return Pair(psiClass, resolvePsiType(genericParameters[0]))
+            }
         }
 
         val paramIsMap = InheritanceUtil.isInheritor(psiClass, MybatisConstants.MAP)
         if (paramIsMap) {
-            val genericParameters = (psiType as PsiClassReferenceType).parameters
-            if (genericParameters.size < 2) {
-                return null
-            }
+            val referenceType = psiType as? PsiClassReferenceType
+            if (referenceType != null) {
+                val genericParameters = psiType.parameters
+                if (genericParameters.size < 2) {
+                    return null
+                }
 
-            val idx = if (valueType) 1 else 0
-            val genericParameter = genericParameters[idx]
-            return Pair(psiClass, resolvePsiType(genericParameter))
+                val idx = if (valueType) 1 else 0
+                val genericParameter = genericParameters[idx]
+                
+                return Pair(psiClass, resolvePsiType(genericParameter))
+            }
         }
 
         return Pair(psiClass, null)

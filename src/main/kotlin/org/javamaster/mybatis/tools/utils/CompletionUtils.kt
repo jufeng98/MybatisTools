@@ -3,11 +3,9 @@ package org.javamaster.mybatis.tools.utils
 import com.baomidou.plugin.idea.mybatisx.annotation.Annotation
 import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
-import com.intellij.codeInsight.completion.CompletionParameters
-import com.intellij.codeInsight.completion.CompletionResultSet
-import com.intellij.codeInsight.completion.CompletionUtil
-import com.intellij.codeInsight.completion.JavaClassNameCompletionContributor
+import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.completion.util.MethodParenthesesHandler
+import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.ognl.psi.OgnlIndexedExpression
@@ -23,6 +21,11 @@ import com.intellij.util.xml.DomUtil
  * @author yudong
  */
 object CompletionUtils {
+    private const val PRIORITY_PARAM = 100.0
+    private const val PRIORITY_FOREACH_VAR = 95.0
+    private const val PRIORITY_FIELD = 90.0
+    private const val PRIORITY_METHOD = 80.0
+    private const val PRIORITY_EXPRESSION = 70.0
 
     fun fillMybatisOgnlReferenceVariants(
         referenceExpression: OgnlReferenceExpression,
@@ -108,7 +111,7 @@ object CompletionUtils {
 
                 val newCompletionResultSet = resultSet.withPrefixMatcher(validPrefix)
 
-                fillMethodNames(psiClass, newCompletionResultSet)
+                fillMethodNames(psiClass, newCompletionResultSet, true)
             }
 
             return
@@ -135,7 +138,7 @@ object CompletionUtils {
                 }
             }
 
-            newCompletionResultSet.addElement(LookupElementBuilder.create(tip))
+            add(PRIORITY_FOREACH_VAR, LookupElementBuilder.create(tip), resultSet)
 
             return
         }
@@ -149,6 +152,9 @@ object CompletionUtils {
                 currentPsiElementText = itemAttrValue.value
 
                 val psiReferences = ReferenceUtils.convert(currentPsiElementText, itemAttrValue)
+                if (psiReferences.isEmpty()) {
+                    return
+                }
 
                 val itemPsiElement = psiReferences[0].resolve()
                 if (itemPsiElement !is PsiClass) {
@@ -158,11 +164,16 @@ object CompletionUtils {
                 @Suppress("USELESS_CAST")
                 val itemPsiClass = itemPsiElement as PsiClass
 
-                newCompletionResultSet.addElement(
-                    LookupElementBuilder.create(itemPsiClass, itemAttrValue.value).withTypeText(itemPsiClass.name)
+                add(
+                    PRIORITY_FOREACH_VAR,
+                    LookupElementBuilder.create(itemPsiClass, itemAttrValue.value).withTypeText(itemPsiClass.name),
+                    resultSet
                 )
             } else {
                 val psiReferences = referenceExpression.references
+                if (psiReferences.isEmpty()) {
+                    return
+                }
 
                 val itemPsiElement = psiReferences[0].resolve()
                 if (itemPsiElement !is PsiClass) {
@@ -194,18 +205,24 @@ object CompletionUtils {
 
                     fillParamNames(paramValue, psiParameter, newCompletionResultSet, fullOgnl)
                 } else {
-                    newCompletionResultSet.addElement(
+                    add(
+                        PRIORITY_PARAM,
                         LookupElementBuilder.create(psiParameter, psiParameter.name)
-                            .withTypeText(psiParameter.type.presentableText)
+                            .withTypeText(psiParameter.type.presentableText),
+                        resultSet
                     )
 
-                    val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: return
+                    val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: continue
 
                     fillFieldAndMethodNames("", psiClass, newCompletionResultSet, fullOgnl)
                 }
             }
         } else {
             val psiReferences = referenceExpression.references
+
+            if (psiReferences.isEmpty()) {
+                return
+            }
 
             val resolve = if (psiReferences.size == 1) {
                 psiReferences[0].resolve()
@@ -252,7 +269,12 @@ object CompletionUtils {
         val newCompletionResultSet = resultSet.withPrefixMatcher(prefix)
 
         if (resolve is PsiParameter || resolve is PsiField) {
-            val genericParameters = (resolve.type as PsiClassReferenceType).parameters
+            val referenceType = resolve.type as? PsiClassReferenceType
+            if (referenceType == null) {
+                return
+            }
+
+            val genericParameters = referenceType.parameters
             if (genericParameters.isNotEmpty()) {
                 val genericPsiClass = PsiUtils.resolvePsiType(genericParameters[0]) ?: return
 
@@ -273,26 +295,31 @@ object CompletionUtils {
         completionResultSet: CompletionResultSet,
         fullOgnl: Boolean,
     ) {
-        completionResultSet.addElement(
-            LookupElementBuilder.create(psiParameter, paramValue).withTypeText(psiParameter.type.presentableText)
+        val psiType = psiParameter.type
+
+        add(
+            PRIORITY_PARAM,
+            LookupElementBuilder.create(psiParameter, paramValue)
+                .withTypeText(psiType.presentableText)
+                .bold(),
+            completionResultSet
         )
 
-        if (fullOgnl) {
-            val psiClass = PsiUtils.resolvePsiType(psiParameter.type) ?: return
-            var qualifiedName = psiClass.qualifiedName
-
-            if (qualifiedName == "java.lang.String") {
-                completionResultSet.addElement(
-                    LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue != ''")
-                )
-            } else if (InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)) {
-                completionResultSet.addElement(
-                    LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue.size() > 0")
-                )
-            } else {
-                completionResultSet.addElement(LookupElementBuilder.create(psiParameter, "$paramValue != null"))
-            }
+        if (fullOgnl || psiType !is PsiClassReferenceType) {
+            return
         }
+
+        var qualifiedName = psiType.name
+
+        val element = if (qualifiedName == String::class.java.simpleName) {
+            LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue != ''")
+        } else if (InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)) {
+            LookupElementBuilder.create(psiParameter, "$paramValue != null and $paramValue.size() > 0")
+        } else {
+            LookupElementBuilder.create(psiParameter, "$paramValue != null")
+        }
+
+        add(PRIORITY_EXPRESSION, element, completionResultSet)
     }
 
     private fun fillFieldAndMethodNames(
@@ -304,48 +331,60 @@ object CompletionUtils {
         val psiFields = psiClass.allFields
         psiFields.forEach {
             var lookupString = it.name
-            resultSet.addElement(LookupElementBuilder.create(it, lookupString).withTypeText(it.type.presentableText))
+            val psiType = it.type
 
-            if (fullOgnl) {
-                val psiClazz = PsiUtils.resolvePsiType(it.type)
-                val qualifiedName = psiClazz?.qualifiedName
+            add(
+                PRIORITY_FIELD,
+                LookupElementBuilder.create(it, lookupString).withTypeText(psiType.presentableText),
+                resultSet
+            )
+
+            if (fullOgnl && psiType is PsiClassReferenceType) {
+                val qualifiedName = psiType.name
                 lookupString = it.name
 
-                if (qualifiedName == "java.lang.String") {
-                    resultSet.addElement(
-                        LookupElementBuilder.create(it, "$lookupString != null and ${fieldPrefix + lookupString} != ''")
-                    )
-                } else if (InheritanceUtil.isInheritor(psiClazz, MybatisConstants.COLLECTION)) {
-                    resultSet.addElement(
-                        LookupElementBuilder.create(
-                            it,
-                            "$lookupString != null and ${fieldPrefix + lookupString}.size() > 0"
-                        )
+                val element = if (qualifiedName == String::class.java.simpleName) {
+                    LookupElementBuilder.create(it, "$lookupString != null and ${fieldPrefix + lookupString} != ''")
+                } else if (InheritanceUtil.isInheritor(psiType, MybatisConstants.COLLECTION)) {
+                    LookupElementBuilder.create(
+                        it, "$lookupString != null and ${fieldPrefix + lookupString}.size() > 0"
                     )
                 } else {
-                    resultSet.addElement(LookupElementBuilder.create(it, "$lookupString != null"))
+                    LookupElementBuilder.create(it, "$lookupString != null")
                 }
+
+                add(PRIORITY_EXPRESSION, element, resultSet)
             }
         }
 
         if (InheritanceUtil.isInheritor(psiClass, MybatisConstants.MAP)
             || InheritanceUtil.isInheritor(psiClass, MybatisConstants.COLLECTION)
         ) {
-            fillMethodNames(psiClass, resultSet)
+            fillMethodNames(psiClass, resultSet, false)
         }
 
         if (fullOgnl) {
             if (psiClass.qualifiedName?.startsWith("java") == true) {
-                fillMethodNames(psiClass, resultSet)
+                fillMethodNames(psiClass, resultSet, false)
             }
         }
     }
 
-    private fun fillMethodNames(psiClass: PsiClass, resultSet: CompletionResultSet) {
+    private fun fillMethodNames(psiClass: PsiClass, resultSet: CompletionResultSet, onlyStatic: Boolean) {
         val set = mutableSetOf<String>()
 
         val allMethods = psiClass.allMethods
         allMethods.forEach {
+            if (onlyStatic) {
+                if (!it.hasModifierProperty(PsiModifier.STATIC)) {
+                    return@forEach
+                }
+            }
+
+            if (it.hasModifierProperty(PsiModifier.PRIVATE)) {
+                return@forEach
+            }
+
             val lookupString = it.name + it.parameterList.text
             if (set.contains(lookupString)) {
                 return@forEach
@@ -353,13 +392,19 @@ object CompletionUtils {
 
             set.add(lookupString)
 
-            resultSet.addElement(
+            add(
+                PRIORITY_METHOD,
                 LookupElementBuilder.create(it, it.name)
                     .withTypeText(it.returnType?.presentableText)
                     .withPresentableText(lookupString)
-                    .withInsertHandler(MethodParenthesesHandler.getInstance(!it.parameterList.isEmpty))
+                    .withInsertHandler(MethodParenthesesHandler.getInstance(!it.parameterList.isEmpty)),
+                resultSet
             )
         }
+    }
+
+    private fun add(priority: Double, element: LookupElement, resultSet: CompletionResultSet) {
+        resultSet.addElement(PrioritizedLookupElement.withPriority(element, priority))
     }
 
 }
