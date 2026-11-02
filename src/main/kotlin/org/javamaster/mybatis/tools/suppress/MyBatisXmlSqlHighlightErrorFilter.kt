@@ -1,5 +1,6 @@
 package org.javamaster.mybatis.tools.suppress
 
+import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.intellij.codeInsight.highlighting.HighlightErrorFilter
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.PsiElement
@@ -25,6 +26,10 @@ class MyBatisXmlSqlHighlightErrorFilter : HighlightErrorFilter() {
 
         val injectionHost = InjectedLanguageManager.getInstance(project).getInjectionHost(element)
         if (injectionHost == null) {
+            return true
+        }
+
+        if (!MapperUtils.isElementWithinMybatisFile(injectionHost)) {
             return true
         }
 

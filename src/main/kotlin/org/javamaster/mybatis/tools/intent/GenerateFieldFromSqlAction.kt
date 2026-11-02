@@ -55,8 +55,9 @@ class GenerateFieldFromSqlAction : BaseIntentionAction() {
             .mapNotNull {
                 val name = it.name ?: return@mapNotNull null
 
-                // val dataType = it.dasType.toDataType().typeName
-                val typeName = "String"
+                val typeName = runCatching {
+                    it.dasType.toDataType().typeName
+                }.getOrNull() ?: "String"
 
                 GenerateUtils.generateJavaField(name, typeName)
             }

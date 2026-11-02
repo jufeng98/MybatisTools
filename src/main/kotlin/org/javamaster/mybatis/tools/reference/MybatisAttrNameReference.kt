@@ -21,9 +21,9 @@ class MybatisAttrNameReference(
     }
 
     override fun getVariants(): Array<Any> {
-        return CompositeHashMarkTip.hashMarkTips
+        return CompositeHashMarkTip.hashMarkTips.keys
             .map {
-                LookupElementBuilder.create(it.name).withInsertHandler(EqualsEndInsertHandler)
+                LookupElementBuilder.create(it).withInsertHandler(EqualsEndInsertHandler)
             }
             .toTypedArray()
     }

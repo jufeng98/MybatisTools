@@ -1,7 +1,6 @@
 package org.javamaster.mybatis.tools.completion
 
 import com.baomidou.plugin.idea.mybatisx.tip.hashmark.CompositeHashMarkTip
-import com.baomidou.plugin.idea.mybatisx.tip.hashmark.JavaTypeHashMark
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.intellij.codeInsight.completion.CompletionContributor
 import com.intellij.codeInsight.completion.CompletionParameters
@@ -28,15 +27,9 @@ class XmlCompletionContributor : CompletionContributor() {
             val name = attribute.name
 
             if (set.contains(name)) {
-                val hashMarkTip = CompositeHashMarkTip.hashMarkTips
-                    .first {
-                        it is JavaTypeHashMark
-                    }
-
-                hashMarkTip.tipValue(parameters, result, null)
+                CompositeHashMarkTip.hashMarkTips["javaType"]!!.tipValue(parameters, result, null)
             }
         }
     }
-
 
 }

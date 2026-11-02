@@ -5,18 +5,24 @@ import com.intellij.codeInsight.intention.preview.IntentionPreviewUtils
 import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemDescriptor
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElementFactory
+import com.intellij.psi.SmartPsiElementPointer
+import com.intellij.sql.psi.SqlExpression
 import com.intellij.util.application
 import org.javamaster.mybatis.tools.utils.GenerateUtils
-import org.javamaster.mybatis.tools.utils.PsiUtils
 
 /**
  * @author yudong
  */
-class AddFieldToClassQuickFix(val fieldName: String, val fullClassName: String, val typeName: String) : LocalQuickFix,
+@Suppress("ActionIsNotPreviewFriendly")
+class AddFieldToClassQuickFix(
+    val classPointer: SmartPsiElementPointer<PsiClass>,
+    val fieldName: String,
+    val expressionPointer: SmartPsiElementPointer<SqlExpression>,
+) : LocalQuickFix,
     PriorityAction {
 
     override fun getFamilyName(): String {
@@ -33,11 +39,13 @@ class AddFieldToClassQuickFix(val fieldName: String, val fullClassName: String, 
             return
         }
 
-        val module = ModuleUtil.findModuleForPsiElement(descriptor.psiElement)
-
-        val psiClass = PsiUtils.resolvePsiClass(fullClassName, module, project) ?: return
+        val psiClass = classPointer.element ?: return
 
         FileEditorManager.getInstance(project).openFile(psiClass.containingFile.virtualFile, true)
+
+        val typeName = runCatching {
+            expressionPointer.element?.dasType?.toDataType()?.typeName
+        }.getOrNull() ?: "String"
 
         val fieldText = GenerateUtils.generateJavaField(fieldName, typeName).trim()
 
@@ -50,7 +58,7 @@ class AddFieldToClassQuickFix(val fieldName: String, val fullClassName: String, 
     }
 
     override fun getPriority(): PriorityAction.Priority {
-        return PriorityAction.Priority.HIGH
+        return PriorityAction.Priority.NORMAL
     }
 
 }

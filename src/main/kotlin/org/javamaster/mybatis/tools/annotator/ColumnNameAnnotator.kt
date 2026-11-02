@@ -20,6 +20,7 @@ import com.intellij.sql.psi.*
 import com.intellij.util.xml.DomUtil
 import org.javamaster.mybatis.tools.fix.AddColumnToResultMapQuickFix
 import org.javamaster.mybatis.tools.fix.AddFieldToClassQuickFix
+import org.javamaster.mybatis.tools.utils.PsiUtils
 import org.javamaster.mybatis.tools.utils.StringUtil
 
 /**
@@ -57,7 +58,7 @@ class ColumnNameAnnotator : Annotator {
 
         val existResultType = resultType != null && resultType.isWritable
         val fieldNames = if (existResultType) {
-            resultType.allFields.mapNotNull { it.name }.toSet()
+            PsiUtils.getCachedFields(resultType).first
         } else {
             null
         }
@@ -96,7 +97,7 @@ class ColumnNameAnnotator : Annotator {
                 }
 
                 existResultType -> {
-                    handleResultType(resultType, fieldNames!!, columnName, nameElement, holder, project)
+                    handleResultType(resultType, fieldNames!!, columnName, it, nameElement, holder, project)
                 }
             }
         }
@@ -106,6 +107,7 @@ class ColumnNameAnnotator : Annotator {
         resultType: PsiClass,
         fieldNames: Set<String>,
         columnName: String,
+        expression: SqlExpression,
         nameElement: SqlIdentifier,
         holder: AnnotationHolder,
         project: Project,
@@ -117,20 +119,19 @@ class ColumnNameAnnotator : Annotator {
             return
         }
 
-        val manager = InspectionManager.getInstance(project)
-
         @Suppress("DialogTitleCapitalization")
-        val descriptor = manager.createProblemDescriptor(
+        val descriptor = InspectionManager.getInstance(project).createProblemDescriptor(
             nameElement, nameElement, "在 resultType 中新增字段", ProblemHighlightType.WARNING, false
         )
 
-        // val typeName = runCatching { expression.dasType.toDataType().typeName }.getOrNull() ?: "String"
-        val typeName = "String"
+        val manager = SmartPointerManager.getInstance(project)
+        val classPointer = manager.createSmartPsiElementPointer(resultType)
+        val expressionPointer = manager.createSmartPsiElementPointer(expression)
 
         holder.newAnnotation(HighlightSeverity.WARNING, "在 resultType 中无法找到列 $columnName 对应的字段")
             .range(nameElement.textRange)
             .newLocalQuickFix(
-                AddFieldToClassQuickFix(camelCaseName, resultType.qualifiedName ?: "", typeName),
+                AddFieldToClassQuickFix(classPointer, camelCaseName, expressionPointer),
                 descriptor
             )
             .registerFix()
@@ -152,10 +153,8 @@ class ColumnNameAnnotator : Annotator {
             return
         }
 
-        val manager = InspectionManager.getInstance(project)
-
         @Suppress("DialogTitleCapitalization")
-        val descriptor = manager.createProblemDescriptor(
+        val descriptor = InspectionManager.getInstance(project).createProblemDescriptor(
             nameElement, nameElement, "在 resultMap 标签中新增 xml 标签", ProblemHighlightType.WARNING, false
         )
 
