@@ -63,7 +63,7 @@ class ColumnNameAnnotator : Annotator {
             null
         }
 
-        val resultMap = selectDomElement.resultMap.value
+        val resultMap = selectDomElement.resultMap.value?.parent?.parent as? XmlTag
 
         val existResultMap = resultMap != null && resultMap.isWritable
         val columnNames = if (existResultMap) {

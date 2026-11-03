@@ -2,6 +2,7 @@ package com.baomidou.plugin.idea.mybatisx.util;
 
 import com.google.common.collect.Sets;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -10,9 +11,7 @@ import com.intellij.psi.xml.XmlTag;
 import com.intellij.util.xml.*;
 import org.jetbrains.annotations.*;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +46,8 @@ public final class DomUtils {
         }
 
         GlobalSearchScope scope = GlobalSearchScope.moduleWithDependenciesScope(module);
+
+        ProgressManager.checkCanceled();
 
         List<DomFileElement<T>> elements = DomService.getInstance().getFileElements(clazz, project, scope);
 

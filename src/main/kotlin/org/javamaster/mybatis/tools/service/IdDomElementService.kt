@@ -5,6 +5,7 @@ import com.baomidou.plugin.idea.mybatisx.dom.model.IdDomElement
 import com.baomidou.plugin.idea.mybatisx.util.MapperUtils
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.util.CachedValue
@@ -53,6 +54,8 @@ class IdDomElementService(val project: Project) {
 
         val mappers = MapperUtils.findMappers(module, project)
         for (mapper in mappers) {
+            ProgressManager.checkCanceled()
+
             val domMap = idBasedTagConverter.getComparisons(mapper)
 
             map.putAll(domMap)

@@ -2,10 +2,7 @@ package org.javamaster.mybatis.tools.utils
 
 import com.baomidou.plugin.idea.mybatisx.util.MybatisConstants
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiClassType
-import com.intellij.psi.PsiField
-import com.intellij.psi.XmlElementFactory
+import com.intellij.psi.*
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.xml.XmlTag
@@ -20,8 +17,8 @@ object GenerateUtils {
 
         val factory = XmlElementFactory.getInstance(project)
 
-        return psiClass.allFields
-            .filter { it.modifierList?.text?.contains("static") == false }
+        return PsiUtils.getCachedFields(psiClass).second
+            .filter { it.hasModifierProperty(PsiModifier.STATIC) }
             .map {
                 val pair = handleCollectionOrAssociation(it, factory)
                 if (pair != null) {

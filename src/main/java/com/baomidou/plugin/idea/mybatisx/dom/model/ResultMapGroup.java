@@ -1,7 +1,7 @@
 package com.baomidou.plugin.idea.mybatisx.dom.model;
 
 import com.baomidou.plugin.idea.mybatisx.dom.converter.ResultMapConverter;
-import com.intellij.psi.xml.XmlTag;
+import com.intellij.psi.xml.XmlAttributeValue;
 import com.intellij.util.xml.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,5 +20,5 @@ public interface ResultMapGroup extends DomElement {
     @NotNull
     @Attribute("resultMap")
     @Convert(ResultMapConverter.class)
-    GenericAttributeValue<XmlTag> getResultMap();
+    GenericAttributeValue<XmlAttributeValue> getResultMap();
 }

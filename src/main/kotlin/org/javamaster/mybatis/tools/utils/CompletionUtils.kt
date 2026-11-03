@@ -328,7 +328,7 @@ object CompletionUtils {
         resultSet: CompletionResultSet,
         fullOgnl: Boolean,
     ) {
-        val psiFields = psiClass.allFields
+        val psiFields = PsiUtils.getCachedFields(psiClass).second
         psiFields.forEach {
             var lookupString = it.name
             val psiType = it.type
@@ -373,12 +373,10 @@ object CompletionUtils {
     private fun fillMethodNames(psiClass: PsiClass, resultSet: CompletionResultSet, onlyStatic: Boolean) {
         val set = mutableSetOf<String>()
 
-        val allMethods = psiClass.allMethods
+        val allMethods = PsiUtils.getCachedMethods(psiClass).second
         allMethods.forEach {
-            if (onlyStatic) {
-                if (!it.hasModifierProperty(PsiModifier.STATIC)) {
-                    return@forEach
-                }
+            if (onlyStatic && !it.hasModifierProperty(PsiModifier.STATIC)) {
+                return@forEach
             }
 
             if (it.hasModifierProperty(PsiModifier.PRIVATE)) {
